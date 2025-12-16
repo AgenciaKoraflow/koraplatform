@@ -11,41 +11,21 @@ import { ActionMenu } from "@/components/shared/ActionMenu";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
 import { toast } from "sonner";
+import { useData } from "@/contexts/DataContext";
+import { KnowledgeItem } from "@/types/data";
 
-interface KnowledgeItem {
-  id: string;
-  title: string;
-  type: "credential" | "document" | "link";
-  client: string;
-  category: string;
-  lastUpdated: string;
-  description?: string;
-  content?: string;
-}
-
-const initialItems: KnowledgeItem[] = [
-  { id: "1", title: "AWS Credentials", type: "credential", client: "TechCorp", category: "Cloud", lastUpdated: "Há 2 dias", description: "Credenciais de acesso à AWS", content: "AKIAIOSFODNN7EXAMPLE" },
-  { id: "2", title: "Documentação API", type: "document", client: "TechCorp", category: "Técnico", lastUpdated: "Há 1 semana", description: "Swagger e guia de integração" },
-  { id: "3", title: "Repositório GitHub", type: "link", client: "InnovateLab", category: "Desenvolvimento", lastUpdated: "Hoje", description: "Link do repositório principal", content: "https://github.com/example/repo" },
-  { id: "4", title: "Database Credentials", type: "credential", client: "SmartRetail", category: "Database", lastUpdated: "Há 3 dias", description: "Acesso ao PostgreSQL", content: "postgres://user:pass@host:5432/db" },
-  { id: "5", title: "Manual de Treinamento", type: "document", client: "DataFlow Inc", category: "Treinamento", lastUpdated: "Há 2 semanas", description: "Guia para equipe do cliente" },
-  { id: "6", title: "OpenAI API Key", type: "credential", client: "Interno", category: "IA", lastUpdated: "Há 1 mês", description: "Chave de API compartilhada", content: "sk-xxxxxxxxxxxxxxxxxxxxx" },
-  { id: "7", title: "Dashboard Staging", type: "link", client: "FinTech Plus", category: "Ambiente", lastUpdated: "Há 5 dias", description: "Link do ambiente de homologação", content: "https://staging.example.com" },
-  { id: "8", title: "Proposta Template", type: "document", client: "Interno", category: "Comercial", lastUpdated: "Há 1 semana", description: "Template padrão de propostas" },
-];
-
-const typeConfig = {
-  credential: { label: "Credencial", color: "bg-amber-500/10 text-amber-500", icon: Key },
-  document: { label: "Documento", color: "bg-blue-500/10 text-blue-500", icon: FileText },
+const categoryConfig = {
+  credencial: { label: "Credencial", color: "bg-amber-500/10 text-amber-500", icon: Key },
+  documento: { label: "Documento", color: "bg-blue-500/10 text-blue-500", icon: FileText },
   link: { label: "Link", color: "bg-green-500/10 text-green-500", icon: Link2 },
 };
 
-const categories = ["Todos", "Cloud", "Técnico", "Desenvolvimento", "Database", "Treinamento", "IA", "Ambiente", "Comercial"];
+const tagCategories = ["Cloud", "Técnico", "Desenvolvimento", "Database", "Treinamento", "IA", "Ambiente", "Comercial"];
 
 export default function Conhecimento() {
-  const [items, setItems] = useState<KnowledgeItem[]>(initialItems);
+  const { knowledgeItems, clients, projects, addKnowledgeItem, updateKnowledgeItem, deleteKnowledgeItem, getClient, getProjectsByClient } = useData();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("Todos");
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -56,19 +36,26 @@ export default function Conhecimento() {
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: "",
-    type: "credential" as KnowledgeItem["type"],
-    client: "",
-    category: "",
-    description: "",
+    category: "credencial" as KnowledgeItem["category"],
+    clientId: "",
+    projectId: "",
     content: "",
+    username: "",
+    password: "",
+    url: "",
+    tags: "",
   });
 
-  const filteredItems = items.filter((item) => {
+  const filteredItems = knowledgeItems.filter((item) => {
+    const client = item.clientId ? getClient(item.clientId) : null;
     const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.client.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "Todos" || item.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+      client?.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesTag = !selectedTag || item.tags.includes(selectedTag);
+    return matchesSearch && matchesTag;
   });
+
+  const availableProjects = formData.clientId ? getProjectsByClient(formData.clientId) : [];
 
   const togglePassword = (id: string) => {
     setShowPasswords(prev => ({ ...prev, [id]: !prev[id] }));
@@ -81,13 +68,23 @@ export default function Conhecimento() {
 
   const openNewDialog = () => {
     setEditingItem(null);
-    setFormData({ title: "", type: "credential", client: "", category: "", description: "", content: "" });
+    setFormData({ title: "", category: "credencial", clientId: "", projectId: "", content: "", username: "", password: "", url: "", tags: "" });
     setIsDialogOpen(true);
   };
 
   const openEditDialog = (item: KnowledgeItem) => {
     setEditingItem(item);
-    setFormData({ title: item.title, type: item.type, client: item.client, category: item.category, description: item.description || "", content: item.content || "" });
+    setFormData({
+      title: item.title,
+      category: item.category,
+      clientId: item.clientId || "",
+      projectId: item.projectId || "",
+      content: item.content,
+      username: item.username || "",
+      password: item.password || "",
+      url: item.url || "",
+      tags: item.tags.join(", "),
+    });
     setIsDialogOpen(true);
   };
 
@@ -97,21 +94,41 @@ export default function Conhecimento() {
   };
 
   const handleSave = () => {
-    if (!formData.title || !formData.client || !formData.category) {
+    if (!formData.title) {
       toast.error("Preencha os campos obrigatórios");
       return;
     }
 
+    const now = new Date().toISOString().split("T")[0];
+
     if (editingItem) {
-      setItems(items.map(i => i.id === editingItem.id ? { ...i, ...formData, lastUpdated: "Agora" } : i));
+      updateKnowledgeItem(editingItem.id, {
+        title: formData.title,
+        category: formData.category,
+        clientId: formData.clientId || undefined,
+        projectId: formData.projectId || undefined,
+        content: formData.content,
+        username: formData.username || undefined,
+        password: formData.password || undefined,
+        url: formData.url || undefined,
+        tags: formData.tags.split(",").map(t => t.trim()).filter(Boolean),
+        updatedAt: now,
+      });
       toast.success("Item atualizado com sucesso!");
     } else {
-      const newItem: KnowledgeItem = {
-        id: Date.now().toString(),
-        ...formData,
-        lastUpdated: "Agora",
-      };
-      setItems([...items, newItem]);
+      addKnowledgeItem({
+        clientId: formData.clientId || undefined,
+        projectId: formData.projectId || undefined,
+        title: formData.title,
+        category: formData.category,
+        content: formData.content,
+        username: formData.username || undefined,
+        password: formData.password || undefined,
+        url: formData.url || undefined,
+        tags: formData.tags.split(",").map(t => t.trim()).filter(Boolean),
+        createdAt: now,
+        updatedAt: now,
+      });
       toast.success("Item adicionado com sucesso!");
     }
     setIsDialogOpen(false);
@@ -119,12 +136,26 @@ export default function Conhecimento() {
 
   const handleDelete = () => {
     if (deletingItemId) {
-      setItems(items.filter(i => i.id !== deletingItemId));
+      deleteKnowledgeItem(deletingItemId);
       toast.success("Item removido com sucesso!");
       setIsDeleteDialogOpen(false);
       setDeletingItemId(null);
     }
   };
+
+  const getClientName = (clientId?: string) => {
+    if (!clientId) return "Interno";
+    const client = getClient(clientId);
+    return client?.company || "Cliente não encontrado";
+  };
+
+  const getProjectName = (projectId?: string) => {
+    if (!projectId) return null;
+    const project = projects.find(p => p.id === projectId);
+    return project?.name;
+  };
+
+  const allTags = Array.from(new Set(knowledgeItems.flatMap(item => item.tags)));
 
   return (
     <AppLayout>
@@ -151,9 +182,12 @@ export default function Conhecimento() {
           <ViewModeToggle modes={["grid", "list"]} currentMode={viewMode} onChange={setViewMode} />
 
           <div className="flex items-center gap-2 flex-wrap">
-            {categories.map((category) => (
-              <button key={category} onClick={() => setSelectedCategory(category)} className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all border", selectedCategory === category ? "bg-primary/10 text-primary border-primary/20" : "bg-secondary/50 text-muted-foreground border-border hover:bg-secondary")}>
-                {category}
+            <button onClick={() => setSelectedTag(null)} className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all border", !selectedTag ? "bg-primary/10 text-primary border-primary/20" : "bg-secondary/50 text-muted-foreground border-border hover:bg-secondary")}>
+              Todos
+            </button>
+            {allTags.slice(0, 6).map((tag) => (
+              <button key={tag} onClick={() => setSelectedTag(selectedTag === tag ? null : tag)} className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all border", selectedTag === tag ? "bg-primary/10 text-primary border-primary/20" : "bg-secondary/50 text-muted-foreground border-border hover:bg-secondary")}>
+                {tag}
               </button>
             ))}
           </div>
@@ -163,12 +197,12 @@ export default function Conhecimento() {
         {viewMode === "grid" && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredItems.map((item, index) => {
-              const TypeIcon = typeConfig[item.type].icon;
+              const CategoryIcon = categoryConfig[item.category].icon;
               return (
                 <div key={item.id} className="p-5 rounded-xl bg-card border border-border shadow-soft hover:shadow-medium transition-all duration-200 animate-scale-in" style={{ animationDelay: `${index * 50}ms` }}>
                   <div className="flex items-start justify-between mb-4">
-                    <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", typeConfig[item.type].color)}>
-                      <TypeIcon className="w-5 h-5" />
+                    <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", categoryConfig[item.category].color)}>
+                      <CategoryIcon className="w-5 h-5" />
                     </div>
                     <ActionMenu items={[
                       { label: "Visualizar", icon: Eye, onClick: () => openViewDialog(item) },
@@ -177,26 +211,30 @@ export default function Conhecimento() {
                     ]} />
                   </div>
                   <h3 className="font-semibold text-foreground mb-1">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground mb-3">{item.description}</p>
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="px-2 py-1 rounded-md bg-secondary text-xs text-muted-foreground">{item.client}</span>
-                    <span className="px-2 py-1 rounded-md bg-secondary text-xs text-muted-foreground">{item.category}</span>
+                  <p className="text-sm text-muted-foreground mb-3">{getClientName(item.clientId)}</p>
+                  {getProjectName(item.projectId) && (
+                    <p className="text-xs text-primary mb-3">{getProjectName(item.projectId)}</p>
+                  )}
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {item.tags.slice(0, 3).map((tag) => (
+                      <span key={tag} className="px-2 py-1 rounded-md bg-secondary text-xs text-muted-foreground">{tag}</span>
+                    ))}
                   </div>
                   <div className="flex items-center justify-between pt-3 border-t border-border">
-                    <span className="text-xs text-muted-foreground">{item.lastUpdated}</span>
+                    <span className="text-xs text-muted-foreground">{item.updatedAt}</span>
                     <div className="flex items-center gap-1">
-                      {item.type === "credential" && (
+                      {item.category === "credencial" && item.password && (
                         <button onClick={() => togglePassword(item.id)} className="p-2 rounded-lg hover:bg-secondary transition-colors" title={showPasswords[item.id] ? "Ocultar" : "Mostrar"}>
                           {showPasswords[item.id] ? <EyeOff className="w-4 h-4 text-muted-foreground" /> : <Eye className="w-4 h-4 text-muted-foreground" />}
                         </button>
                       )}
-                      {item.content && (
-                        <button onClick={() => copyToClipboard(item.content!)} className="p-2 rounded-lg hover:bg-secondary transition-colors" title="Copiar">
+                      {(item.password || item.username || item.url) && (
+                        <button onClick={() => copyToClipboard(item.password || item.username || item.url || "")} className="p-2 rounded-lg hover:bg-secondary transition-colors" title="Copiar">
                           <Copy className="w-4 h-4 text-muted-foreground" />
                         </button>
                       )}
-                      {item.type === "link" && item.content && (
-                        <button onClick={() => window.open(item.content, "_blank")} className="p-2 rounded-lg hover:bg-secondary transition-colors" title="Abrir">
+                      {item.category === "link" && item.url && (
+                        <button onClick={() => window.open(item.url, "_blank")} className="p-2 rounded-lg hover:bg-secondary transition-colors" title="Abrir">
                           <ExternalLink className="w-4 h-4 text-muted-foreground" />
                         </button>
                       )}
@@ -217,37 +255,45 @@ export default function Conhecimento() {
                   <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase">Item</th>
                   <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase">Tipo</th>
                   <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase">Cliente</th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase">Categoria</th>
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase">Tags</th>
                   <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase">Atualizado</th>
                   <th className="text-right px-6 py-4"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {filteredItems.map((item) => {
-                  const TypeIcon = typeConfig[item.type].icon;
+                  const CategoryIcon = categoryConfig[item.category].icon;
                   return (
                     <tr key={item.id} className="hover:bg-secondary/20 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", typeConfig[item.type].color)}>
-                            <TypeIcon className="w-4 h-4" />
+                          <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", categoryConfig[item.category].color)}>
+                            <CategoryIcon className="w-4 h-4" />
                           </div>
                           <div>
                             <p className="font-medium text-foreground">{item.title}</p>
-                            <p className="text-sm text-muted-foreground truncate max-w-xs">{item.description}</p>
+                            {getProjectName(item.projectId) && (
+                              <p className="text-xs text-primary">{getProjectName(item.projectId)}</p>
+                            )}
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={cn("px-2.5 py-1 rounded-full text-xs font-medium", typeConfig[item.type].color)}>{typeConfig[item.type].label}</span>
+                        <span className={cn("px-2.5 py-1 rounded-full text-xs font-medium", categoryConfig[item.category].color)}>{categoryConfig[item.category].label}</span>
                       </td>
-                      <td className="px-6 py-4 text-muted-foreground">{item.client}</td>
-                      <td className="px-6 py-4 text-muted-foreground">{item.category}</td>
-                      <td className="px-6 py-4 text-muted-foreground">{item.lastUpdated}</td>
+                      <td className="px-6 py-4 text-muted-foreground">{getClientName(item.clientId)}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-1">
+                          {item.tags.slice(0, 2).map((tag) => (
+                            <span key={tag} className="px-2 py-0.5 rounded bg-secondary text-xs text-muted-foreground">{tag}</span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-muted-foreground">{item.updatedAt}</td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-1">
-                          {item.content && (
-                            <button onClick={() => copyToClipboard(item.content!)} className="p-2 rounded-lg hover:bg-secondary transition-colors" title="Copiar">
+                          {(item.password || item.username || item.url) && (
+                            <button onClick={() => copyToClipboard(item.password || item.username || item.url || "")} className="p-2 rounded-lg hover:bg-secondary transition-colors" title="Copiar">
                               <Copy className="w-4 h-4 text-muted-foreground" />
                             </button>
                           )}
@@ -273,112 +319,189 @@ export default function Conhecimento() {
           <DialogHeader>
             <DialogTitle className="text-foreground">{editingItem ? "Editar Item" : "Adicionar Item"}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
             <div className="space-y-2">
               <Label htmlFor="title">Título *</Label>
               <Input id="title" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="Nome do item" className="bg-secondary/50 border-border" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="type">Tipo</Label>
-                <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value as KnowledgeItem["type"] })}>
+                <Label htmlFor="category">Tipo</Label>
+                <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value as KnowledgeItem["category"] })}>
                   <SelectTrigger className="bg-secondary/50 border-border">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border">
-                    {Object.entries(typeConfig).map(([key, config]) => (
+                    {Object.entries(categoryConfig).map(([key, config]) => (
                       <SelectItem key={key} value={key}>{config.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="client">Cliente *</Label>
-                <Input id="client" value={formData.client} onChange={(e) => setFormData({ ...formData, client: e.target.value })} placeholder="Nome do cliente" className="bg-secondary/50 border-border" />
+                <Label htmlFor="client">Cliente</Label>
+                <Select value={formData.clientId} onValueChange={(value) => setFormData({ ...formData, clientId: value, projectId: "" })}>
+                  <SelectTrigger className="bg-secondary/50 border-border">
+                    <SelectValue placeholder="Interno" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    <SelectItem value="">Interno</SelectItem>
+                    {clients.map(client => (
+                      <SelectItem key={client.id} value={client.id}>{client.company}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
+            {formData.clientId && availableProjects.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="project">Projeto (opcional)</Label>
+                <Select value={formData.projectId} onValueChange={(value) => setFormData({ ...formData, projectId: value })}>
+                  <SelectTrigger className="bg-secondary/50 border-border">
+                    <SelectValue placeholder="Selecione um projeto" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    <SelectItem value="">Nenhum projeto</SelectItem>
+                    {availableProjects.map(project => (
+                      <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {formData.category === "credencial" && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="username">Usuário</Label>
+                  <Input id="username" value={formData.username} onChange={(e) => setFormData({ ...formData, username: e.target.value })} placeholder="Nome de usuário" className="bg-secondary/50 border-border" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Senha</Label>
+                  <Input id="password" type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="Senha" className="bg-secondary/50 border-border" />
+                </div>
+              </>
+            )}
+            {(formData.category === "link" || formData.category === "credencial") && (
+              <div className="space-y-2">
+                <Label htmlFor="url">URL</Label>
+                <Input id="url" value={formData.url} onChange={(e) => setFormData({ ...formData, url: e.target.value })} placeholder="https://..." className="bg-secondary/50 border-border" />
+              </div>
+            )}
+            {formData.category === "documento" && (
+              <div className="space-y-2">
+                <Label htmlFor="content">Conteúdo</Label>
+                <Textarea id="content" value={formData.content} onChange={(e) => setFormData({ ...formData, content: e.target.value })} placeholder="Descrição ou conteúdo do documento" className="bg-secondary/50 border-border" rows={4} />
+              </div>
+            )}
             <div className="space-y-2">
-              <Label htmlFor="category">Categoria *</Label>
-              <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
-                <SelectTrigger className="bg-secondary/50 border-border">
-                  <SelectValue placeholder="Selecione uma categoria" />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border">
-                  {categories.filter(c => c !== "Todos").map((category) => (
-                    <SelectItem key={category} value={category}>{category}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição</Label>
-              <Textarea id="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Descrição do item" className="bg-secondary/50 border-border" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="content">{formData.type === "credential" ? "Senha/Chave" : formData.type === "link" ? "URL" : "Conteúdo"}</Label>
-              <Input id="content" type={formData.type === "credential" ? "password" : "text"} value={formData.content} onChange={(e) => setFormData({ ...formData, content: e.target.value })} placeholder={formData.type === "credential" ? "Senha ou chave de API" : formData.type === "link" ? "https://..." : "Conteúdo"} className="bg-secondary/50 border-border" />
+              <Label htmlFor="tags">Tags (separadas por vírgula)</Label>
+              <Input id="tags" value={formData.tags} onChange={(e) => setFormData({ ...formData, tags: e.target.value })} placeholder="servidor, produção, aws" className="bg-secondary/50 border-border" />
             </div>
           </div>
           <DialogFooter>
             <button onClick={() => setIsDialogOpen(false)} className="px-4 py-2 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors">Cancelar</button>
-            <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">{editingItem ? "Salvar" : "Adicionar"}</button>
+            <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Salvar</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* View Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="bg-card border-border sm:max-w-md">
+        <DialogContent className="bg-card border-border sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-foreground">Detalhes do Item</DialogTitle>
           </DialogHeader>
-          {viewingItem && (
+          {viewingItem && (() => {
+            const ViewIcon = categoryConfig[viewingItem.category].icon;
+            return (
             <div className="space-y-4 py-4">
-              <div className="flex items-center gap-4">
-                <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center", typeConfig[viewingItem.type].color)}>
-                  {(() => { const TypeIcon = typeConfig[viewingItem.type].icon; return <TypeIcon className="w-6 h-6" />; })()}
+              <div className="flex items-center gap-3">
+                <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center", categoryConfig[viewingItem.category].color)}>
+                  <ViewIcon className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground">{viewingItem.title}</h3>
-                  <p className="text-muted-foreground">{viewingItem.description}</p>
+                  <h3 className="text-xl font-bold text-foreground">{viewingItem.title}</h3>
+                  <p className="text-muted-foreground">{getClientName(viewingItem.clientId)}</p>
+                  {getProjectName(viewingItem.projectId) && (
+                    <p className="text-sm text-primary">{getProjectName(viewingItem.projectId)}</p>
+                  )}
                 </div>
               </div>
-              <div className="space-y-3 pt-4 border-t border-border">
-                <div className="flex justify-between"><span className="text-muted-foreground">Tipo</span><span className={cn("px-2.5 py-1 rounded-full text-xs font-medium", typeConfig[viewingItem.type].color)}>{typeConfig[viewingItem.type].label}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Cliente</span><span className="text-foreground">{viewingItem.client}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Categoria</span><span className="text-foreground">{viewingItem.category}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Atualizado</span><span className="text-foreground">{viewingItem.lastUpdated}</span></div>
-                {viewingItem.content && (
-                  <div className="pt-3 border-t border-border">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-muted-foreground">{viewingItem.type === "credential" ? "Credencial" : viewingItem.type === "link" ? "URL" : "Conteúdo"}</span>
-                      <div className="flex items-center gap-1">
-                        {viewingItem.type === "credential" && (
-                          <button onClick={() => togglePassword(viewingItem.id)} className="p-1 rounded hover:bg-secondary transition-colors">
-                            {showPasswords[viewingItem.id] ? <EyeOff className="w-4 h-4 text-muted-foreground" /> : <Eye className="w-4 h-4 text-muted-foreground" />}
-                          </button>
-                        )}
-                        <button onClick={() => copyToClipboard(viewingItem.content!)} className="p-1 rounded hover:bg-secondary transition-colors">
-                          <Copy className="w-4 h-4 text-muted-foreground" />
+              {viewingItem.category === "credencial" && (
+                <div className="space-y-3 p-4 rounded-lg bg-secondary/30">
+                  {viewingItem.username && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Usuário:</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-sm">{viewingItem.username}</span>
+                        <button onClick={() => copyToClipboard(viewingItem.username!)} className="p-1 rounded hover:bg-secondary">
+                          <Copy className="w-3 h-3" />
                         </button>
                       </div>
                     </div>
-                    <code className="block p-2 rounded bg-secondary text-sm text-foreground break-all">
-                      {viewingItem.type === "credential" && !showPasswords[viewingItem.id] ? "••••••••••••••" : viewingItem.content}
-                    </code>
-                  </div>
-                )}
+                  )}
+                  {viewingItem.password && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Senha:</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-sm">{showPasswords[viewingItem.id] ? viewingItem.password : "••••••••"}</span>
+                        <button onClick={() => togglePassword(viewingItem.id)} className="p-1 rounded hover:bg-secondary">
+                          {showPasswords[viewingItem.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                        </button>
+                        <button onClick={() => copyToClipboard(viewingItem.password!)} className="p-1 rounded hover:bg-secondary">
+                          <Copy className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {viewingItem.url && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">URL:</span>
+                      <a href={viewingItem.url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex items-center gap-1">
+                        Abrir <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
+              {viewingItem.category === "link" && viewingItem.url && (
+                <div className="p-4 rounded-lg bg-secondary/30">
+                  <a href={viewingItem.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-2">
+                    {viewingItem.url} <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
+              )}
+              {viewingItem.content && (
+                <div className="p-4 rounded-lg bg-secondary/30">
+                  <p className="text-sm">{viewingItem.content}</p>
+                </div>
+              )}
+              <div className="flex flex-wrap gap-2">
+                {viewingItem.tags.map((tag) => (
+                  <span key={tag} className="px-3 py-1 rounded-lg bg-secondary text-sm text-foreground">{tag}</span>
+                ))}
+              </div>
+              <div className="pt-4 border-t border-border text-xs text-muted-foreground">
+                <p>Criado em: {viewingItem.createdAt}</p>
+                <p>Atualizado em: {viewingItem.updatedAt}</p>
               </div>
             </div>
           )}
           <DialogFooter>
-            <button onClick={() => { setIsViewDialogOpen(false); if (viewingItem) openEditDialog(viewingItem); }} className="px-4 py-2 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors">Editar</button>
-            <button onClick={() => setIsViewDialogOpen(false)} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Fechar</button>
+            <button onClick={() => setIsViewDialogOpen(false)} className="px-4 py-2 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors">Fechar</button>
+            <button onClick={() => { setIsViewDialogOpen(false); viewingItem && openEditDialog(viewingItem); }} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Editar</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <ConfirmDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen} title="Excluir Item" description="Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita." confirmLabel="Excluir" onConfirm={handleDelete} variant="destructive" />
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        title="Excluir Item"
+        description="Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita."
+        onConfirm={handleDelete}
+      />
     </AppLayout>
   );
 }
