@@ -11,26 +11,8 @@ import { ActionMenu } from "@/components/shared/ActionMenu";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
 import { toast } from "sonner";
-
-interface Task {
-  id: string;
-  title: string;
-  description: string;
-  project: string;
-  assignee: string;
-  status: "todo" | "in_progress" | "review" | "done";
-  priority: "low" | "medium" | "high" | "urgent";
-  dueDate: string;
-}
-
-const initialTasks: Task[] = [
-  { id: "1", title: "Implementar autenticação OAuth", description: "Adicionar login com Google e Microsoft", project: "TechCorp - Chatbot", assignee: "CS", status: "in_progress", priority: "high", dueDate: "Hoje" },
-  { id: "2", title: "Design do dashboard", description: "Criar mockups para o painel de controle", project: "SmartRetail - Recomendação", assignee: "AM", status: "review", priority: "medium", dueDate: "Amanhã" },
-  { id: "3", title: "Treinar modelo NLP", description: "Fine-tuning do modelo de linguagem", project: "InnovateLab - Automação", assignee: "PC", status: "todo", priority: "urgent", dueDate: "Hoje" },
-  { id: "4", title: "Documentação da API", description: "Escrever docs no Swagger", project: "DataFlow - Analytics", assignee: "MO", status: "done", priority: "low", dueDate: "Ontem" },
-  { id: "5", title: "Testes de integração", description: "Testar endpoints de IA", project: "TechCorp - Chatbot", assignee: "LM", status: "in_progress", priority: "high", dueDate: "Amanhã" },
-  { id: "6", title: "Setup do ambiente", description: "Configurar Docker e CI/CD", project: "AIStartup - API", assignee: "JF", status: "todo", priority: "medium", dueDate: "3 dias" },
-];
+import { useData } from "@/contexts/DataContext";
+import { Task } from "@/types/data";
 
 const statusColumns = [
   { id: "todo", label: "A Fazer", icon: Circle },
@@ -43,11 +25,10 @@ const priorityConfig = {
   low: { label: "Baixa", color: "bg-slate-500" },
   medium: { label: "Média", color: "bg-blue-500" },
   high: { label: "Alta", color: "bg-amber-500" },
-  urgent: { label: "Urgente", color: "bg-red-500" },
 };
 
 export default function Tarefas() {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const { tasks, clients, projects, addTask, updateTask, deleteTask, getClient, getProjectsByClient } = useData();
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -60,7 +41,8 @@ export default function Tarefas() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    project: "",
+    clientId: "",
+    projectId: "",
     assignee: "",
     status: "todo" as Task["status"],
     priority: "medium" as Task["priority"],
@@ -68,27 +50,44 @@ export default function Tarefas() {
   });
 
   const getTasksByStatus = (status: string) => 
-    tasks.filter(task => 
-      task.status === status && 
-      (task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-       task.project.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    tasks.filter(task => {
+      const client = getClient(task.clientId);
+      const project = projects.find(p => p.id === task.projectId);
+      const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        client?.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        project?.name.toLowerCase().includes(searchQuery.toLowerCase());
+      return task.status === status && matchesSearch;
+    });
 
-  const filteredTasks = tasks.filter(task => 
-    task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    task.project.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredTasks = tasks.filter(task => {
+    const client = getClient(task.clientId);
+    const project = projects.find(p => p.id === task.projectId);
+    return task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      client?.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      project?.name.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
+  const availableProjects = formData.clientId ? getProjectsByClient(formData.clientId) : [];
 
   const openNewDialog = (status: Task["status"] = "todo") => {
     setEditingTask(null);
     setDefaultStatus(status);
-    setFormData({ title: "", description: "", project: "", assignee: "", status, priority: "medium", dueDate: "" });
+    setFormData({ title: "", description: "", clientId: "", projectId: "", assignee: "", status, priority: "medium", dueDate: "" });
     setIsDialogOpen(true);
   };
 
   const openEditDialog = (task: Task) => {
     setEditingTask(task);
-    setFormData({ title: task.title, description: task.description, project: task.project, assignee: task.assignee, status: task.status, priority: task.priority, dueDate: task.dueDate });
+    setFormData({
+      title: task.title,
+      description: task.description,
+      clientId: task.clientId,
+      projectId: task.projectId || "",
+      assignee: task.assignee,
+      status: task.status,
+      priority: task.priority,
+      dueDate: task.dueDate,
+    });
     setIsDialogOpen(true);
   };
 
@@ -98,17 +97,34 @@ export default function Tarefas() {
   };
 
   const handleSave = () => {
-    if (!formData.title || !formData.project) {
+    if (!formData.title || !formData.clientId) {
       toast.error("Preencha os campos obrigatórios");
       return;
     }
 
     if (editingTask) {
-      setTasks(tasks.map(t => t.id === editingTask.id ? { ...t, ...formData } : t));
+      updateTask(editingTask.id, {
+        title: formData.title,
+        description: formData.description,
+        clientId: formData.clientId,
+        projectId: formData.projectId || undefined,
+        assignee: formData.assignee,
+        status: formData.status,
+        priority: formData.priority,
+        dueDate: formData.dueDate,
+      });
       toast.success("Tarefa atualizada com sucesso!");
     } else {
-      const newTask: Task = { id: Date.now().toString(), ...formData };
-      setTasks([...tasks, newTask]);
+      addTask({
+        clientId: formData.clientId,
+        projectId: formData.projectId || undefined,
+        title: formData.title,
+        description: formData.description,
+        assignee: formData.assignee,
+        status: formData.status,
+        priority: formData.priority,
+        dueDate: formData.dueDate || "A definir",
+      });
       toast.success("Tarefa criada com sucesso!");
     }
     setIsDialogOpen(false);
@@ -116,11 +132,22 @@ export default function Tarefas() {
 
   const handleDelete = () => {
     if (deletingTaskId) {
-      setTasks(tasks.filter(t => t.id !== deletingTaskId));
+      deleteTask(deletingTaskId);
       toast.success("Tarefa removida com sucesso!");
       setIsDeleteDialogOpen(false);
       setDeletingTaskId(null);
     }
+  };
+
+  const getClientName = (clientId: string) => {
+    const client = getClient(clientId);
+    return client?.company || "Cliente não encontrado";
+  };
+
+  const getProjectName = (projectId?: string) => {
+    if (!projectId) return null;
+    const project = projects.find(p => p.id === projectId);
+    return project?.name;
   };
 
   return (
@@ -176,17 +203,22 @@ export default function Tarefas() {
                         </div>
                         <h4 className="font-medium text-foreground mb-1">{task.title}</h4>
                         <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{task.description}</p>
-                        <div className="mb-3">
-                          <span className="px-2 py-1 rounded-md bg-secondary text-xs text-muted-foreground">{task.project}</span>
+                        <div className="flex flex-wrap gap-1 mb-3">
+                          <span className="px-2 py-1 rounded-md bg-secondary text-xs text-muted-foreground">{getClientName(task.clientId)}</span>
+                          {getProjectName(task.projectId) && (
+                            <span className="px-2 py-1 rounded-md bg-primary/10 text-xs text-primary">{getProjectName(task.projectId)}</span>
+                          )}
                         </div>
                         <div className="flex items-center justify-between pt-3 border-t border-border">
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
                             <Calendar className="w-3 h-3" />
                             <span>{task.dueDate}</span>
                           </div>
-                          <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-                            <span className="text-xs font-medium text-primary">{task.assignee}</span>
-                          </div>
+                          {task.assignee && (
+                            <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+                              <span className="text-xs font-medium text-primary">{task.assignee.substring(0, 2)}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -207,7 +239,7 @@ export default function Tarefas() {
               <thead>
                 <tr className="border-b border-border bg-secondary/30">
                   <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase">Tarefa</th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase">Projeto</th>
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase">Cliente / Projeto</th>
                   <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase">Status</th>
                   <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase">Prioridade</th>
                   <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase">Prazo</th>
@@ -221,7 +253,12 @@ export default function Tarefas() {
                       <p className="font-medium text-foreground">{task.title}</p>
                       <p className="text-sm text-muted-foreground truncate max-w-xs">{task.description}</p>
                     </td>
-                    <td className="px-6 py-4 text-muted-foreground">{task.project}</td>
+                    <td className="px-6 py-4">
+                      <p className="text-foreground">{getClientName(task.clientId)}</p>
+                      {getProjectName(task.projectId) && (
+                        <p className="text-sm text-primary">{getProjectName(task.projectId)}</p>
+                      )}
+                    </td>
                     <td className="px-6 py-4">
                       <span className={cn("px-2.5 py-1 rounded-full text-xs font-medium", task.status === "done" ? "bg-green-500/10 text-green-500" : task.status === "in_progress" ? "bg-primary/10 text-primary" : task.status === "review" ? "bg-amber-500/10 text-amber-500" : "bg-secondary text-muted-foreground")}>
                         {statusColumns.find(s => s.id === task.status)?.label}
@@ -265,12 +302,19 @@ export default function Tarefas() {
                 </div>
                 <h4 className="font-medium text-foreground mb-1">{task.title}</h4>
                 <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{task.description}</p>
-                <span className="px-2 py-1 rounded-md bg-secondary text-xs text-muted-foreground">{task.project}</span>
+                <div className="flex flex-wrap gap-1 mb-3">
+                  <span className="px-2 py-1 rounded-md bg-secondary text-xs text-muted-foreground">{getClientName(task.clientId)}</span>
+                  {getProjectName(task.projectId) && (
+                    <span className="px-2 py-1 rounded-md bg-primary/10 text-xs text-primary">{getProjectName(task.projectId)}</span>
+                  )}
+                </div>
                 <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
                   <span className="text-xs text-muted-foreground">{task.dueDate}</span>
-                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-                    <span className="text-xs font-medium text-primary">{task.assignee}</span>
-                  </div>
+                  {task.assignee && (
+                    <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+                      <span className="text-xs font-medium text-primary">{task.assignee.substring(0, 2)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -294,9 +338,34 @@ export default function Tarefas() {
               <Textarea id="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Descrição da tarefa" className="bg-secondary/50 border-border" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="project">Projeto *</Label>
-              <Input id="project" value={formData.project} onChange={(e) => setFormData({ ...formData, project: e.target.value })} placeholder="Nome do projeto" className="bg-secondary/50 border-border" />
+              <Label htmlFor="client">Cliente *</Label>
+              <Select value={formData.clientId} onValueChange={(value) => setFormData({ ...formData, clientId: value, projectId: "" })}>
+                <SelectTrigger className="bg-secondary/50 border-border">
+                  <SelectValue placeholder="Selecione um cliente" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border">
+                  {clients.map(client => (
+                    <SelectItem key={client.id} value={client.id}>{client.company} - {client.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+            {formData.clientId && availableProjects.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="project">Projeto (opcional)</Label>
+                <Select value={formData.projectId} onValueChange={(value) => setFormData({ ...formData, projectId: value })}>
+                  <SelectTrigger className="bg-secondary/50 border-border">
+                    <SelectValue placeholder="Selecione um projeto" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    <SelectItem value="">Nenhum projeto</SelectItem>
+                    {availableProjects.map(project => (
+                      <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
@@ -316,58 +385,90 @@ export default function Tarefas() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border">
-                    {Object.entries(priorityConfig).map(([key, config]) => <SelectItem key={key} value={key}>{config.label}</SelectItem>)}
+                    {Object.entries(priorityConfig).map(([key, config]) => (
+                      <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="assignee">Responsável</Label>
-                <Input id="assignee" value={formData.assignee} onChange={(e) => setFormData({ ...formData, assignee: e.target.value })} placeholder="Iniciais" className="bg-secondary/50 border-border" />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="dueDate">Prazo</Label>
                 <Input id="dueDate" value={formData.dueDate} onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })} placeholder="DD/MM/AAAA" className="bg-secondary/50 border-border" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="assignee">Responsável</Label>
+                <Input id="assignee" value={formData.assignee} onChange={(e) => setFormData({ ...formData, assignee: e.target.value })} placeholder="Nome do responsável" className="bg-secondary/50 border-border" />
               </div>
             </div>
           </div>
           <DialogFooter>
             <button onClick={() => setIsDialogOpen(false)} className="px-4 py-2 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors">Cancelar</button>
-            <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">{editingTask ? "Salvar" : "Criar"}</button>
+            <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Salvar</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* View Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="bg-card border-border sm:max-w-md">
+        <DialogContent className="bg-card border-border sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-foreground">Detalhes da Tarefa</DialogTitle>
           </DialogHeader>
           {viewingTask && (
             <div className="space-y-4 py-4">
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">{viewingTask.title}</h3>
-                <p className="text-muted-foreground mt-1">{viewingTask.description}</p>
+              <div className="flex items-center gap-2">
+                <span className={cn("px-2.5 py-1 rounded-full text-xs font-medium", viewingTask.status === "done" ? "bg-green-500/10 text-green-500" : viewingTask.status === "in_progress" ? "bg-primary/10 text-primary" : viewingTask.status === "review" ? "bg-amber-500/10 text-amber-500" : "bg-secondary text-muted-foreground")}>
+                  {statusColumns.find(s => s.id === viewingTask.status)?.label}
+                </span>
+                <div className="flex items-center gap-1">
+                  <div className={cn("w-2 h-2 rounded-full", priorityConfig[viewingTask.priority].color)} />
+                  <span className="text-xs text-muted-foreground">{priorityConfig[viewingTask.priority].label}</span>
+                </div>
               </div>
-              <div className="space-y-3 pt-4 border-t border-border">
-                <div className="flex justify-between"><span className="text-muted-foreground">Projeto</span><span className="text-foreground">{viewingTask.project}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Status</span><span className={cn("px-2.5 py-1 rounded-full text-xs font-medium", viewingTask.status === "done" ? "bg-green-500/10 text-green-500" : "bg-primary/10 text-primary")}>{statusColumns.find(s => s.id === viewingTask.status)?.label}</span></div>
-                <div className="flex justify-between items-center"><span className="text-muted-foreground">Prioridade</span><div className="flex items-center gap-2"><div className={cn("w-2 h-2 rounded-full", priorityConfig[viewingTask.priority].color)} /><span>{priorityConfig[viewingTask.priority].label}</span></div></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Responsável</span><div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center"><span className="text-xs font-medium text-primary">{viewingTask.assignee}</span></div></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Prazo</span><span className="text-foreground">{viewingTask.dueDate}</span></div>
+              <div>
+                <h3 className="text-xl font-bold text-foreground">{viewingTask.title}</h3>
+                <div className="flex gap-2 mt-2">
+                  <span className="px-2 py-1 rounded-md bg-secondary text-xs text-muted-foreground">{getClientName(viewingTask.clientId)}</span>
+                  {getProjectName(viewingTask.projectId) && (
+                    <span className="px-2 py-1 rounded-md bg-primary/10 text-xs text-primary">{getProjectName(viewingTask.projectId)}</span>
+                  )}
+                </div>
+              </div>
+              {viewingTask.description && (
+                <p className="text-muted-foreground">{viewingTask.description}</p>
+              )}
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Prazo</p>
+                  <p className="font-medium flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-muted-foreground" />
+                    {viewingTask.dueDate}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Responsável</p>
+                  <p className="font-medium">{viewingTask.assignee || "Não atribuído"}</p>
+                </div>
               </div>
             </div>
           )}
           <DialogFooter>
-            <button onClick={() => { setIsViewDialogOpen(false); if (viewingTask) openEditDialog(viewingTask); }} className="px-4 py-2 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors">Editar</button>
-            <button onClick={() => setIsViewDialogOpen(false)} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Fechar</button>
+            <button onClick={() => setIsViewDialogOpen(false)} className="px-4 py-2 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors">Fechar</button>
+            <button onClick={() => { setIsViewDialogOpen(false); viewingTask && openEditDialog(viewingTask); }} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Editar</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <ConfirmDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen} title="Excluir Tarefa" description="Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita." confirmLabel="Excluir" onConfirm={handleDelete} variant="destructive" />
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        title="Excluir Tarefa"
+        description="Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita."
+        onConfirm={handleDelete}
+      />
     </AppLayout>
   );
 }

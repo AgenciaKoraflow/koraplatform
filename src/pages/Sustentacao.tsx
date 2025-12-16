@@ -11,34 +11,15 @@ import { ActionMenu } from "@/components/shared/ActionMenu";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
 import { toast } from "sonner";
-
-interface Ticket {
-  id: string;
-  title: string;
-  description?: string;
-  client: string;
-  project: string;
-  status: "open" | "in_progress" | "waiting" | "resolved";
-  priority: "low" | "medium" | "high" | "critical";
-  createdAt: string;
-  lastUpdate: string;
-  assignee: string;
-}
-
-const initialTickets: Ticket[] = [
-  { id: "TK-001", title: "Erro no processamento de dados", description: "O sistema apresenta erro ao processar grandes volumes de dados", client: "TechCorp", project: "Chatbot", status: "in_progress", priority: "high", createdAt: "Hoje, 09:30", lastUpdate: "Há 2h", assignee: "CS" },
-  { id: "TK-002", title: "Lentidão no dashboard", description: "Dashboard demora mais de 10s para carregar", client: "SmartRetail", project: "Recomendação", status: "open", priority: "medium", createdAt: "Hoje, 11:00", lastUpdate: "Há 30min", assignee: "AM" },
-  { id: "TK-003", title: "Integração API falhando", description: "Erro 500 ao chamar endpoint de autenticação", client: "InnovateLab", project: "Automação", status: "waiting", priority: "critical", createdAt: "Ontem, 16:45", lastUpdate: "Há 5h", assignee: "PC" },
-  { id: "TK-004", title: "Atualização de modelo ML", description: "Atualizar modelo para nova versão", client: "DataFlow Inc", project: "Analytics", status: "resolved", priority: "low", createdAt: "Há 2 dias", lastUpdate: "Há 1 dia", assignee: "MO" },
-  { id: "TK-005", title: "Bug na autenticação", description: "Usuários não conseguem fazer login via SSO", client: "FinTech Plus", project: "Modelo Preditivo", status: "in_progress", priority: "high", createdAt: "Hoje, 08:15", lastUpdate: "Há 3h", assignee: "LM" },
-  { id: "TK-006", title: "Requisição de nova feature", description: "Cliente solicita nova funcionalidade de exportação", client: "TechCorp", project: "Chatbot", status: "open", priority: "low", createdAt: "Há 3 dias", lastUpdate: "Há 2 dias", assignee: "JF" },
-];
+import { useData } from "@/contexts/DataContext";
+import { SupportTicket } from "@/types/data";
 
 const statusConfig = {
   open: { label: "Aberto", color: "bg-blue-500/10 text-blue-500 border-blue-500/20", icon: MessageSquare },
   in_progress: { label: "Em Andamento", color: "bg-amber-500/10 text-amber-500 border-amber-500/20", icon: Clock },
   waiting: { label: "Aguardando", color: "bg-purple-500/10 text-purple-500 border-purple-500/20", icon: AlertCircle },
   resolved: { label: "Resolvido", color: "bg-green-500/10 text-green-500 border-green-500/20", icon: CheckCircle },
+  closed: { label: "Fechado", color: "bg-slate-500/10 text-slate-500 border-slate-500/20", icon: CheckCircle },
 };
 
 const priorityConfig = {
@@ -49,33 +30,37 @@ const priorityConfig = {
 };
 
 export default function Sustentacao() {
-  const [tickets, setTickets] = useState<Ticket[]>(initialTickets);
+  const { tickets, clients, projects, addTicket, updateTicket, deleteTicket, getClient, getProjectsByClient } = useData();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
-  const [viewingTicket, setViewingTicket] = useState<Ticket | null>(null);
+  const [editingTicket, setEditingTicket] = useState<SupportTicket | null>(null);
+  const [viewingTicket, setViewingTicket] = useState<SupportTicket | null>(null);
   const [deletingTicketId, setDeletingTicketId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    client: "",
-    project: "",
-    status: "open" as Ticket["status"],
-    priority: "medium" as Ticket["priority"],
+    clientId: "",
+    projectId: "",
+    status: "open" as SupportTicket["status"],
+    priority: "medium" as SupportTicket["priority"],
     assignee: "",
   });
 
   const filteredTickets = tickets.filter((ticket) => {
+    const client = getClient(ticket.clientId);
+    const project = projects.find(p => p.id === ticket.projectId);
     const matchesSearch = ticket.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      ticket.client.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      client?.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
       ticket.id.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = !selectedStatus || ticket.status === selectedStatus;
     return matchesSearch && matchesStatus;
   });
+
+  const availableProjects = formData.clientId ? getProjectsByClient(formData.clientId) : [];
 
   const stats = {
     open: tickets.filter(t => t.status === "open").length,
@@ -91,38 +76,61 @@ export default function Sustentacao() {
 
   const openNewDialog = () => {
     setEditingTicket(null);
-    setFormData({ title: "", description: "", client: "", project: "", status: "open", priority: "medium", assignee: "" });
+    setFormData({ title: "", description: "", clientId: "", projectId: "", status: "open", priority: "medium", assignee: "" });
     setIsDialogOpen(true);
   };
 
-  const openEditDialog = (ticket: Ticket) => {
+  const openEditDialog = (ticket: SupportTicket) => {
     setEditingTicket(ticket);
-    setFormData({ title: ticket.title, description: ticket.description || "", client: ticket.client, project: ticket.project, status: ticket.status, priority: ticket.priority, assignee: ticket.assignee });
+    setFormData({
+      title: ticket.title,
+      description: ticket.description,
+      clientId: ticket.clientId,
+      projectId: ticket.projectId || "",
+      status: ticket.status,
+      priority: ticket.priority,
+      assignee: ticket.assignee || "",
+    });
     setIsDialogOpen(true);
   };
 
-  const openViewDialog = (ticket: Ticket) => {
+  const openViewDialog = (ticket: SupportTicket) => {
     setViewingTicket(ticket);
     setIsViewDialogOpen(true);
   };
 
   const handleSave = () => {
-    if (!formData.title || !formData.client || !formData.project) {
+    if (!formData.title || !formData.clientId) {
       toast.error("Preencha os campos obrigatórios");
       return;
     }
 
+    const now = new Date().toISOString().split("T")[0];
+
     if (editingTicket) {
-      setTickets(tickets.map(t => t.id === editingTicket.id ? { ...t, ...formData, lastUpdate: "Agora" } : t));
+      updateTicket(editingTicket.id, {
+        title: formData.title,
+        description: formData.description,
+        clientId: formData.clientId,
+        projectId: formData.projectId || undefined,
+        status: formData.status,
+        priority: formData.priority,
+        assignee: formData.assignee || undefined,
+        updatedAt: now,
+      });
       toast.success("Ticket atualizado com sucesso!");
     } else {
-      const newTicket: Ticket = {
-        id: generateTicketId(),
-        ...formData,
-        createdAt: "Agora",
-        lastUpdate: "Agora",
-      };
-      setTickets([...tickets, newTicket]);
+      addTicket({
+        clientId: formData.clientId,
+        projectId: formData.projectId || undefined,
+        title: formData.title,
+        description: formData.description,
+        status: formData.status,
+        priority: formData.priority,
+        assignee: formData.assignee || undefined,
+        createdAt: now,
+        updatedAt: now,
+      });
       toast.success("Ticket criado com sucesso!");
     }
     setIsDialogOpen(false);
@@ -130,11 +138,22 @@ export default function Sustentacao() {
 
   const handleDelete = () => {
     if (deletingTicketId) {
-      setTickets(tickets.filter(t => t.id !== deletingTicketId));
+      deleteTicket(deletingTicketId);
       toast.success("Ticket removido com sucesso!");
       setIsDeleteDialogOpen(false);
       setDeletingTicketId(null);
     }
+  };
+
+  const getClientName = (clientId: string) => {
+    const client = getClient(clientId);
+    return client?.company || "Cliente não encontrado";
+  };
+
+  const getProjectName = (projectId?: string) => {
+    if (!projectId) return null;
+    const project = projects.find(p => p.id === projectId);
+    return project?.name;
   };
 
   return (
@@ -213,7 +232,7 @@ export default function Sustentacao() {
             <button onClick={() => setSelectedStatus(null)} className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all border", !selectedStatus ? "bg-primary/10 text-primary border-primary/20" : "bg-secondary/50 text-muted-foreground border-border hover:bg-secondary")}>
               Todos
             </button>
-            {Object.entries(statusConfig).map(([key, config]) => (
+            {Object.entries(statusConfig).slice(0, 4).map(([key, config]) => (
               <button key={key} onClick={() => setSelectedStatus(selectedStatus === key ? null : key)} className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all border", selectedStatus === key ? config.color : "bg-secondary/50 text-muted-foreground border-border hover:bg-secondary")}>
                 {config.label}
               </button>
@@ -248,8 +267,10 @@ export default function Sustentacao() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <p className="font-medium text-foreground">{ticket.client}</p>
-                        <p className="text-sm text-muted-foreground">{ticket.project}</p>
+                        <p className="font-medium text-foreground">{getClientName(ticket.clientId)}</p>
+                        {getProjectName(ticket.projectId) && (
+                          <p className="text-sm text-primary">{getProjectName(ticket.projectId)}</p>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <span className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium w-fit border", statusConfig[ticket.status].color)}>
@@ -264,11 +285,15 @@ export default function Sustentacao() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                          <span className="text-xs font-medium text-primary">{ticket.assignee}</span>
-                        </div>
+                        {ticket.assignee ? (
+                          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                            <span className="text-xs font-medium text-primary">{ticket.assignee.substring(0, 2)}</span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
                       </td>
-                      <td className="px-6 py-4 text-sm text-muted-foreground">{ticket.lastUpdate}</td>
+                      <td className="px-6 py-4 text-sm text-muted-foreground">{ticket.updatedAt}</td>
                       <td className="px-6 py-4 text-right">
                         <ActionMenu items={[
                           { label: "Visualizar", icon: Eye, onClick: () => openViewDialog(ticket) },
@@ -287,7 +312,7 @@ export default function Sustentacao() {
         {/* Kanban View */}
         {viewMode === "kanban" && (
           <div className="flex gap-4 overflow-x-auto pb-4">
-            {Object.entries(statusConfig).map(([statusKey, config]) => {
+            {Object.entries(statusConfig).slice(0, 4).map(([statusKey, config]) => {
               const statusTickets = filteredTickets.filter(t => t.status === statusKey);
               const StatusIcon = config.icon;
               return (
@@ -308,11 +333,17 @@ export default function Sustentacao() {
                           </div>
                         </div>
                         <h4 className="font-medium text-foreground mb-2">{ticket.title}</h4>
+                        <p className="text-sm text-muted-foreground mb-2">{getClientName(ticket.clientId)}</p>
+                        {getProjectName(ticket.projectId) && (
+                          <p className="text-xs text-primary mb-2">{getProjectName(ticket.projectId)}</p>
+                        )}
                         <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <span>{ticket.client}</span>
-                          <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-                            <span className="text-xs font-medium text-primary">{ticket.assignee}</span>
-                          </div>
+                          <span>{ticket.updatedAt}</span>
+                          {ticket.assignee && (
+                            <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+                              <span className="text-xs font-medium text-primary">{ticket.assignee.substring(0, 2)}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -332,32 +363,30 @@ export default function Sustentacao() {
             {filteredTickets.map((ticket, index) => {
               const StatusIcon = statusConfig[ticket.status].icon;
               return (
-                <div key={ticket.id} className="p-5 rounded-xl bg-card border border-border shadow-soft hover:shadow-medium transition-all animate-scale-in" style={{ animationDelay: `${index * 50}ms` }}>
-                  <div className="flex items-start justify-between mb-3">
+                <div key={ticket.id} className="p-5 rounded-xl bg-card border border-border shadow-soft hover:shadow-medium transition-all cursor-pointer animate-scale-in" style={{ animationDelay: `${index * 50}ms` }} onClick={() => openViewDialog(ticket)}>
+                  <div className="flex items-center justify-between mb-3">
                     <span className="font-mono text-xs text-primary">{ticket.id}</span>
-                    <ActionMenu items={[
-                      { label: "Visualizar", icon: Eye, onClick: () => openViewDialog(ticket) },
-                      { label: "Editar", icon: Edit, onClick: () => openEditDialog(ticket) },
-                      { label: "Excluir", icon: Trash2, onClick: () => { setDeletingTicketId(ticket.id); setIsDeleteDialogOpen(true); }, variant: "destructive" },
-                    ]} />
-                  </div>
-                  <h3 className="font-semibold text-foreground mb-2">{ticket.title}</h3>
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className={cn("flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border", statusConfig[ticket.status].color)}>
+                    <span className={cn("flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border", statusConfig[ticket.status].color)}>
                       <StatusIcon className="w-3 h-3" />
                       {statusConfig[ticket.status].label}
                     </span>
-                    <div className="flex items-center gap-1">
-                      <div className={cn("w-2 h-2 rounded-full", priorityConfig[ticket.priority].color)} />
-                      <span className="text-xs text-muted-foreground">{priorityConfig[ticket.priority].label}</span>
-                    </div>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-3">{ticket.client} • {ticket.project}</p>
+                  <h4 className="font-semibold text-foreground mb-2">{ticket.title}</h4>
+                  <p className="text-sm text-muted-foreground mb-1">{getClientName(ticket.clientId)}</p>
+                  {getProjectName(ticket.projectId) && (
+                    <p className="text-xs text-primary mb-3">{getProjectName(ticket.projectId)}</p>
+                  )}
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className={cn("w-2 h-2 rounded-full", priorityConfig[ticket.priority].color)} />
+                    <span className="text-xs text-muted-foreground">{priorityConfig[ticket.priority].label}</span>
+                  </div>
                   <div className="flex items-center justify-between pt-3 border-t border-border">
-                    <span className="text-xs text-muted-foreground">{ticket.lastUpdate}</span>
-                    <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-                      <span className="text-xs font-medium text-primary">{ticket.assignee}</span>
-                    </div>
+                    <span className="text-xs text-muted-foreground">{ticket.updatedAt}</span>
+                    {ticket.assignee && (
+                      <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+                        <span className="text-xs font-medium text-primary">{ticket.assignee.substring(0, 2)}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -379,22 +408,41 @@ export default function Sustentacao() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Descrição</Label>
-              <Textarea id="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Descreva o problema ou solicitação" className="bg-secondary/50 border-border" />
+              <Textarea id="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Descrição do problema" className="bg-secondary/50 border-border" rows={3} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="client">Cliente *</Label>
-                <Input id="client" value={formData.client} onChange={(e) => setFormData({ ...formData, client: e.target.value })} placeholder="Nome do cliente" className="bg-secondary/50 border-border" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="project">Projeto *</Label>
-                <Input id="project" value={formData.project} onChange={(e) => setFormData({ ...formData, project: e.target.value })} placeholder="Nome do projeto" className="bg-secondary/50 border-border" />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="client">Cliente *</Label>
+              <Select value={formData.clientId} onValueChange={(value) => setFormData({ ...formData, clientId: value, projectId: "" })}>
+                <SelectTrigger className="bg-secondary/50 border-border">
+                  <SelectValue placeholder="Selecione um cliente" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border">
+                  {clients.map(client => (
+                    <SelectItem key={client.id} value={client.id}>{client.company} - {client.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+            {formData.clientId && availableProjects.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="project">Projeto (opcional)</Label>
+                <Select value={formData.projectId} onValueChange={(value) => setFormData({ ...formData, projectId: value })}>
+                  <SelectTrigger className="bg-secondary/50 border-border">
+                    <SelectValue placeholder="Selecione um projeto" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    <SelectItem value="">Nenhum projeto</SelectItem>
+                    {availableProjects.map(project => (
+                      <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
-                <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value as Ticket["status"] })}>
+                <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value as SupportTicket["status"] })}>
                   <SelectTrigger className="bg-secondary/50 border-border">
                     <SelectValue />
                   </SelectTrigger>
@@ -407,7 +455,7 @@ export default function Sustentacao() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="priority">Prioridade</Label>
-                <Select value={formData.priority} onValueChange={(value) => setFormData({ ...formData, priority: value as Ticket["priority"] })}>
+                <Select value={formData.priority} onValueChange={(value) => setFormData({ ...formData, priority: value as SupportTicket["priority"] })}>
                   <SelectTrigger className="bg-secondary/50 border-border">
                     <SelectValue />
                   </SelectTrigger>
@@ -420,13 +468,13 @@ export default function Sustentacao() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="assignee">Responsável (iniciais)</Label>
-              <Input id="assignee" value={formData.assignee} onChange={(e) => setFormData({ ...formData, assignee: e.target.value })} placeholder="Ex: CS" className="bg-secondary/50 border-border" />
+              <Label htmlFor="assignee">Responsável</Label>
+              <Input id="assignee" value={formData.assignee} onChange={(e) => setFormData({ ...formData, assignee: e.target.value })} placeholder="Nome do responsável" className="bg-secondary/50 border-border" />
             </div>
           </div>
           <DialogFooter>
             <button onClick={() => setIsDialogOpen(false)} className="px-4 py-2 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors">Cancelar</button>
-            <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">{editingTicket ? "Salvar" : "Criar"}</button>
+            <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Salvar</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -439,34 +487,62 @@ export default function Sustentacao() {
           </DialogHeader>
           {viewingTicket && (
             <div className="space-y-4 py-4">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between">
                 <span className="font-mono text-sm text-primary">{viewingTicket.id}</span>
-                <span className={cn("flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border", statusConfig[viewingTicket.status].color)}>
+                <span className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border", statusConfig[viewingTicket.status].color)}>
                   {statusConfig[viewingTicket.status].label}
                 </span>
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-foreground">{viewingTicket.title}</h3>
-                {viewingTicket.description && <p className="text-muted-foreground mt-1">{viewingTicket.description}</p>}
+                <h3 className="text-xl font-bold text-foreground">{viewingTicket.title}</h3>
+                <p className="text-muted-foreground">{getClientName(viewingTicket.clientId)}</p>
+                {getProjectName(viewingTicket.projectId) && (
+                  <p className="text-sm text-primary mt-1">{getProjectName(viewingTicket.projectId)}</p>
+                )}
               </div>
-              <div className="space-y-3 pt-4 border-t border-border">
-                <div className="flex justify-between"><span className="text-muted-foreground">Cliente</span><span className="text-foreground">{viewingTicket.client}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Projeto</span><span className="text-foreground">{viewingTicket.project}</span></div>
-                <div className="flex justify-between items-center"><span className="text-muted-foreground">Prioridade</span><div className="flex items-center gap-2"><div className={cn("w-2 h-2 rounded-full", priorityConfig[viewingTicket.priority].color)} /><span>{priorityConfig[viewingTicket.priority].label}</span></div></div>
-                <div className="flex justify-between items-center"><span className="text-muted-foreground">Responsável</span><div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center"><span className="text-xs font-medium text-primary">{viewingTicket.assignee}</span></div></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Criado em</span><span className="text-foreground">{viewingTicket.createdAt}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Última atualização</span><span className="text-foreground">{viewingTicket.lastUpdate}</span></div>
+              {viewingTicket.description && (
+                <div className="p-4 rounded-lg bg-secondary/30">
+                  <p className="text-sm">{viewingTicket.description}</p>
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Prioridade</p>
+                  <div className="flex items-center gap-2">
+                    <div className={cn("w-2 h-2 rounded-full", priorityConfig[viewingTicket.priority].color)} />
+                    <span className="font-medium">{priorityConfig[viewingTicket.priority].label}</span>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Responsável</p>
+                  <p className="font-medium">{viewingTicket.assignee || "Não atribuído"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Criado em</p>
+                  <p className="font-medium">{viewingTicket.createdAt}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Última atualização</p>
+                  <p className="font-medium">{viewingTicket.updatedAt}</p>
+                </div>
               </div>
             </div>
           )}
           <DialogFooter>
-            <button onClick={() => { setIsViewDialogOpen(false); if (viewingTicket) openEditDialog(viewingTicket); }} className="px-4 py-2 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors">Editar</button>
-            <button onClick={() => setIsViewDialogOpen(false)} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Fechar</button>
+            <button onClick={() => setIsViewDialogOpen(false)} className="px-4 py-2 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors">Fechar</button>
+            <button onClick={() => { setIsViewDialogOpen(false); viewingTicket && openEditDialog(viewingTicket); }} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Editar</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <ConfirmDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen} title="Excluir Ticket" description="Tem certeza que deseja excluir este ticket? Esta ação não pode ser desfeita." confirmLabel="Excluir" onConfirm={handleDelete} variant="destructive" />
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        title="Excluir Ticket"
+        description="Tem certeza que deseja excluir este ticket? Esta ação não pode ser desfeita."
+        onConfirm={handleDelete}
+      />
     </AppLayout>
   );
 }

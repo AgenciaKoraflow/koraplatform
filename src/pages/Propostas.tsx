@@ -11,25 +11,8 @@ import { ActionMenu } from "@/components/shared/ActionMenu";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
 import { toast } from "sonner";
-
-interface Proposal {
-  id: string;
-  title: string;
-  client: string;
-  value: string;
-  status: "draft" | "sent" | "viewed" | "accepted" | "rejected";
-  createdAt: string;
-  expiresAt: string;
-  services: string[];
-}
-
-const initialProposals: Proposal[] = [
-  { id: "1", title: "Chatbot de Atendimento Premium", client: "TechCorp", value: "R$ 45.000", status: "accepted", createdAt: "10 Dez 2024", expiresAt: "10 Jan 2025", services: ["Chatbot", "Integração", "Treinamento"] },
-  { id: "2", title: "Sistema de Recomendação IA", client: "SmartRetail", value: "R$ 120.000", status: "sent", createdAt: "15 Dez 2024", expiresAt: "15 Jan 2025", services: ["ML Model", "API", "Dashboard"] },
-  { id: "3", title: "Automação de Processos", client: "InnovateLab", value: "R$ 80.000", status: "viewed", createdAt: "18 Dez 2024", expiresAt: "18 Jan 2025", services: ["RPA", "Integração", "Suporte"] },
-  { id: "4", title: "Analytics Dashboard", client: "DataFlow Inc", value: "R$ 35.000", status: "draft", createdAt: "20 Dez 2024", expiresAt: "20 Jan 2025", services: ["Dashboard", "Relatórios"] },
-  { id: "5", title: "Modelo Preditivo de Vendas", client: "FinTech Plus", value: "R$ 95.000", status: "rejected", createdAt: "05 Dez 2024", expiresAt: "05 Jan 2025", services: ["ML Model", "API", "Consultoria"] },
-];
+import { useData } from "@/contexts/DataContext";
+import { Proposal } from "@/types/data";
 
 const statusConfig = {
   draft: { label: "Rascunho", color: "bg-slate-500/10 text-slate-500", icon: FileText },
@@ -40,7 +23,7 @@ const statusConfig = {
 };
 
 export default function Propostas() {
-  const [proposals, setProposals] = useState<Proposal[]>(initialProposals);
+  const { proposals, clients, projects, addProposal, updateProposal, deleteProposal, getClient, getProjectsByClient } = useData();
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -51,17 +34,21 @@ export default function Propostas() {
   const [deletingProposalId, setDeletingProposalId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: "",
-    client: "",
+    clientId: "",
+    projectId: "",
     value: "",
     status: "draft" as Proposal["status"],
-    expiresAt: "",
+    validUntil: "",
     services: "",
   });
 
-  const filteredProposals = proposals.filter((proposal) =>
-    proposal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    proposal.client.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProposals = proposals.filter((proposal) => {
+    const client = getClient(proposal.clientId);
+    return proposal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      client?.company.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
+  const availableProjects = formData.clientId ? getProjectsByClient(formData.clientId) : [];
 
   const stats = {
     total: proposals.length,
@@ -72,13 +59,21 @@ export default function Propostas() {
 
   const openNewDialog = () => {
     setEditingProposal(null);
-    setFormData({ title: "", client: "", value: "", status: "draft", expiresAt: "", services: "" });
+    setFormData({ title: "", clientId: "", projectId: "", value: "", status: "draft", validUntil: "", services: "" });
     setIsDialogOpen(true);
   };
 
   const openEditDialog = (proposal: Proposal) => {
     setEditingProposal(proposal);
-    setFormData({ title: proposal.title, client: proposal.client, value: proposal.value, status: proposal.status, expiresAt: proposal.expiresAt, services: proposal.services.join(", ") });
+    setFormData({
+      title: proposal.title,
+      clientId: proposal.clientId,
+      projectId: proposal.projectId || "",
+      value: proposal.value,
+      status: proposal.status,
+      validUntil: proposal.validUntil,
+      services: proposal.services.join(", "),
+    });
     setIsDialogOpen(true);
   };
 
@@ -88,7 +83,7 @@ export default function Propostas() {
   };
 
   const handleSave = () => {
-    if (!formData.title || !formData.client || !formData.value) {
+    if (!formData.title || !formData.clientId || !formData.value) {
       toast.error("Preencha os campos obrigatórios");
       return;
     }
@@ -96,20 +91,27 @@ export default function Propostas() {
     const today = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }).replace(".", "");
 
     if (editingProposal) {
-      setProposals(proposals.map(p => p.id === editingProposal.id ? { ...p, ...formData, services: formData.services.split(",").map(s => s.trim()).filter(Boolean) } : p));
-      toast.success("Proposta atualizada com sucesso!");
-    } else {
-      const newProposal: Proposal = {
-        id: Date.now().toString(),
+      updateProposal(editingProposal.id, {
         title: formData.title,
-        client: formData.client,
+        clientId: formData.clientId,
+        projectId: formData.projectId || undefined,
         value: formData.value,
         status: formData.status,
-        createdAt: today,
-        expiresAt: formData.expiresAt || "30 dias",
+        validUntil: formData.validUntil || "30 dias",
         services: formData.services.split(",").map(s => s.trim()).filter(Boolean),
-      };
-      setProposals([...proposals, newProposal]);
+      });
+      toast.success("Proposta atualizada com sucesso!");
+    } else {
+      addProposal({
+        clientId: formData.clientId,
+        projectId: formData.projectId || undefined,
+        title: formData.title,
+        value: formData.value,
+        status: formData.status,
+        services: formData.services.split(",").map(s => s.trim()).filter(Boolean),
+        createdAt: today,
+        validUntil: formData.validUntil || "30 dias",
+      });
       toast.success("Proposta criada com sucesso!");
     }
     setIsDialogOpen(false);
@@ -117,7 +119,7 @@ export default function Propostas() {
 
   const handleDelete = () => {
     if (deletingProposalId) {
-      setProposals(proposals.filter(p => p.id !== deletingProposalId));
+      deleteProposal(deletingProposalId);
       toast.success("Proposta removida com sucesso!");
       setIsDeleteDialogOpen(false);
       setDeletingProposalId(null);
@@ -125,20 +127,30 @@ export default function Propostas() {
   };
 
   const handleDuplicate = (proposal: Proposal) => {
-    const newProposal: Proposal = {
+    const today = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }).replace(".", "");
+    addProposal({
       ...proposal,
-      id: Date.now().toString(),
       title: `${proposal.title} (Cópia)`,
       status: "draft",
-      createdAt: new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }).replace(".", ""),
-    };
-    setProposals([...proposals, newProposal]);
+      createdAt: today,
+    });
     toast.success("Proposta duplicada com sucesso!");
   };
 
   const handleSendProposal = (proposal: Proposal) => {
-    setProposals(proposals.map(p => p.id === proposal.id ? { ...p, status: "sent" } : p));
+    updateProposal(proposal.id, { status: "sent" });
     toast.success("Proposta enviada para o cliente!");
+  };
+
+  const getClientName = (clientId: string) => {
+    const client = getClient(clientId);
+    return client?.company || "Cliente não encontrado";
+  };
+
+  const getProjectName = (projectId?: string) => {
+    if (!projectId) return null;
+    const project = projects.find(p => p.id === projectId);
+    return project?.name;
   };
 
   return (
@@ -201,7 +213,10 @@ export default function Propostas() {
                         </span>
                       </div>
                       <h3 className="text-lg font-semibold text-foreground mb-1">{proposal.title}</h3>
-                      <p className="text-sm text-muted-foreground mb-4">{proposal.client}</p>
+                      <p className="text-sm text-muted-foreground mb-2">{getClientName(proposal.clientId)}</p>
+                      {getProjectName(proposal.projectId) && (
+                        <p className="text-sm text-primary mb-4">Projeto: {getProjectName(proposal.projectId)}</p>
+                      )}
                       <div className="flex flex-wrap gap-2">
                         {proposal.services.map((service) => (
                           <span key={service} className="px-2 py-1 rounded-md bg-secondary text-xs text-muted-foreground">{service}</span>
@@ -212,7 +227,7 @@ export default function Propostas() {
                       <p className="text-2xl font-bold text-foreground">{proposal.value}</p>
                       <div className="flex items-center gap-1 text-sm text-muted-foreground mt-2">
                         <Clock className="w-3 h-3" />
-                        <span>Expira: {proposal.expiresAt}</span>
+                        <span>Expira: {proposal.validUntil}</span>
                       </div>
                     </div>
                   </div>
@@ -261,7 +276,10 @@ export default function Propostas() {
                     ]} />
                   </div>
                   <h3 className="font-semibold text-foreground mb-1">{proposal.title}</h3>
-                  <p className="text-sm text-muted-foreground mb-3">{proposal.client}</p>
+                  <p className="text-sm text-muted-foreground mb-1">{getClientName(proposal.clientId)}</p>
+                  {getProjectName(proposal.projectId) && (
+                    <p className="text-xs text-primary mb-3">{getProjectName(proposal.projectId)}</p>
+                  )}
                   <p className="text-xl font-bold text-foreground mb-3">{proposal.value}</p>
                   <div className="flex flex-wrap gap-1 mb-4">
                     {proposal.services.slice(0, 2).map((service) => (
@@ -272,7 +290,7 @@ export default function Propostas() {
                     )}
                   </div>
                   <div className="pt-3 border-t border-border text-xs text-muted-foreground">
-                    Expira: {proposal.expiresAt}
+                    Expira: {proposal.validUntil}
                   </div>
                 </div>
               );
@@ -294,8 +312,33 @@ export default function Propostas() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="client">Cliente *</Label>
-              <Input id="client" value={formData.client} onChange={(e) => setFormData({ ...formData, client: e.target.value })} placeholder="Nome do cliente" className="bg-secondary/50 border-border" />
+              <Select value={formData.clientId} onValueChange={(value) => setFormData({ ...formData, clientId: value, projectId: "" })}>
+                <SelectTrigger className="bg-secondary/50 border-border">
+                  <SelectValue placeholder="Selecione um cliente" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border">
+                  {clients.map(client => (
+                    <SelectItem key={client.id} value={client.id}>{client.company} - {client.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+            {formData.clientId && availableProjects.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="project">Projeto (opcional)</Label>
+                <Select value={formData.projectId} onValueChange={(value) => setFormData({ ...formData, projectId: value })}>
+                  <SelectTrigger className="bg-secondary/50 border-border">
+                    <SelectValue placeholder="Selecione um projeto" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    <SelectItem value="">Nenhum projeto</SelectItem>
+                    {availableProjects.map(project => (
+                      <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="value">Valor *</Label>
@@ -316,8 +359,8 @@ export default function Propostas() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="expiresAt">Validade</Label>
-              <Input id="expiresAt" value={formData.expiresAt} onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })} placeholder="DD/MM/AAAA" className="bg-secondary/50 border-border" />
+              <Label htmlFor="validUntil">Validade</Label>
+              <Input id="validUntil" value={formData.validUntil} onChange={(e) => setFormData({ ...formData, validUntil: e.target.value })} placeholder="DD/MM/AAAA" className="bg-secondary/50 border-border" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="services">Serviços (separados por vírgula)</Label>
@@ -326,7 +369,7 @@ export default function Propostas() {
           </div>
           <DialogFooter>
             <button onClick={() => setIsDialogOpen(false)} className="px-4 py-2 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors">Cancelar</button>
-            <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">{editingProposal ? "Salvar" : "Criar"}</button>
+            <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Salvar</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -339,38 +382,54 @@ export default function Propostas() {
           </DialogHeader>
           {viewingProposal && (
             <div className="space-y-4 py-4">
-              <div className="flex items-center gap-3">
-                <span className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium", statusConfig[viewingProposal.status].color)}>
+              <div className="flex items-center justify-between">
+                <span className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium", statusConfig[viewingProposal.status].color)}>
                   {statusConfig[viewingProposal.status].label}
                 </span>
+                <span className="text-2xl font-bold">{viewingProposal.value}</span>
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-foreground">{viewingProposal.title}</h3>
-                <p className="text-muted-foreground">{viewingProposal.client}</p>
+                <h3 className="text-xl font-bold text-foreground">{viewingProposal.title}</h3>
+                <p className="text-muted-foreground">{getClientName(viewingProposal.clientId)}</p>
+                {getProjectName(viewingProposal.projectId) && (
+                  <p className="text-sm text-primary mt-1">Projeto: {getProjectName(viewingProposal.projectId)}</p>
+                )}
               </div>
-              <div className="text-3xl font-bold text-foreground">{viewingProposal.value}</div>
-              <div className="space-y-3 pt-4 border-t border-border">
-                <div className="flex justify-between"><span className="text-muted-foreground">Criada em</span><span className="text-foreground">{viewingProposal.createdAt}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Expira em</span><span className="text-foreground">{viewingProposal.expiresAt}</span></div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">Serviços incluídos:</p>
+                <div className="flex flex-wrap gap-2">
+                  {viewingProposal.services.map((service) => (
+                    <span key={service} className="px-3 py-1 rounded-lg bg-secondary text-sm text-foreground">{service}</span>
+                  ))}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
                 <div>
-                  <span className="text-muted-foreground">Serviços incluídos:</span>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {viewingProposal.services.map((service) => (
-                      <span key={service} className="px-2 py-1 rounded-md bg-secondary text-sm text-foreground">{service}</span>
-                    ))}
-                  </div>
+                  <p className="text-xs text-muted-foreground mb-1">Criada em</p>
+                  <p className="font-medium">{viewingProposal.createdAt}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Válida até</p>
+                  <p className="font-medium">{viewingProposal.validUntil}</p>
                 </div>
               </div>
             </div>
           )}
           <DialogFooter>
-            <button onClick={() => { setIsViewDialogOpen(false); if (viewingProposal) openEditDialog(viewingProposal); }} className="px-4 py-2 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors">Editar</button>
-            <button onClick={() => setIsViewDialogOpen(false)} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Fechar</button>
+            <button onClick={() => setIsViewDialogOpen(false)} className="px-4 py-2 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors">Fechar</button>
+            <button onClick={() => { setIsViewDialogOpen(false); viewingProposal && openEditDialog(viewingProposal); }} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Editar</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <ConfirmDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen} title="Excluir Proposta" description="Tem certeza que deseja excluir esta proposta? Esta ação não pode ser desfeita." confirmLabel="Excluir" onConfirm={handleDelete} variant="destructive" />
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        title="Excluir Proposta"
+        description="Tem certeza que deseja excluir esta proposta? Esta ação não pode ser desfeita."
+        onConfirm={handleDelete}
+      />
     </AppLayout>
   );
 }

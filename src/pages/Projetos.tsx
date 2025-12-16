@@ -5,43 +5,27 @@ import { Plus, Calendar, Clock, Search, Eye, Edit, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ActionMenu } from "@/components/shared/ActionMenu";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
 import { toast } from "sonner";
-
-interface Project {
-  id: string;
-  name: string;
-  client: string;
-  status: "planning" | "in_progress" | "review" | "completed";
-  progress: number;
-  dueDate: string;
-  team: string[];
-  tasks: { completed: number; total: number };
-}
-
-const initialProjects: Project[] = [
-  { id: "1", name: "Chatbot de Atendimento", client: "TechCorp", status: "in_progress", progress: 65, dueDate: "15 Jan 2025", team: ["CS", "AM", "PC"], tasks: { completed: 13, total: 20 } },
-  { id: "2", name: "Sistema de Recomendação", client: "SmartRetail", status: "planning", progress: 15, dueDate: "28 Jan 2025", team: ["MO", "LM"], tasks: { completed: 3, total: 18 } },
-  { id: "3", name: "Automação de Processos", client: "InnovateLab", status: "in_progress", progress: 40, dueDate: "10 Fev 2025", team: ["AS", "JF", "CS"], tasks: { completed: 8, total: 22 } },
-  { id: "4", name: "Analytics Dashboard", client: "DataFlow Inc", status: "review", progress: 90, dueDate: "05 Jan 2025", team: ["PC", "AM"], tasks: { completed: 17, total: 19 } },
-  { id: "5", name: "Modelo Preditivo", client: "FinTech Plus", status: "completed", progress: 100, dueDate: "20 Dez 2024", team: ["JF", "LM", "MO"], tasks: { completed: 15, total: 15 } },
-  { id: "6", name: "Integração API IA", client: "AIStartup", status: "planning", progress: 5, dueDate: "20 Fev 2025", team: ["CS"], tasks: { completed: 1, total: 12 } },
-];
+import { useData } from "@/contexts/DataContext";
+import { Project } from "@/types/data";
 
 const statusConfig = {
   planning: { label: "Planejamento", color: "bg-blue-500/10 text-blue-500", dot: "bg-blue-500" },
   in_progress: { label: "Em Andamento", color: "bg-primary/10 text-primary", dot: "bg-primary" },
   review: { label: "Em Revisão", color: "bg-amber-500/10 text-amber-500", dot: "bg-amber-500" },
   completed: { label: "Concluído", color: "bg-green-500/10 text-green-500", dot: "bg-green-500" },
+  on_hold: { label: "Em Espera", color: "bg-slate-500/10 text-slate-500", dot: "bg-slate-500" },
 };
 
-const statusOrder: (keyof typeof statusConfig)[] = ["planning", "in_progress", "review", "completed"];
+const statusOrder: (keyof typeof statusConfig)[] = ["planning", "in_progress", "review", "completed", "on_hold"];
 
 export default function Projetos() {
-  const [projects, setProjects] = useState<Project[]>(initialProjects);
+  const { projects, clients, addProject, updateProject, deleteProject, getClient, getTasksByProject } = useData();
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
@@ -53,22 +37,24 @@ export default function Projetos() {
   const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
-    client: "",
+    clientId: "",
+    description: "",
     status: "planning" as Project["status"],
     dueDate: "",
     team: "",
   });
 
   const filteredProjects = projects.filter((project) => {
+    const client = getClient(project.clientId);
     const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.client.toLowerCase().includes(searchQuery.toLowerCase());
+      client?.company.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = !selectedStatus || project.status === selectedStatus;
     return matchesSearch && matchesStatus;
   });
 
   const openNewDialog = () => {
     setEditingProject(null);
-    setFormData({ name: "", client: "", status: "planning", dueDate: "", team: "" });
+    setFormData({ name: "", clientId: "", description: "", status: "planning", dueDate: "", team: "" });
     setIsDialogOpen(true);
   };
 
@@ -76,7 +62,8 @@ export default function Projetos() {
     setEditingProject(project);
     setFormData({
       name: project.name,
-      client: project.client,
+      clientId: project.clientId,
+      description: project.description,
       status: project.status,
       dueDate: project.dueDate,
       team: project.team.join(", "),
@@ -90,30 +77,35 @@ export default function Projetos() {
   };
 
   const handleSave = () => {
-    if (!formData.name || !formData.client) {
+    if (!formData.name || !formData.clientId) {
       toast.error("Preencha os campos obrigatórios");
       return;
     }
 
+    const teamArray = formData.team.split(",").map(t => t.trim()).filter(Boolean);
+
     if (editingProject) {
-      setProjects(projects.map(p => 
-        p.id === editingProject.id 
-          ? { ...p, ...formData, team: formData.team.split(",").map(t => t.trim()).filter(Boolean) }
-          : p
-      ));
+      updateProject(editingProject.id, {
+        name: formData.name,
+        clientId: formData.clientId,
+        description: formData.description,
+        status: formData.status,
+        dueDate: formData.dueDate || "A definir",
+        team: teamArray,
+      });
       toast.success("Projeto atualizado com sucesso!");
     } else {
-      const newProject: Project = {
-        id: Date.now().toString(),
+      addProject({
+        clientId: formData.clientId,
         name: formData.name,
-        client: formData.client,
+        description: formData.description,
         status: formData.status,
         progress: 0,
         dueDate: formData.dueDate || "A definir",
-        team: formData.team.split(",").map(t => t.trim()).filter(Boolean),
-        tasks: { completed: 0, total: 0 },
-      };
-      setProjects([...projects, newProject]);
+        team: teamArray,
+        tasks: 0,
+        completedTasks: 0,
+      });
       toast.success("Projeto criado com sucesso!");
     }
     setIsDialogOpen(false);
@@ -121,7 +113,7 @@ export default function Projetos() {
 
   const handleDelete = () => {
     if (deletingProjectId) {
-      setProjects(projects.filter(p => p.id !== deletingProjectId));
+      deleteProject(deletingProjectId);
       toast.success("Projeto removido com sucesso!");
       setIsDeleteDialogOpen(false);
       setDeletingProjectId(null);
@@ -130,6 +122,11 @@ export default function Projetos() {
 
   const getProjectsByStatus = (status: string) => 
     filteredProjects.filter(p => p.status === status);
+
+  const getClientName = (clientId: string) => {
+    const client = getClient(clientId);
+    return client?.company || "Cliente não encontrado";
+  };
 
   return (
     <AppLayout>
@@ -213,7 +210,7 @@ export default function Projetos() {
                   />
                 </div>
                 <h3 className="text-lg font-semibold text-foreground mb-1">{project.name}</h3>
-                <p className="text-sm text-muted-foreground mb-4">{project.client}</p>
+                <p className="text-sm text-muted-foreground mb-4">{getClientName(project.clientId)}</p>
                 <div className="mb-4">
                   <div className="flex items-center justify-between text-sm mb-2">
                     <span className="text-muted-foreground">Progresso</span>
@@ -231,12 +228,12 @@ export default function Projetos() {
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1 text-sm text-muted-foreground">
                       <Clock className="w-4 h-4" />
-                      <span>{project.tasks.completed}/{project.tasks.total}</span>
+                      <span>{project.completedTasks}/{project.tasks}</span>
                     </div>
                     <div className="flex -space-x-2">
                       {project.team.slice(0, 3).map((member, i) => (
                         <div key={i} className="w-7 h-7 rounded-full bg-primary/20 border-2 border-card flex items-center justify-center">
-                          <span className="text-xs font-medium text-primary">{member}</span>
+                          <span className="text-xs font-medium text-primary">{member.substring(0, 2)}</span>
                         </div>
                       ))}
                       {project.team.length > 3 && (
@@ -272,13 +269,13 @@ export default function Projetos() {
                       className="p-4 rounded-xl bg-card border border-border shadow-soft hover:shadow-medium transition-all cursor-pointer"
                     >
                       <h4 className="font-medium text-foreground mb-1">{project.name}</h4>
-                      <p className="text-sm text-muted-foreground mb-3">{project.client}</p>
+                      <p className="text-sm text-muted-foreground mb-3">{getClientName(project.clientId)}</p>
                       <div className="h-1.5 bg-secondary rounded-full overflow-hidden mb-3">
                         <div className="h-full bg-primary rounded-full" style={{ width: `${project.progress}%` }} />
                       </div>
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <span>{project.dueDate}</span>
-                        <span>{project.tasks.completed}/{project.tasks.total} tarefas</span>
+                        <span>{project.completedTasks}/{project.tasks} tarefas</span>
                       </div>
                     </div>
                   ))}
@@ -309,7 +306,7 @@ export default function Projetos() {
                 {filteredProjects.map((project) => (
                   <tr key={project.id} className="hover:bg-secondary/20 transition-colors">
                     <td className="px-6 py-4 font-medium text-foreground">{project.name}</td>
-                    <td className="px-6 py-4 text-muted-foreground">{project.client}</td>
+                    <td className="px-6 py-4 text-muted-foreground">{getClientName(project.clientId)}</td>
                     <td className="px-6 py-4">
                       <span className={cn("px-2.5 py-1 rounded-full text-xs font-medium", statusConfig[project.status].color)}>
                         {statusConfig[project.status].label}
@@ -354,77 +351,95 @@ export default function Projetos() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="client">Cliente *</Label>
-              <Input id="client" value={formData.client} onChange={(e) => setFormData({ ...formData, client: e.target.value })} placeholder="Nome do cliente" className="bg-secondary/50 border-border" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value as Project["status"] })}>
+              <Select value={formData.clientId} onValueChange={(value) => setFormData({ ...formData, clientId: value })}>
                 <SelectTrigger className="bg-secondary/50 border-border">
-                  <SelectValue />
+                  <SelectValue placeholder="Selecione um cliente" />
                 </SelectTrigger>
                 <SelectContent className="bg-card border-border">
-                  {Object.entries(statusConfig).map(([key, config]) => (
-                    <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                  {clients.map(client => (
+                    <SelectItem key={client.id} value={client.id}>{client.company} - {client.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="dueDate">Prazo</Label>
-              <Input id="dueDate" value={formData.dueDate} onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })} placeholder="DD/MM/AAAA" className="bg-secondary/50 border-border" />
+              <Label htmlFor="description">Descrição</Label>
+              <Textarea id="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Descrição do projeto" className="bg-secondary/50 border-border" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value as Project["status"] })}>
+                  <SelectTrigger className="bg-secondary/50 border-border">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    {Object.entries(statusConfig).map(([key, config]) => (
+                      <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="dueDate">Prazo</Label>
+                <Input id="dueDate" value={formData.dueDate} onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })} placeholder="DD/MM/AAAA" className="bg-secondary/50 border-border" />
+              </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="team">Equipe (iniciais separadas por vírgula)</Label>
-              <Input id="team" value={formData.team} onChange={(e) => setFormData({ ...formData, team: e.target.value })} placeholder="CS, AM, PC" className="bg-secondary/50 border-border" />
+              <Label htmlFor="team">Equipe (separados por vírgula)</Label>
+              <Input id="team" value={formData.team} onChange={(e) => setFormData({ ...formData, team: e.target.value })} placeholder="João, Maria, Pedro" className="bg-secondary/50 border-border" />
             </div>
           </div>
           <DialogFooter>
             <button onClick={() => setIsDialogOpen(false)} className="px-4 py-2 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors">Cancelar</button>
-            <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">{editingProject ? "Salvar" : "Criar"}</button>
+            <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Salvar</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* View Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="bg-card border-border sm:max-w-md">
+        <DialogContent className="bg-card border-border sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-foreground">Detalhes do Projeto</DialogTitle>
           </DialogHeader>
           {viewingProject && (
             <div className="space-y-4 py-4">
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">{viewingProject.name}</h3>
-                <p className="text-muted-foreground">{viewingProject.client}</p>
+              <div className="flex items-center justify-between">
+                <span className={cn("px-3 py-1.5 rounded-full text-sm font-medium", statusConfig[viewingProject.status].color)}>
+                  {statusConfig[viewingProject.status].label}
+                </span>
+                <span className="text-sm text-muted-foreground">{viewingProject.dueDate}</span>
               </div>
-              <div className="space-y-3 pt-4 border-t border-border">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Status</span>
-                  <span className={cn("px-2.5 py-1 rounded-full text-xs font-medium", statusConfig[viewingProject.status].color)}>{statusConfig[viewingProject.status].label}</span>
+              <div>
+                <h3 className="text-xl font-bold text-foreground">{viewingProject.name}</h3>
+                <p className="text-muted-foreground">{getClientName(viewingProject.clientId)}</p>
+              </div>
+              {viewingProject.description && (
+                <div>
+                  <p className="text-sm text-muted-foreground">{viewingProject.description}</p>
                 </div>
-                <div className="flex justify-between items-center">
+              )}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Progresso</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-24 h-2 bg-secondary rounded-full overflow-hidden">
-                      <div className="h-full bg-primary rounded-full" style={{ width: `${viewingProject.progress}%` }} />
-                    </div>
-                    <span className="text-foreground">{viewingProject.progress}%</span>
-                  </div>
+                  <span className="font-medium">{viewingProject.progress}%</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Prazo</span>
-                  <span className="text-foreground">{viewingProject.dueDate}</span>
+                <div className="h-3 bg-secondary rounded-full overflow-hidden">
+                  <div className="h-full bg-primary rounded-full" style={{ width: `${viewingProject.progress}%` }} />
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Tarefas</span>
-                  <span className="text-foreground">{viewingProject.tasks.completed}/{viewingProject.tasks.total}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Tarefas</p>
+                  <p className="font-semibold">{viewingProject.completedTasks} / {viewingProject.tasks}</p>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Equipe</span>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Equipe</p>
                   <div className="flex -space-x-2">
                     {viewingProject.team.map((member, i) => (
-                      <div key={i} className="w-7 h-7 rounded-full bg-primary/20 border-2 border-card flex items-center justify-center">
-                        <span className="text-xs font-medium text-primary">{member}</span>
+                      <div key={i} className="w-8 h-8 rounded-full bg-primary/20 border-2 border-card flex items-center justify-center">
+                        <span className="text-xs font-medium text-primary">{member.substring(0, 2)}</span>
                       </div>
                     ))}
                   </div>
@@ -433,13 +448,20 @@ export default function Projetos() {
             </div>
           )}
           <DialogFooter>
-            <button onClick={() => { setIsViewDialogOpen(false); if (viewingProject) openEditDialog(viewingProject); }} className="px-4 py-2 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors">Editar</button>
-            <button onClick={() => setIsViewDialogOpen(false)} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Fechar</button>
+            <button onClick={() => setIsViewDialogOpen(false)} className="px-4 py-2 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors">Fechar</button>
+            <button onClick={() => { setIsViewDialogOpen(false); viewingProject && openEditDialog(viewingProject); }} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Editar</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <ConfirmDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen} title="Excluir Projeto" description="Tem certeza que deseja excluir este projeto? Esta ação não pode ser desfeita." confirmLabel="Excluir" onConfirm={handleDelete} variant="destructive" />
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        title="Excluir Projeto"
+        description="Tem certeza que deseja excluir este projeto? Esta ação não pode ser desfeita e todas as tarefas associadas serão removidas."
+        onConfirm={handleDelete}
+      />
     </AppLayout>
   );
 }
