@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Client, Project, Task, Proposal, Contract, KnowledgeItem, SupportTicket } from "@/types/data";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface DataContextType {
   clients: Client[];
@@ -9,248 +11,663 @@ interface DataContextType {
   contracts: Contract[];
   knowledgeItems: KnowledgeItem[];
   tickets: SupportTicket[];
+  loading: boolean;
   
   // Client methods
-  addClient: (client: Omit<Client, "id">) => Client;
-  updateClient: (id: string, client: Partial<Client>) => void;
-  deleteClient: (id: string) => void;
+  addClient: (client: Omit<Client, "id">) => Promise<Client | null>;
+  updateClient: (id: string, client: Partial<Client>) => Promise<void>;
+  deleteClient: (id: string) => Promise<void>;
   getClient: (id: string) => Client | undefined;
   
   // Project methods
-  addProject: (project: Omit<Project, "id">) => Project;
-  updateProject: (id: string, project: Partial<Project>) => void;
-  deleteProject: (id: string) => void;
+  addProject: (project: Omit<Project, "id">) => Promise<Project | null>;
+  updateProject: (id: string, project: Partial<Project>) => Promise<void>;
+  deleteProject: (id: string) => Promise<void>;
   getProjectsByClient: (clientId: string) => Project[];
   
   // Task methods
-  addTask: (task: Omit<Task, "id">) => Task;
-  updateTask: (id: string, task: Partial<Task>) => void;
-  deleteTask: (id: string) => void;
+  addTask: (task: Omit<Task, "id">) => Promise<Task | null>;
+  updateTask: (id: string, task: Partial<Task>) => Promise<void>;
+  deleteTask: (id: string) => Promise<void>;
   getTasksByClient: (clientId: string) => Task[];
   getTasksByProject: (projectId: string) => Task[];
   
   // Proposal methods
-  addProposal: (proposal: Omit<Proposal, "id">) => Proposal;
-  updateProposal: (id: string, proposal: Partial<Proposal>) => void;
-  deleteProposal: (id: string) => void;
+  addProposal: (proposal: Omit<Proposal, "id">) => Promise<Proposal | null>;
+  updateProposal: (id: string, proposal: Partial<Proposal>) => Promise<void>;
+  deleteProposal: (id: string) => Promise<void>;
   getProposalsByClient: (clientId: string) => Proposal[];
   
   // Contract methods
-  addContract: (contract: Omit<Contract, "id">) => Contract;
-  updateContract: (id: string, contract: Partial<Contract>) => void;
-  deleteContract: (id: string) => void;
+  addContract: (contract: Omit<Contract, "id">) => Promise<Contract | null>;
+  updateContract: (id: string, contract: Partial<Contract>) => Promise<void>;
+  deleteContract: (id: string) => Promise<void>;
   getContractsByClient: (clientId: string) => Contract[];
   
   // Knowledge methods
-  addKnowledgeItem: (item: Omit<KnowledgeItem, "id">) => KnowledgeItem;
-  updateKnowledgeItem: (id: string, item: Partial<KnowledgeItem>) => void;
-  deleteKnowledgeItem: (id: string) => void;
+  addKnowledgeItem: (item: Omit<KnowledgeItem, "id">) => Promise<KnowledgeItem | null>;
+  updateKnowledgeItem: (id: string, item: Partial<KnowledgeItem>) => Promise<void>;
+  deleteKnowledgeItem: (id: string) => Promise<void>;
   getKnowledgeByClient: (clientId: string) => KnowledgeItem[];
   
   // Support ticket methods
-  addTicket: (ticket: Omit<SupportTicket, "id">) => SupportTicket;
-  updateTicket: (id: string, ticket: Partial<SupportTicket>) => void;
-  deleteTicket: (id: string) => void;
+  addTicket: (ticket: Omit<SupportTicket, "id">) => Promise<SupportTicket | null>;
+  updateTicket: (id: string, ticket: Partial<SupportTicket>) => Promise<void>;
+  deleteTicket: (id: string) => Promise<void>;
   getTicketsByClient: (clientId: string) => SupportTicket[];
+  
+  // Refresh data
+  refreshData: () => Promise<void>;
 }
-
-const initialClients: Client[] = [
-  { id: "1", name: "Carlos Silva", company: "TechCorp", email: "carlos@techcorp.com", phone: "(11) 99999-0001", stage: "cliente", value: "R$ 45.000", lastContact: "Há 2 dias", anniversary: "2024-01-15" },
-  { id: "2", name: "Ana Santos", company: "InnovateLab", email: "ana@innovatelab.com", phone: "(11) 99999-0002", stage: "proposta", value: "R$ 80.000", lastContact: "Há 1 dia" },
-  { id: "3", name: "Pedro Costa", company: "DataFlow Inc", email: "pedro@dataflow.com", phone: "(11) 99999-0003", stage: "qualificacao", value: "R$ 35.000", lastContact: "Hoje" },
-  { id: "4", name: "Maria Oliveira", company: "SmartRetail", email: "maria@smartretail.com", phone: "(11) 99999-0004", stage: "negociacao", value: "R$ 120.000", lastContact: "Há 3 dias" },
-  { id: "5", name: "Lucas Mendes", company: "AIStartup", email: "lucas@aistartup.com", phone: "(11) 99999-0005", stage: "prospeccao", value: "R$ 25.000", lastContact: "Há 1 semana" },
-  { id: "6", name: "Juliana Ferreira", company: "FinTech Plus", email: "juliana@fintechplus.com", phone: "(11) 99999-0006", stage: "cliente", value: "R$ 95.000", lastContact: "Há 4 dias", anniversary: "2024-06-01" },
-];
-
-const initialProjects: Project[] = [
-  { id: "1", clientId: "1", name: "Chatbot Atendimento", description: "Desenvolvimento de chatbot para atendimento ao cliente", status: "in_progress", progress: 65, dueDate: "15 Jan 2025", team: ["João", "Maria"], tasks: 24, completedTasks: 18 },
-  { id: "2", clientId: "4", name: "Automação RPA", description: "Automação de processos internos com RPA", status: "planning", progress: 20, dueDate: "28 Fev 2025", team: ["Pedro", "Ana"], tasks: 15, completedTasks: 3 },
-  { id: "3", clientId: "6", name: "Sistema ML Previsão", description: "Sistema de machine learning para previsão de vendas", status: "review", progress: 90, dueDate: "20 Dez 2024", team: ["Carlos", "Lucas"], tasks: 30, completedTasks: 28 },
-  { id: "4", clientId: "1", name: "Dashboard Analytics", description: "Dashboard de analytics em tempo real", status: "completed", progress: 100, dueDate: "10 Dez 2024", team: ["João"], tasks: 12, completedTasks: 12 },
-];
-
-const initialTasks: Task[] = [
-  { id: "1", clientId: "1", projectId: "1", title: "Definir fluxos de conversa", description: "Mapear todos os fluxos de conversa do chatbot", status: "done", priority: "high", dueDate: "20 Dez 2024", assignee: "João Silva" },
-  { id: "2", clientId: "1", projectId: "1", title: "Implementar NLP", description: "Integrar processamento de linguagem natural", status: "in_progress", priority: "high", dueDate: "22 Dez 2024", assignee: "Maria Santos" },
-  { id: "3", clientId: "4", projectId: "2", title: "Levantar requisitos RPA", description: "Documentar todos os processos a serem automatizados", status: "todo", priority: "medium", dueDate: "25 Dez 2024", assignee: "Pedro Costa" },
-  { id: "4", clientId: "6", projectId: "3", title: "Revisar modelo ML", description: "Fazer revisão final do modelo de machine learning", status: "review", priority: "high", dueDate: "18 Dez 2024", assignee: "Carlos Lima" },
-  { id: "5", clientId: "1", projectId: "1", title: "Testes de integração", description: "Realizar testes de integração com sistemas existentes", status: "todo", priority: "medium", dueDate: "28 Dez 2024", assignee: "João Silva" },
-];
-
-const initialProposals: Proposal[] = [
-  { id: "1", clientId: "2", title: "Proposta Automação Completa", value: "R$ 80.000", status: "sent", services: ["Automação RPA", "Consultoria", "Treinamento"], createdAt: "10 Dez 2024", validUntil: "10 Jan 2025" },
-  { id: "2", clientId: "3", title: "Proposta Chatbot Básico", value: "R$ 35.000", status: "viewed", services: ["Chatbot", "Integração WhatsApp"], createdAt: "12 Dez 2024", validUntil: "12 Jan 2025" },
-  { id: "3", clientId: "4", title: "Proposta RPA Financeiro", value: "R$ 120.000", status: "accepted", services: ["RPA", "Automação", "Suporte 12 meses"], createdAt: "05 Dez 2024", validUntil: "05 Jan 2025" },
-  { id: "4", clientId: "5", title: "Proposta Consultoria IA", value: "R$ 25.000", status: "draft", services: ["Consultoria", "Análise de Viabilidade"], createdAt: "15 Dez 2024", validUntil: "15 Jan 2025" },
-];
-
-const initialContracts: Contract[] = [
-  { id: "1", clientId: "1", projectId: "1", title: "Contrato de Desenvolvimento - Chatbot", value: "R$ 45.000", status: "signed", type: "projeto", createdAt: "01 Dez 2024", signedAt: "05 Dez 2024", expiresAt: "01 Dez 2025" },
-  { id: "2", clientId: "4", title: "Contrato de Sustentação Mensal", value: "R$ 8.000/mês", status: "signed", type: "sustentacao", createdAt: "15 Nov 2024", signedAt: "18 Nov 2024", expiresAt: "15 Nov 2025" },
-  { id: "3", clientId: "2", proposalId: "1", title: "Contrato de Automação", value: "R$ 80.000", status: "pending_signature", type: "projeto", createdAt: "18 Dez 2024", expiresAt: "18 Dez 2025" },
-  { id: "4", clientId: "3", title: "Contrato de Consultoria IA", value: "R$ 15.000", status: "draft", type: "consultoria", createdAt: "20 Dez 2024", expiresAt: "20 Dez 2025" },
-  { id: "5", clientId: "6", projectId: "3", title: "Contrato de Desenvolvimento ML", value: "R$ 95.000", status: "expired", type: "projeto", createdAt: "01 Jun 2024", signedAt: "05 Jun 2024", expiresAt: "01 Dez 2024" },
-];
-
-const initialKnowledgeItems: KnowledgeItem[] = [
-  { id: "1", clientId: "1", title: "Acesso Servidor Produção", category: "credencial", content: "", username: "admin_techcorp", password: "T3chC0rp#2024", url: "https://servidor.techcorp.com", tags: ["servidor", "produção"], createdAt: "01 Dez 2024", updatedAt: "01 Dez 2024" },
-  { id: "2", clientId: "1", projectId: "1", title: "Documentação API Chatbot", category: "documento", content: "Documentação completa da API do chatbot", tags: ["api", "chatbot"], createdAt: "05 Dez 2024", updatedAt: "10 Dez 2024" },
-  { id: "3", clientId: "4", title: "Portal RPA SmartRetail", category: "link", content: "", url: "https://rpa.smartretail.com/portal", tags: ["rpa", "portal"], createdAt: "15 Nov 2024", updatedAt: "15 Nov 2024" },
-  { id: "4", clientId: "6", title: "Credenciais AWS FinTech", category: "credencial", content: "", username: "fintech_ml_user", password: "ML#Fintech@2024", tags: ["aws", "ml"], createdAt: "01 Jun 2024", updatedAt: "01 Jun 2024" },
-];
-
-const initialTickets: SupportTicket[] = [
-  { id: "1", clientId: "1", projectId: "4", title: "Dashboard não carrega dados", description: "O dashboard de analytics não está carregando os dados em tempo real", status: "open", priority: "high", createdAt: "18 Dez 2024", updatedAt: "18 Dez 2024", assignee: "João Silva" },
-  { id: "2", clientId: "4", title: "Erro no processo RPA", description: "Processo de automação financeira está falhando", status: "in_progress", priority: "critical", createdAt: "17 Dez 2024", updatedAt: "18 Dez 2024", assignee: "Pedro Costa" },
-  { id: "3", clientId: "6", projectId: "3", title: "Ajuste no modelo ML", description: "Modelo precisa de ajustes para melhor precisão", status: "waiting", priority: "medium", createdAt: "15 Dez 2024", updatedAt: "16 Dez 2024", assignee: "Carlos Lima" },
-  { id: "4", clientId: "1", projectId: "1", title: "Chatbot resposta lenta", description: "O chatbot está demorando muito para responder", status: "resolved", priority: "medium", createdAt: "10 Dez 2024", updatedAt: "12 Dez 2024", assignee: "Maria Santos" },
-];
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-export function DataProvider({ children }: { children: ReactNode }) {
-  const [clients, setClients] = useState<Client[]>(initialClients);
-  const [projects, setProjects] = useState<Project[]>(initialProjects);
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
-  const [proposals, setProposals] = useState<Proposal[]>(initialProposals);
-  const [contracts, setContracts] = useState<Contract[]>(initialContracts);
-  const [knowledgeItems, setKnowledgeItems] = useState<KnowledgeItem[]>(initialKnowledgeItems);
-  const [tickets, setTickets] = useState<SupportTicket[]>(initialTickets);
+// Helper to call the external-db edge function
+async function callExternalDb(action: string, table: string, data?: any, id?: string, filters?: Record<string, any>) {
+  const { data: result, error } = await supabase.functions.invoke('external-db', {
+    body: { action, table, data, id, filters }
+  });
+  
+  if (error) {
+    console.error('External DB error:', error);
+    throw error;
+  }
+  
+  if (result.error) {
+    console.error('External DB result error:', result.error);
+    throw new Error(result.error);
+  }
+  
+  return result.data;
+}
 
-  const generateId = () => Date.now().toString();
+// Mappers from DB to frontend types
+function mapDbClient(db: any): Client {
+  return {
+    id: db.id,
+    name: db.name || '',
+    company: db.company || '',
+    email: db.email || '',
+    phone: db.phone || '',
+    stage: db.pipeline_stage || db.status || 'prospeccao',
+    value: db.notes || 'R$ 0',
+    lastContact: db.updated_at ? formatDate(db.updated_at) : 'Nunca',
+    anniversary: db.anniversary
+  };
+}
+
+function mapDbProject(db: any): Project {
+  return {
+    id: db.id,
+    clientId: db.client_id,
+    name: db.name || '',
+    description: db.description || '',
+    status: db.status || 'planning',
+    progress: db.progress || 0,
+    dueDate: db.end_date || '',
+    team: [],
+    tasks: 0,
+    completedTasks: 0
+  };
+}
+
+function mapDbTask(db: any): Task {
+  return {
+    id: db.id,
+    clientId: db.client_id,
+    projectId: db.project_id,
+    title: db.title || '',
+    description: db.description || '',
+    status: db.status || 'todo',
+    priority: db.priority || 'medium',
+    dueDate: db.due_date || '',
+    assignee: db.assigned_to || ''
+  };
+}
+
+function mapDbProposal(db: any): Proposal {
+  return {
+    id: db.id,
+    clientId: db.client_id,
+    projectId: db.project_id,
+    title: db.title || '',
+    value: db.value ? `R$ ${db.value.toLocaleString()}` : 'R$ 0',
+    status: db.status || 'draft',
+    services: [],
+    createdAt: db.created_at ? formatDate(db.created_at) : '',
+    validUntil: db.valid_until || ''
+  };
+}
+
+function mapDbContract(db: any): Contract {
+  return {
+    id: db.id,
+    clientId: db.client_id,
+    projectId: db.project_id,
+    proposalId: db.proposal_id,
+    title: db.title || '',
+    value: db.value ? `R$ ${db.value.toLocaleString()}` : 'R$ 0',
+    status: db.status || 'draft',
+    type: 'projeto',
+    createdAt: db.created_at ? formatDate(db.created_at) : '',
+    signedAt: db.signed_at ? formatDate(db.signed_at) : undefined,
+    expiresAt: db.end_date || '',
+    documentName: db.document_name,
+    documentData: db.document_data
+  };
+}
+
+function mapDbKnowledge(db: any): KnowledgeItem {
+  return {
+    id: db.id,
+    clientId: db.client_id,
+    projectId: db.project_id,
+    title: db.title || '',
+    category: db.category || 'documento',
+    content: db.content || '',
+    username: db.username,
+    password: db.password,
+    url: db.url,
+    tags: db.tags || [],
+    createdAt: db.created_at ? formatDate(db.created_at) : '',
+    updatedAt: db.updated_at ? formatDate(db.updated_at) : ''
+  };
+}
+
+function mapDbTicket(db: any): SupportTicket {
+  return {
+    id: db.id,
+    clientId: db.client_id,
+    projectId: db.project_id,
+    title: db.title || '',
+    description: db.description || '',
+    status: db.status || 'open',
+    priority: db.priority || 'medium',
+    createdAt: db.created_at ? formatDate(db.created_at) : '',
+    updatedAt: db.updated_at ? formatDate(db.updated_at) : '',
+    assignee: undefined
+  };
+}
+
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('pt-BR');
+}
+
+function parseValue(value: string): number | null {
+  if (!value) return null;
+  const num = value.replace(/[^\d,.-]/g, '').replace(',', '.');
+  return parseFloat(num) || null;
+}
+
+export function DataProvider({ children }: { children: ReactNode }) {
+  const [clients, setClients] = useState<Client[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [knowledgeItems, setKnowledgeItems] = useState<KnowledgeItem[]>([]);
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [clientsData, projectsData, tasksData, proposalsData, contractsData, knowledgeData, ticketsData] = await Promise.all([
+        callExternalDb('select', 'clients'),
+        callExternalDb('select', 'projects'),
+        callExternalDb('select', 'tasks'),
+        callExternalDb('select', 'proposals'),
+        callExternalDb('select', 'contracts'),
+        callExternalDb('select', 'knowledge_items'),
+        callExternalDb('select', 'support_tickets')
+      ]);
+      
+      setClients((clientsData || []).map(mapDbClient));
+      setProjects((projectsData || []).map(mapDbProject));
+      setTasks((tasksData || []).map(mapDbTask));
+      setProposals((proposalsData || []).map(mapDbProposal));
+      setContracts((contractsData || []).map(mapDbContract));
+      setKnowledgeItems((knowledgeData || []).map(mapDbKnowledge));
+      setTickets((ticketsData || []).map(mapDbTicket));
+      
+      console.log('Data loaded from external Supabase');
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast.error('Erro ao carregar dados do banco de dados');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   // Client methods
-  const addClient = (client: Omit<Client, "id">) => {
-    const newClient = { ...client, id: generateId() };
-    setClients(prev => [...prev, newClient]);
-    return newClient;
+  const addClient = async (client: Omit<Client, "id">): Promise<Client | null> => {
+    try {
+      const dbData = {
+        name: client.name,
+        company: client.company,
+        email: client.email,
+        phone: client.phone,
+        pipeline_stage: client.stage,
+        notes: client.value,
+        anniversary: client.anniversary
+      };
+      const result = await callExternalDb('insert', 'clients', dbData);
+      if (result && result[0]) {
+        const newClient = mapDbClient(result[0]);
+        setClients(prev => [...prev, newClient]);
+        toast.success('Cliente adicionado com sucesso');
+        return newClient;
+      }
+      return null;
+    } catch (error) {
+      toast.error('Erro ao adicionar cliente');
+      return null;
+    }
   };
   
-  const updateClient = (id: string, client: Partial<Client>) => {
-    setClients(prev => prev.map(c => c.id === id ? { ...c, ...client } : c));
+  const updateClient = async (id: string, client: Partial<Client>) => {
+    try {
+      const dbData: any = {};
+      if (client.name) dbData.name = client.name;
+      if (client.company) dbData.company = client.company;
+      if (client.email) dbData.email = client.email;
+      if (client.phone) dbData.phone = client.phone;
+      if (client.stage) dbData.pipeline_stage = client.stage;
+      if (client.value) dbData.notes = client.value;
+      if (client.anniversary) dbData.anniversary = client.anniversary;
+      dbData.updated_at = new Date().toISOString();
+      
+      await callExternalDb('update', 'clients', dbData, id);
+      setClients(prev => prev.map(c => c.id === id ? { ...c, ...client } : c));
+      toast.success('Cliente atualizado com sucesso');
+    } catch (error) {
+      toast.error('Erro ao atualizar cliente');
+    }
   };
   
-  const deleteClient = (id: string) => {
-    setClients(prev => prev.filter(c => c.id !== id));
-    // Also delete related items
-    setProjects(prev => prev.filter(p => p.clientId !== id));
-    setTasks(prev => prev.filter(t => t.clientId !== id));
-    setProposals(prev => prev.filter(p => p.clientId !== id));
-    setContracts(prev => prev.filter(c => c.clientId !== id));
-    setKnowledgeItems(prev => prev.filter(k => k.clientId !== id));
-    setTickets(prev => prev.filter(t => t.clientId !== id));
+  const deleteClient = async (id: string) => {
+    try {
+      await callExternalDb('delete', 'clients', undefined, id);
+      setClients(prev => prev.filter(c => c.id !== id));
+      setProjects(prev => prev.filter(p => p.clientId !== id));
+      setTasks(prev => prev.filter(t => t.clientId !== id));
+      setProposals(prev => prev.filter(p => p.clientId !== id));
+      setContracts(prev => prev.filter(c => c.clientId !== id));
+      setKnowledgeItems(prev => prev.filter(k => k.clientId !== id));
+      setTickets(prev => prev.filter(t => t.clientId !== id));
+      toast.success('Cliente excluído com sucesso');
+    } catch (error) {
+      toast.error('Erro ao excluir cliente');
+    }
   };
   
   const getClient = (id: string) => clients.find(c => c.id === id);
 
   // Project methods
-  const addProject = (project: Omit<Project, "id">) => {
-    const newProject = { ...project, id: generateId() };
-    setProjects(prev => [...prev, newProject]);
-    return newProject;
+  const addProject = async (project: Omit<Project, "id">): Promise<Project | null> => {
+    try {
+      const dbData = {
+        client_id: project.clientId,
+        name: project.name,
+        description: project.description,
+        status: project.status,
+        progress: project.progress,
+        end_date: project.dueDate
+      };
+      const result = await callExternalDb('insert', 'projects', dbData);
+      if (result && result[0]) {
+        const newProject = mapDbProject(result[0]);
+        setProjects(prev => [...prev, newProject]);
+        toast.success('Projeto adicionado com sucesso');
+        return newProject;
+      }
+      return null;
+    } catch (error) {
+      toast.error('Erro ao adicionar projeto');
+      return null;
+    }
   };
   
-  const updateProject = (id: string, project: Partial<Project>) => {
-    setProjects(prev => prev.map(p => p.id === id ? { ...p, ...project } : p));
+  const updateProject = async (id: string, project: Partial<Project>) => {
+    try {
+      const dbData: any = {};
+      if (project.clientId) dbData.client_id = project.clientId;
+      if (project.name) dbData.name = project.name;
+      if (project.description) dbData.description = project.description;
+      if (project.status) dbData.status = project.status;
+      if (project.progress !== undefined) dbData.progress = project.progress;
+      if (project.dueDate) dbData.end_date = project.dueDate;
+      dbData.updated_at = new Date().toISOString();
+      
+      await callExternalDb('update', 'projects', dbData, id);
+      setProjects(prev => prev.map(p => p.id === id ? { ...p, ...project } : p));
+      toast.success('Projeto atualizado com sucesso');
+    } catch (error) {
+      toast.error('Erro ao atualizar projeto');
+    }
   };
   
-  const deleteProject = (id: string) => {
-    setProjects(prev => prev.filter(p => p.id !== id));
-    setTasks(prev => prev.filter(t => t.projectId !== id));
+  const deleteProject = async (id: string) => {
+    try {
+      await callExternalDb('delete', 'projects', undefined, id);
+      setProjects(prev => prev.filter(p => p.id !== id));
+      setTasks(prev => prev.filter(t => t.projectId !== id));
+      toast.success('Projeto excluído com sucesso');
+    } catch (error) {
+      toast.error('Erro ao excluir projeto');
+    }
   };
   
   const getProjectsByClient = (clientId: string) => projects.filter(p => p.clientId === clientId);
 
   // Task methods
-  const addTask = (task: Omit<Task, "id">) => {
-    const newTask = { ...task, id: generateId() };
-    setTasks(prev => [...prev, newTask]);
-    return newTask;
+  const addTask = async (task: Omit<Task, "id">): Promise<Task | null> => {
+    try {
+      const dbData = {
+        client_id: task.clientId,
+        project_id: task.projectId || null,
+        title: task.title,
+        description: task.description,
+        status: task.status,
+        priority: task.priority,
+        due_date: task.dueDate,
+        assigned_to: task.assignee
+      };
+      const result = await callExternalDb('insert', 'tasks', dbData);
+      if (result && result[0]) {
+        const newTask = mapDbTask(result[0]);
+        setTasks(prev => [...prev, newTask]);
+        toast.success('Tarefa adicionada com sucesso');
+        return newTask;
+      }
+      return null;
+    } catch (error) {
+      toast.error('Erro ao adicionar tarefa');
+      return null;
+    }
   };
   
-  const updateTask = (id: string, task: Partial<Task>) => {
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, ...task } : t));
+  const updateTask = async (id: string, task: Partial<Task>) => {
+    try {
+      const dbData: any = {};
+      if (task.clientId) dbData.client_id = task.clientId;
+      if (task.projectId !== undefined) dbData.project_id = task.projectId || null;
+      if (task.title) dbData.title = task.title;
+      if (task.description) dbData.description = task.description;
+      if (task.status) dbData.status = task.status;
+      if (task.priority) dbData.priority = task.priority;
+      if (task.dueDate) dbData.due_date = task.dueDate;
+      if (task.assignee) dbData.assigned_to = task.assignee;
+      dbData.updated_at = new Date().toISOString();
+      
+      await callExternalDb('update', 'tasks', dbData, id);
+      setTasks(prev => prev.map(t => t.id === id ? { ...t, ...task } : t));
+      toast.success('Tarefa atualizada com sucesso');
+    } catch (error) {
+      toast.error('Erro ao atualizar tarefa');
+    }
   };
   
-  const deleteTask = (id: string) => {
-    setTasks(prev => prev.filter(t => t.id !== id));
+  const deleteTask = async (id: string) => {
+    try {
+      await callExternalDb('delete', 'tasks', undefined, id);
+      setTasks(prev => prev.filter(t => t.id !== id));
+      toast.success('Tarefa excluída com sucesso');
+    } catch (error) {
+      toast.error('Erro ao excluir tarefa');
+    }
   };
   
   const getTasksByClient = (clientId: string) => tasks.filter(t => t.clientId === clientId);
   const getTasksByProject = (projectId: string) => tasks.filter(t => t.projectId === projectId);
 
   // Proposal methods
-  const addProposal = (proposal: Omit<Proposal, "id">) => {
-    const newProposal = { ...proposal, id: generateId() };
-    setProposals(prev => [...prev, newProposal]);
-    return newProposal;
+  const addProposal = async (proposal: Omit<Proposal, "id">): Promise<Proposal | null> => {
+    try {
+      const dbData = {
+        client_id: proposal.clientId,
+        project_id: proposal.projectId || null,
+        title: proposal.title,
+        value: parseValue(proposal.value),
+        status: proposal.status,
+        valid_until: proposal.validUntil
+      };
+      const result = await callExternalDb('insert', 'proposals', dbData);
+      if (result && result[0]) {
+        const newProposal = mapDbProposal(result[0]);
+        setProposals(prev => [...prev, newProposal]);
+        toast.success('Proposta adicionada com sucesso');
+        return newProposal;
+      }
+      return null;
+    } catch (error) {
+      toast.error('Erro ao adicionar proposta');
+      return null;
+    }
   };
   
-  const updateProposal = (id: string, proposal: Partial<Proposal>) => {
-    setProposals(prev => prev.map(p => p.id === id ? { ...p, ...proposal } : p));
+  const updateProposal = async (id: string, proposal: Partial<Proposal>) => {
+    try {
+      const dbData: any = {};
+      if (proposal.clientId) dbData.client_id = proposal.clientId;
+      if (proposal.projectId !== undefined) dbData.project_id = proposal.projectId || null;
+      if (proposal.title) dbData.title = proposal.title;
+      if (proposal.value) dbData.value = parseValue(proposal.value);
+      if (proposal.status) dbData.status = proposal.status;
+      if (proposal.validUntil) dbData.valid_until = proposal.validUntil;
+      dbData.updated_at = new Date().toISOString();
+      
+      await callExternalDb('update', 'proposals', dbData, id);
+      setProposals(prev => prev.map(p => p.id === id ? { ...p, ...proposal } : p));
+      toast.success('Proposta atualizada com sucesso');
+    } catch (error) {
+      toast.error('Erro ao atualizar proposta');
+    }
   };
   
-  const deleteProposal = (id: string) => {
-    setProposals(prev => prev.filter(p => p.id !== id));
+  const deleteProposal = async (id: string) => {
+    try {
+      await callExternalDb('delete', 'proposals', undefined, id);
+      setProposals(prev => prev.filter(p => p.id !== id));
+      toast.success('Proposta excluída com sucesso');
+    } catch (error) {
+      toast.error('Erro ao excluir proposta');
+    }
   };
   
   const getProposalsByClient = (clientId: string) => proposals.filter(p => p.clientId === clientId);
 
   // Contract methods
-  const addContract = (contract: Omit<Contract, "id">) => {
-    const newContract = { ...contract, id: generateId() };
-    setContracts(prev => [...prev, newContract]);
-    return newContract;
+  const addContract = async (contract: Omit<Contract, "id">): Promise<Contract | null> => {
+    try {
+      const dbData = {
+        client_id: contract.clientId,
+        project_id: contract.projectId || null,
+        proposal_id: contract.proposalId || null,
+        title: contract.title,
+        value: parseValue(contract.value),
+        status: contract.status,
+        start_date: contract.createdAt,
+        end_date: contract.expiresAt,
+        document_name: contract.documentName,
+        document_data: contract.documentData,
+        signed_at: contract.signedAt
+      };
+      const result = await callExternalDb('insert', 'contracts', dbData);
+      if (result && result[0]) {
+        const newContract = mapDbContract(result[0]);
+        setContracts(prev => [...prev, newContract]);
+        toast.success('Contrato adicionado com sucesso');
+        return newContract;
+      }
+      return null;
+    } catch (error) {
+      toast.error('Erro ao adicionar contrato');
+      return null;
+    }
   };
   
-  const updateContract = (id: string, contract: Partial<Contract>) => {
-    setContracts(prev => prev.map(c => c.id === id ? { ...c, ...contract } : c));
+  const updateContract = async (id: string, contract: Partial<Contract>) => {
+    try {
+      const dbData: any = {};
+      if (contract.clientId) dbData.client_id = contract.clientId;
+      if (contract.projectId !== undefined) dbData.project_id = contract.projectId || null;
+      if (contract.proposalId !== undefined) dbData.proposal_id = contract.proposalId || null;
+      if (contract.title) dbData.title = contract.title;
+      if (contract.value) dbData.value = parseValue(contract.value);
+      if (contract.status) dbData.status = contract.status;
+      if (contract.expiresAt) dbData.end_date = contract.expiresAt;
+      if (contract.documentName) dbData.document_name = contract.documentName;
+      if (contract.documentData) dbData.document_data = contract.documentData;
+      if (contract.signedAt) dbData.signed_at = contract.signedAt;
+      dbData.updated_at = new Date().toISOString();
+      
+      await callExternalDb('update', 'contracts', dbData, id);
+      setContracts(prev => prev.map(c => c.id === id ? { ...c, ...contract } : c));
+      toast.success('Contrato atualizado com sucesso');
+    } catch (error) {
+      toast.error('Erro ao atualizar contrato');
+    }
   };
   
-  const deleteContract = (id: string) => {
-    setContracts(prev => prev.filter(c => c.id !== id));
+  const deleteContract = async (id: string) => {
+    try {
+      await callExternalDb('delete', 'contracts', undefined, id);
+      setContracts(prev => prev.filter(c => c.id !== id));
+      toast.success('Contrato excluído com sucesso');
+    } catch (error) {
+      toast.error('Erro ao excluir contrato');
+    }
   };
   
   const getContractsByClient = (clientId: string) => contracts.filter(c => c.clientId === clientId);
 
   // Knowledge methods
-  const addKnowledgeItem = (item: Omit<KnowledgeItem, "id">) => {
-    const newItem = { ...item, id: generateId() };
-    setKnowledgeItems(prev => [...prev, newItem]);
-    return newItem;
+  const addKnowledgeItem = async (item: Omit<KnowledgeItem, "id">): Promise<KnowledgeItem | null> => {
+    try {
+      const dbData = {
+        client_id: item.clientId || null,
+        project_id: item.projectId || null,
+        title: item.title,
+        category: item.category,
+        content: item.content,
+        username: item.username,
+        password: item.password,
+        url: item.url,
+        tags: item.tags
+      };
+      const result = await callExternalDb('insert', 'knowledge_items', dbData);
+      if (result && result[0]) {
+        const newItem = mapDbKnowledge(result[0]);
+        setKnowledgeItems(prev => [...prev, newItem]);
+        toast.success('Item adicionado com sucesso');
+        return newItem;
+      }
+      return null;
+    } catch (error) {
+      toast.error('Erro ao adicionar item');
+      return null;
+    }
   };
   
-  const updateKnowledgeItem = (id: string, item: Partial<KnowledgeItem>) => {
-    setKnowledgeItems(prev => prev.map(k => k.id === id ? { ...k, ...item } : k));
+  const updateKnowledgeItem = async (id: string, item: Partial<KnowledgeItem>) => {
+    try {
+      const dbData: any = {};
+      if (item.clientId !== undefined) dbData.client_id = item.clientId || null;
+      if (item.projectId !== undefined) dbData.project_id = item.projectId || null;
+      if (item.title) dbData.title = item.title;
+      if (item.category) dbData.category = item.category;
+      if (item.content !== undefined) dbData.content = item.content;
+      if (item.username !== undefined) dbData.username = item.username;
+      if (item.password !== undefined) dbData.password = item.password;
+      if (item.url !== undefined) dbData.url = item.url;
+      if (item.tags) dbData.tags = item.tags;
+      dbData.updated_at = new Date().toISOString();
+      
+      await callExternalDb('update', 'knowledge_items', dbData, id);
+      setKnowledgeItems(prev => prev.map(k => k.id === id ? { ...k, ...item } : k));
+      toast.success('Item atualizado com sucesso');
+    } catch (error) {
+      toast.error('Erro ao atualizar item');
+    }
   };
   
-  const deleteKnowledgeItem = (id: string) => {
-    setKnowledgeItems(prev => prev.filter(k => k.id !== id));
+  const deleteKnowledgeItem = async (id: string) => {
+    try {
+      await callExternalDb('delete', 'knowledge_items', undefined, id);
+      setKnowledgeItems(prev => prev.filter(k => k.id !== id));
+      toast.success('Item excluído com sucesso');
+    } catch (error) {
+      toast.error('Erro ao excluir item');
+    }
   };
   
   const getKnowledgeByClient = (clientId: string) => knowledgeItems.filter(k => k.clientId === clientId);
 
   // Support ticket methods
-  const addTicket = (ticket: Omit<SupportTicket, "id">) => {
-    const newTicket = { ...ticket, id: generateId() };
-    setTickets(prev => [...prev, newTicket]);
-    return newTicket;
+  const addTicket = async (ticket: Omit<SupportTicket, "id">): Promise<SupportTicket | null> => {
+    try {
+      const dbData = {
+        client_id: ticket.clientId,
+        project_id: ticket.projectId || null,
+        title: ticket.title,
+        description: ticket.description,
+        status: ticket.status,
+        priority: ticket.priority
+      };
+      const result = await callExternalDb('insert', 'support_tickets', dbData);
+      if (result && result[0]) {
+        const newTicket = mapDbTicket(result[0]);
+        setTickets(prev => [...prev, newTicket]);
+        toast.success('Ticket adicionado com sucesso');
+        return newTicket;
+      }
+      return null;
+    } catch (error) {
+      toast.error('Erro ao adicionar ticket');
+      return null;
+    }
   };
   
-  const updateTicket = (id: string, ticket: Partial<SupportTicket>) => {
-    setTickets(prev => prev.map(t => t.id === id ? { ...t, ...ticket } : t));
+  const updateTicket = async (id: string, ticket: Partial<SupportTicket>) => {
+    try {
+      const dbData: any = {};
+      if (ticket.clientId) dbData.client_id = ticket.clientId;
+      if (ticket.projectId !== undefined) dbData.project_id = ticket.projectId || null;
+      if (ticket.title) dbData.title = ticket.title;
+      if (ticket.description) dbData.description = ticket.description;
+      if (ticket.status) dbData.status = ticket.status;
+      if (ticket.priority) dbData.priority = ticket.priority;
+      dbData.updated_at = new Date().toISOString();
+      
+      await callExternalDb('update', 'support_tickets', dbData, id);
+      setTickets(prev => prev.map(t => t.id === id ? { ...t, ...ticket } : t));
+      toast.success('Ticket atualizado com sucesso');
+    } catch (error) {
+      toast.error('Erro ao atualizar ticket');
+    }
   };
   
-  const deleteTicket = (id: string) => {
-    setTickets(prev => prev.filter(t => t.id !== id));
+  const deleteTicket = async (id: string) => {
+    try {
+      await callExternalDb('delete', 'support_tickets', undefined, id);
+      setTickets(prev => prev.filter(t => t.id !== id));
+      toast.success('Ticket excluído com sucesso');
+    } catch (error) {
+      toast.error('Erro ao excluir ticket');
+    }
   };
   
   const getTicketsByClient = (clientId: string) => tickets.filter(t => t.clientId === clientId);
 
   return (
     <DataContext.Provider value={{
-      clients, projects, tasks, proposals, contracts, knowledgeItems, tickets,
+      clients, projects, tasks, proposals, contracts, knowledgeItems, tickets, loading,
       addClient, updateClient, deleteClient, getClient,
       addProject, updateProject, deleteProject, getProjectsByClient,
       addTask, updateTask, deleteTask, getTasksByClient, getTasksByProject,
@@ -258,6 +675,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       addContract, updateContract, deleteContract, getContractsByClient,
       addKnowledgeItem, updateKnowledgeItem, deleteKnowledgeItem, getKnowledgeByClient,
       addTicket, updateTicket, deleteTicket, getTicketsByClient,
+      refreshData: loadData,
     }}>
       {children}
     </DataContext.Provider>
