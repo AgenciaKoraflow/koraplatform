@@ -414,79 +414,80 @@ export default function Conhecimento() {
           {viewingItem && (() => {
             const ViewIcon = categoryConfig[viewingItem.category].icon;
             return (
-            <div className="space-y-4 py-4">
-              <div className="flex items-center gap-3">
-                <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center", categoryConfig[viewingItem.category].color)}>
-                  <ViewIcon className="w-6 h-6" />
+              <div className="space-y-4 py-4">
+                <div className="flex items-center gap-3">
+                  <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center", categoryConfig[viewingItem.category].color)}>
+                    <ViewIcon className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-foreground">{viewingItem.title}</h3>
+                    <p className="text-muted-foreground">{getClientName(viewingItem.clientId)}</p>
+                    {getProjectName(viewingItem.projectId) && (
+                      <p className="text-sm text-primary">{getProjectName(viewingItem.projectId)}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold text-foreground">{viewingItem.title}</h3>
-                  <p className="text-muted-foreground">{getClientName(viewingItem.clientId)}</p>
-                  {getProjectName(viewingItem.projectId) && (
-                    <p className="text-sm text-primary">{getProjectName(viewingItem.projectId)}</p>
-                  )}
-                </div>
-              </div>
-              {viewingItem.category === "credencial" && (
-                <div className="space-y-3 p-4 rounded-lg bg-secondary/30">
-                  {viewingItem.username && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Usuário:</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-sm">{viewingItem.username}</span>
-                        <button onClick={() => copyToClipboard(viewingItem.username!)} className="p-1 rounded hover:bg-secondary">
-                          <Copy className="w-3 h-3" />
-                        </button>
+                {viewingItem.category === "credencial" && (
+                  <div className="space-y-3 p-4 rounded-lg bg-secondary/30">
+                    {viewingItem.username && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Usuário:</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-sm">{viewingItem.username}</span>
+                          <button onClick={() => copyToClipboard(viewingItem.username!)} className="p-1 rounded hover:bg-secondary">
+                            <Copy className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  {viewingItem.password && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Senha:</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-sm">{showPasswords[viewingItem.id] ? viewingItem.password : "••••••••"}</span>
-                        <button onClick={() => togglePassword(viewingItem.id)} className="p-1 rounded hover:bg-secondary">
-                          {showPasswords[viewingItem.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                        </button>
-                        <button onClick={() => copyToClipboard(viewingItem.password!)} className="p-1 rounded hover:bg-secondary">
-                          <Copy className="w-3 h-3" />
-                        </button>
+                    )}
+                    {viewingItem.password && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Senha:</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-sm">{showPasswords[viewingItem.id] ? viewingItem.password : "••••••••"}</span>
+                          <button onClick={() => togglePassword(viewingItem.id)} className="p-1 rounded hover:bg-secondary">
+                            {showPasswords[viewingItem.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                          </button>
+                          <button onClick={() => copyToClipboard(viewingItem.password!)} className="p-1 rounded hover:bg-secondary">
+                            <Copy className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  {viewingItem.url && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">URL:</span>
-                      <a href={viewingItem.url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex items-center gap-1">
-                        Abrir <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </div>
-                  )}
+                    )}
+                    {viewingItem.url && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">URL:</span>
+                        <a href={viewingItem.url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex items-center gap-1">
+                          Abrir <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {viewingItem.category === "link" && viewingItem.url && (
+                  <div className="p-4 rounded-lg bg-secondary/30">
+                    <a href={viewingItem.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-2">
+                      {viewingItem.url} <ExternalLink className="w-4 h-4" />
+                    </a>
+                  </div>
+                )}
+                {viewingItem.content && (
+                  <div className="p-4 rounded-lg bg-secondary/30">
+                    <p className="text-sm">{viewingItem.content}</p>
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  {viewingItem.tags.map((tag) => (
+                    <span key={tag} className="px-3 py-1 rounded-lg bg-secondary text-sm text-foreground">{tag}</span>
+                  ))}
                 </div>
-              )}
-              {viewingItem.category === "link" && viewingItem.url && (
-                <div className="p-4 rounded-lg bg-secondary/30">
-                  <a href={viewingItem.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-2">
-                    {viewingItem.url} <ExternalLink className="w-4 h-4" />
-                  </a>
+                <div className="pt-4 border-t border-border text-xs text-muted-foreground">
+                  <p>Criado em: {viewingItem.createdAt}</p>
+                  <p>Atualizado em: {viewingItem.updatedAt}</p>
                 </div>
-              )}
-              {viewingItem.content && (
-                <div className="p-4 rounded-lg bg-secondary/30">
-                  <p className="text-sm">{viewingItem.content}</p>
-                </div>
-              )}
-              <div className="flex flex-wrap gap-2">
-                {viewingItem.tags.map((tag) => (
-                  <span key={tag} className="px-3 py-1 rounded-lg bg-secondary text-sm text-foreground">{tag}</span>
-                ))}
               </div>
-              <div className="pt-4 border-t border-border text-xs text-muted-foreground">
-                <p>Criado em: {viewingItem.createdAt}</p>
-                <p>Atualizado em: {viewingItem.updatedAt}</p>
-              </div>
-            </div>
-          )}
+            );
+          })()}
           <DialogFooter>
             <button onClick={() => setIsViewDialogOpen(false)} className="px-4 py-2 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors">Fechar</button>
             <button onClick={() => { setIsViewDialogOpen(false); viewingItem && openEditDialog(viewingItem); }} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Editar</button>
