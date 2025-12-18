@@ -1,7 +1,7 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Plus, Search, Building2, Mail, Phone, Calendar, Eye, Edit, Trash2, FileText, FolderOpen, ClipboardList, FileSignature } from "lucide-react";
+import { Plus, Search, Building2, Mail, Phone, Calendar, Eye, Edit, Trash2, FileText, FolderOpen, ClipboardList, FileSignature, CheckSquare } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -391,10 +391,14 @@ export default function Clientes() {
               </div>
 
               <Tabs defaultValue="projects" className="w-full">
-                <TabsList className="grid w-full grid-cols-4 bg-secondary/50">
+                <TabsList className="grid w-full grid-cols-5 bg-secondary/50">
                   <TabsTrigger value="projects" className="text-xs">
                     <FolderOpen className="w-3 h-3 mr-1" />
                     Projetos ({clientProjects.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="tasks" className="text-xs">
+                    <CheckSquare className="w-3 h-3 mr-1" />
+                    Tarefas ({clientTasks.length})
                   </TabsTrigger>
                   <TabsTrigger value="proposals" className="text-xs">
                     <ClipboardList className="w-3 h-3 mr-1" />
@@ -419,6 +423,35 @@ export default function Clientes() {
                         <p className="text-xs text-muted-foreground">{project.status} • {project.progress}% concluído</p>
                       </div>
                     ))
+                  )}
+                </TabsContent>
+                <TabsContent value="tasks" className="mt-4 space-y-2">
+                  {clientTasks.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">Nenhuma tarefa vinculada</p>
+                  ) : (
+                    clientTasks.map(task => {
+                      const project = clientProjects.find(p => p.id === task.projectId);
+                      return (
+                        <div key={task.id} className="p-3 rounded-lg bg-secondary/30 border border-border">
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium text-foreground">{task.title}</p>
+                            <span className={cn("px-2 py-0.5 rounded-full text-xs font-medium",
+                              task.status === "done" ? "bg-green-500/10 text-green-500" :
+                              task.status === "in_progress" ? "bg-primary/10 text-primary" :
+                              task.status === "review" ? "bg-amber-500/10 text-amber-500" :
+                              "bg-secondary text-muted-foreground"
+                            )}>
+                              {task.status === "todo" ? "A Fazer" : 
+                               task.status === "in_progress" ? "Em Progresso" :
+                               task.status === "review" ? "Em Revisão" : "Concluído"}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {project ? `Projeto: ${project.name}` : "Sem projeto"} • Prazo: {task.dueDate}
+                          </p>
+                        </div>
+                      );
+                    })
                   )}
                 </TabsContent>
                 <TabsContent value="proposals" className="mt-4 space-y-2">
