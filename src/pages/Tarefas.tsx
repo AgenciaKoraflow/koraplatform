@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ActionMenu } from "@/components/shared/ActionMenu";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
+import { DatePicker } from "@/components/shared/DatePicker";
 import { toast } from "sonner";
 import { useData } from "@/contexts/DataContext";
 import { Task } from "@/types/data";
@@ -350,12 +351,12 @@ export default function Tarefas() {
                 </SelectContent>
               </Select>
             </div>
-            {formData.clientId && availableProjects.length > 0 && (
+            {formData.clientId && (
               <div className="space-y-2">
-                <Label htmlFor="project">Projeto (opcional)</Label>
+                <Label htmlFor="project">Projeto</Label>
                 <Select value={formData.projectId} onValueChange={(value) => setFormData({ ...formData, projectId: value })}>
                   <SelectTrigger className="bg-secondary/50 border-border">
-                    <SelectValue placeholder="Selecione um projeto" />
+                    <SelectValue placeholder={availableProjects.length > 0 ? "Selecione um projeto" : "Nenhum projeto disponível"} />
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border">
                     <SelectItem value="">Nenhum projeto</SelectItem>
@@ -395,7 +396,11 @@ export default function Tarefas() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="dueDate">Prazo</Label>
-                <Input id="dueDate" value={formData.dueDate} onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })} placeholder="DD/MM/AAAA" className="bg-secondary/50 border-border" />
+                <DatePicker
+                  value={formData.dueDate}
+                  onChange={(value) => setFormData({ ...formData, dueDate: value })}
+                  placeholder="Selecione o prazo"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="assignee">Responsável</Label>

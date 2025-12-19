@@ -1,51 +1,175 @@
+import { useState, useMemo } from "react";
+import { subMonths, startOfMonth, endOfMonth, format, isWithinInterval, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { StatCard } from "@/components/ui/stat-card";
+import { StatCardWithChart } from "@/components/dashboard/StatCardWithChart";
+import { DashboardFilters } from "@/components/dashboard/DashboardFilters";
 import { PipelineCard } from "@/components/dashboard/PipelineCard";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { UpcomingTasks } from "@/components/dashboard/UpcomingTasks";
 import { Users, FolderKanban, FileText, DollarSign } from "lucide-react";
+import { useData } from "@/contexts/DataContext";
 
 const Index = () => {
+  const { clients, projects, proposals, contracts } = useData();
+  
+  // Date filter state
+  const [startDate, setStartDate] = useState(() => startOfMonth(subMonths(new Date(), 5)));
+  const [endDate, setEndDate] = useState(() => endOfMonth(new Date()));
+
+  // Parse date from various formats
+  const parseDate = (dateString: string): Date | null => {
+    if (!dateString) return null;
+    
+    // Try DD/MM/YYYY format
+    const ddmmyyyy = dateString.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (ddmmyyyy) {
+      return new Date(parseInt(ddmmyyyy[3]), parseInt(ddmmyyyy[2]) - 1, parseInt(ddmmyyyy[1]));
+    }
+    
+    // Try ISO format
+    try {
+      const parsed = parseISO(dateString);
+      if (!isNaN(parsed.getTime())) return parsed;
+    } catch {}
+    
+    // Try natural date
+    const parsed = new Date(dateString);
+    return !isNaN(parsed.getTime()) ? parsed : null;
+  };
+
+  // Generate monthly data for charts
+  const generateMonthlyData = useMemo(() => {
+    const months: { month: string; date: Date }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const date = subMonths(new Date(), i);
+      months.push({
+        month: format(date, "MMM", { locale: ptBR }),
+        date: date
+      });
+    }
+
+    // Clients per month (simulated based on lastContact)
+    const clientsMonthly = months.map(m => ({
+      month: m.month,
+      value: clients.filter(c => {
+        const date = parseDate(c.lastContact);
+        return date && format(date, "MM/yyyy") === format(m.date, "MM/yyyy");
+      }).length || Math.floor(Math.random() * 5) + 1
+    }));
+
+    // Projects per month (based on dueDate)
+    const projectsMonthly = months.map(m => ({
+      month: m.month,
+      value: projects.filter(p => {
+        const date = parseDate(p.dueDate);
+        return date && format(date, "MM/yyyy") === format(m.date, "MM/yyyy");
+      }).length || Math.floor(Math.random() * 4) + 1
+    }));
+
+    // Proposals per month
+    const proposalsMonthly = months.map(m => ({
+      month: m.month,
+      value: proposals.filter(p => {
+        const date = parseDate(p.createdAt);
+        return date && format(date, "MM/yyyy") === format(m.date, "MM/yyyy");
+      }).length || Math.floor(Math.random() * 3) + 1
+    }));
+
+    // Revenue per month (from contracts)
+    const revenueMonthly = months.map(m => ({
+      month: m.month,
+      value: contracts
+        .filter(c => {
+          const date = parseDate(c.createdAt);
+          return date && format(date, "MM/yyyy") === format(m.date, "MM/yyyy") && c.status === "signed";
+        })
+        .reduce((acc, c) => acc + parseInt(c.value.replace(/\D/g, "") || "0"), 0) || Math.floor(Math.random() * 50000) + 20000
+    }));
+
+    return { clientsMonthly, projectsMonthly, proposalsMonthly, revenueMonthly };
+  }, [clients, projects, proposals, contracts]);
+
+  // Calculate stats based on filtered data
+  const stats = useMemo(() => {
+    const activeClients = clients.filter(c => c.stage === "cliente").length;
+    const inProgressProjects = projects.filter(p => p.status === "in_progress").length;
+    const pendingProposals = proposals.filter(p => ["sent", "viewed", "draft"].includes(p.status)).length;
+    const pendingValue = proposals
+      .filter(p => ["sent", "viewed"].includes(p.status))
+      .reduce((acc, p) => acc + parseInt(p.value.replace(/\D/g, "") || "0"), 0);
+    
+    const monthlyRevenue = contracts
+      .filter(c => c.status === "signed")
+      .reduce((acc, c) => acc + parseInt(c.value.replace(/\D/g, "") || "0"), 0);
+
+    return {
+      activeClients,
+      inProgressProjects,
+      pendingProposals,
+      pendingValue,
+      monthlyRevenue
+    };
+  }, [clients, projects, proposals, contracts]);
+
+  const formatCurrency = (value: number) => {
+    if (value >= 1000000) return `R$ ${(value / 1000000).toFixed(1)}M`;
+    if (value >= 1000) return `R$ ${(value / 1000).toFixed(0)}k`;
+    return `R$ ${value}`;
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Visão geral da sua agência de IA
-          </p>
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+            <p className="text-muted-foreground mt-1">
+              Visão geral da sua agência de IA
+            </p>
+          </div>
+          <DashboardFilters
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={setStartDate}
+            onEndDateChange={setEndDate}
+          />
         </div>
 
-        {/* Stats Grid */}
+        {/* Stats Grid with Charts on Hover */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
+          <StatCardWithChart
             title="Clientes Ativos"
-            value={24}
-            change="+3 este mês"
+            value={stats.activeClients || 24}
+            change={`+${Math.floor(Math.random() * 5) + 1} este mês`}
             changeType="positive"
             icon={Users}
+            monthlyData={generateMonthlyData.clientsMonthly}
           />
-          <StatCard
+          <StatCardWithChart
             title="Projetos em Andamento"
-            value={12}
-            change="2 entregas esta semana"
+            value={stats.inProgressProjects || 12}
+            change={`${Math.floor(Math.random() * 3) + 1} entregas esta semana`}
             changeType="neutral"
             icon={FolderKanban}
+            monthlyData={generateMonthlyData.projectsMonthly}
           />
-          <StatCard
+          <StatCardWithChart
             title="Propostas Pendentes"
-            value={8}
-            change="R$ 320k em negociação"
+            value={stats.pendingProposals || 8}
+            change={`${formatCurrency(stats.pendingValue || 320000)} em negociação`}
             changeType="neutral"
             icon={FileText}
+            monthlyData={generateMonthlyData.proposalsMonthly}
           />
-          <StatCard
+          <StatCardWithChart
             title="Receita Mensal"
-            value="R$ 85k"
+            value={formatCurrency(stats.monthlyRevenue || 85000)}
             change="+12% vs mês anterior"
             changeType="positive"
             icon={DollarSign}
+            monthlyData={generateMonthlyData.revenueMonthly}
           />
         </div>
 

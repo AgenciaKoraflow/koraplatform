@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ActionMenu } from "@/components/shared/ActionMenu";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
+import { DatePicker } from "@/components/shared/DatePicker";
 import { useData } from "@/contexts/DataContext";
 import { toast } from "sonner";
 
@@ -487,7 +488,11 @@ export default function Contratos() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="expiresAt">Validade</Label>
-                <Input id="expiresAt" value={formData.expiresAt} onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })} placeholder="DD MMM YYYY" className="bg-secondary/50 border-border" />
+                <DatePicker
+                  value={formData.expiresAt}
+                  onChange={(value) => setFormData({ ...formData, expiresAt: value })}
+                  placeholder="Selecione a validade"
+                />
               </div>
             </div>
 

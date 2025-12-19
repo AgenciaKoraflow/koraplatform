@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ActionMenu } from "@/components/shared/ActionMenu";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
+import { DatePicker } from "@/components/shared/DatePicker";
 import { useData } from "@/contexts/DataContext";
 import { toast } from "sonner";
 
@@ -342,7 +343,11 @@ export default function Clientes() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="anniversary">Aniversário de Cliente</Label>
-              <Input id="anniversary" type="date" value={formData.anniversary} onChange={(e) => setFormData({ ...formData, anniversary: e.target.value })} className="bg-secondary/50 border-border" />
+              <DatePicker
+                value={formData.anniversary}
+                onChange={(value) => setFormData({ ...formData, anniversary: value })}
+                placeholder="Selecione a data"
+              />
             </div>
           </div>
           <DialogFooter>

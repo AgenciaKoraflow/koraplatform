@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ActionMenu } from "@/components/shared/ActionMenu";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
+import { DatePicker } from "@/components/shared/DatePicker";
 import { toast } from "sonner";
 import { useData } from "@/contexts/DataContext";
 import { Project } from "@/types/data";
@@ -382,7 +383,11 @@ export default function Projetos() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="dueDate">Prazo</Label>
-                <Input id="dueDate" value={formData.dueDate} onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })} placeholder="DD/MM/AAAA" className="bg-secondary/50 border-border" />
+                <DatePicker
+                  value={formData.dueDate}
+                  onChange={(value) => setFormData({ ...formData, dueDate: value })}
+                  placeholder="Selecione o prazo"
+                />
               </div>
             </div>
             <div className="space-y-2">

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ActionMenu } from "@/components/shared/ActionMenu";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
+import { DatePicker } from "@/components/shared/DatePicker";
 import { toast } from "sonner";
 import { useData } from "@/contexts/DataContext";
 import { Proposal } from "@/types/data";
@@ -360,7 +361,11 @@ export default function Propostas() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="validUntil">Validade</Label>
-              <Input id="validUntil" value={formData.validUntil} onChange={(e) => setFormData({ ...formData, validUntil: e.target.value })} placeholder="DD/MM/AAAA" className="bg-secondary/50 border-border" />
+              <DatePicker
+                value={formData.validUntil}
+                onChange={(value) => setFormData({ ...formData, validUntil: value })}
+                placeholder="Selecione a validade"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="services">Serviços (separados por vírgula)</Label>
