@@ -50,6 +50,9 @@ export default function Contratos() {
     value: "",
     status: "draft" as "draft" | "pending_signature" | "signed" | "expired",
     type: "projeto" as "projeto" | "sustentacao" | "consultoria",
+    billingType: "projeto" as "projeto" | "implantacao_recorrencia",
+    recurrenceValue: "",
+    recurrenceStartDate: "",
     expiresAt: "",
     documentName: "",
     documentData: "",
@@ -68,7 +71,7 @@ export default function Contratos() {
 
   const openNewDialog = () => {
     setEditingContractId(null);
-    setFormData({ title: "", clientId: "", projectId: "", proposalId: "", value: "", status: "draft", type: "projeto", expiresAt: "", documentName: "", documentData: "", documentType: "" });
+    setFormData({ title: "", clientId: "", projectId: "", proposalId: "", value: "", status: "draft", type: "projeto", billingType: "projeto", recurrenceValue: "", recurrenceStartDate: "", expiresAt: "", documentName: "", documentData: "", documentType: "" });
     setDocumentPreview(null);
     setIsDialogOpen(true);
   };
@@ -85,6 +88,9 @@ export default function Contratos() {
         value: contract.value,
         status: contract.status,
         type: contract.type,
+        billingType: contract.billingType || "projeto",
+        recurrenceValue: contract.recurrenceValue || "",
+        recurrenceStartDate: contract.recurrenceStartDate || "",
         expiresAt: contract.expiresAt,
         documentName: contract.documentName || "",
         documentData: contract.documentData || "",
@@ -163,6 +169,9 @@ export default function Contratos() {
         value: formData.value,
         status: formData.status,
         type: formData.type,
+        billingType: formData.billingType,
+        recurrenceValue: formData.billingType === "implantacao_recorrencia" ? formData.recurrenceValue : undefined,
+        recurrenceStartDate: formData.billingType === "implantacao_recorrencia" ? formData.recurrenceStartDate : undefined,
         expiresAt: formData.expiresAt,
         documentName: formData.documentName || undefined,
         documentData: formData.documentData || undefined,
@@ -178,6 +187,9 @@ export default function Contratos() {
         value: formData.value,
         status: formData.status,
         type: formData.type,
+        billingType: formData.billingType,
+        recurrenceValue: formData.billingType === "implantacao_recorrencia" ? formData.recurrenceValue : undefined,
+        recurrenceStartDate: formData.billingType === "implantacao_recorrencia" ? formData.recurrenceStartDate : undefined,
         createdAt: today,
         expiresAt: formData.expiresAt,
         documentName: formData.documentName || undefined,
@@ -452,13 +464,26 @@ export default function Contratos() {
               </div>
             )}
 
+            <div className="space-y-2">
+              <Label htmlFor="billingType">Tipo de Faturamento *</Label>
+              <Select value={formData.billingType} onValueChange={(value) => setFormData({ ...formData, billingType: value as typeof formData.billingType })}>
+                <SelectTrigger className="bg-secondary/50 border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border">
+                  <SelectItem value="projeto">Projeto</SelectItem>
+                  <SelectItem value="implantacao_recorrencia">Implantação + Recorrência</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="value">Valor *</Label>
+                <Label htmlFor="value">{formData.billingType === "implantacao_recorrencia" ? "Valor da Implantação *" : "Valor *"}</Label>
                 <Input id="value" value={formData.value} onChange={(e) => setFormData({ ...formData, value: e.target.value })} placeholder="R$ 0,00" className="bg-secondary/50 border-border" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="type">Tipo</Label>
+                <Label htmlFor="type">Tipo de Contrato</Label>
                 <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value as typeof formData.type })}>
                   <SelectTrigger className="bg-secondary/50 border-border">
                     <SelectValue />
@@ -471,6 +496,23 @@ export default function Contratos() {
                 </Select>
               </div>
             </div>
+
+            {formData.billingType === "implantacao_recorrencia" && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="recurrenceValue">Valor da Recorrência Mensal *</Label>
+                  <Input id="recurrenceValue" value={formData.recurrenceValue} onChange={(e) => setFormData({ ...formData, recurrenceValue: e.target.value })} placeholder="R$ 0,00" className="bg-secondary/50 border-border" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="recurrenceStartDate">Data de Início da Recorrência</Label>
+                  <DatePicker
+                    value={formData.recurrenceStartDate}
+                    onChange={(value) => setFormData({ ...formData, recurrenceStartDate: value })}
+                    placeholder="Selecione a data"
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
