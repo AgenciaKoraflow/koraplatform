@@ -340,12 +340,12 @@ export default function Conhecimento() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="client">Cliente</Label>
-                <Select value={formData.clientId} onValueChange={(value) => setFormData({ ...formData, clientId: value, projectId: "" })}>
+                <Select value={formData.clientId || "internal"} onValueChange={(value) => setFormData({ ...formData, clientId: value === "internal" ? "" : value, projectId: "" })}>
                   <SelectTrigger className="bg-secondary/50 border-border">
                     <SelectValue placeholder="Interno" />
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border">
-                    <SelectItem value="">Interno</SelectItem>
+                    <SelectItem value="internal">Interno</SelectItem>
                     {clients.map(client => (
                       <SelectItem key={client.id} value={client.id}>{client.company}</SelectItem>
                     ))}
@@ -356,12 +356,12 @@ export default function Conhecimento() {
             {formData.clientId && availableProjects.length > 0 && (
               <div className="space-y-2">
                 <Label htmlFor="project">Projeto (opcional)</Label>
-                <Select value={formData.projectId} onValueChange={(value) => setFormData({ ...formData, projectId: value })}>
+                <Select value={formData.projectId || "none"} onValueChange={(value) => setFormData({ ...formData, projectId: value === "none" ? "" : value })}>
                   <SelectTrigger className="bg-secondary/50 border-border">
                     <SelectValue placeholder="Selecione um projeto" />
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border">
-                    <SelectItem value="">Nenhum projeto</SelectItem>
+                    <SelectItem value="none">Nenhum projeto</SelectItem>
                     {availableProjects.map(project => (
                       <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
                     ))}

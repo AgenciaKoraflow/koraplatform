@@ -421,12 +421,12 @@ export default function Contratos() {
             {formData.clientId && clientProjects.length > 0 && (
               <div className="space-y-2">
                 <Label htmlFor="projectId">Projeto (opcional)</Label>
-                <Select value={formData.projectId} onValueChange={(value) => setFormData({ ...formData, projectId: value })}>
+                <Select value={formData.projectId || "none"} onValueChange={(value) => setFormData({ ...formData, projectId: value === "none" ? "" : value })}>
                   <SelectTrigger className="bg-secondary/50 border-border">
                     <SelectValue placeholder="Vincular a um projeto" />
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border">
-                    <SelectItem value="">Nenhum</SelectItem>
+                    <SelectItem value="none">Nenhum</SelectItem>
                     {clientProjects.map((project) => (
                       <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
                     ))}
@@ -438,12 +438,12 @@ export default function Contratos() {
             {formData.clientId && clientProposals.length > 0 && (
               <div className="space-y-2">
                 <Label htmlFor="proposalId">Proposta (opcional)</Label>
-                <Select value={formData.proposalId} onValueChange={(value) => setFormData({ ...formData, proposalId: value })}>
+                <Select value={formData.proposalId || "none"} onValueChange={(value) => setFormData({ ...formData, proposalId: value === "none" ? "" : value })}>
                   <SelectTrigger className="bg-secondary/50 border-border">
                     <SelectValue placeholder="Vincular a uma proposta" />
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border">
-                    <SelectItem value="">Nenhuma</SelectItem>
+                    <SelectItem value="none">Nenhuma</SelectItem>
                     {clientProposals.map((proposal) => (
                       <SelectItem key={proposal.id} value={proposal.id}>{proposal.title}</SelectItem>
                     ))}
