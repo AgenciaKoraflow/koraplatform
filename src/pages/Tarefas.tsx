@@ -354,12 +354,12 @@ export default function Tarefas() {
             {formData.clientId && (
               <div className="space-y-2">
                 <Label htmlFor="project">Projeto</Label>
-                <Select value={formData.projectId} onValueChange={(value) => setFormData({ ...formData, projectId: value })}>
+                <Select value={formData.projectId || "none"} onValueChange={(value) => setFormData({ ...formData, projectId: value === "none" ? "" : value })}>
                   <SelectTrigger className="bg-secondary/50 border-border">
                     <SelectValue placeholder={availableProjects.length > 0 ? "Selecione um projeto" : "Nenhum projeto disponível"} />
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border">
-                    <SelectItem value="">Nenhum projeto</SelectItem>
+                    <SelectItem value="none">Nenhum projeto</SelectItem>
                     {availableProjects.map(project => (
                       <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
                     ))}
