@@ -200,6 +200,24 @@ function parseValue(value: string): number | null {
   return parseFloat(num) || null;
 }
 
+// Convert DD/MM/YYYY to YYYY-MM-DD for PostgreSQL
+function toISODate(dateString: string | undefined): string | null {
+  if (!dateString) return null;
+  
+  // Check if already in ISO format (YYYY-MM-DD)
+  if (/^\d{4}-\d{2}-\d{2}/.test(dateString)) {
+    return dateString.split('T')[0];
+  }
+  
+  // Convert DD/MM/YYYY to YYYY-MM-DD
+  const match = dateString.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (match) {
+    return `${match[3]}-${match[2]}-${match[1]}`;
+  }
+  
+  return null;
+}
+
 export function DataProvider({ children }: { children: ReactNode }) {
   const [clients, setClients] = useState<Client[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -254,7 +272,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         phone: client.phone,
         pipeline_stage: client.stage,
         notes: client.value,
-        anniversary: client.anniversary
+        anniversary: toISODate(client.anniversary)
       };
       const result = await callExternalDb('insert', 'clients', dbData);
       if (result && result[0]) {
@@ -279,7 +297,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (client.phone) dbData.phone = client.phone;
       if (client.stage) dbData.pipeline_stage = client.stage;
       if (client.value) dbData.notes = client.value;
-      if (client.anniversary) dbData.anniversary = client.anniversary;
+      if (client.anniversary) dbData.anniversary = toISODate(client.anniversary);
       dbData.updated_at = new Date().toISOString();
       
       await callExternalDb('update', 'clients', dbData, id);
@@ -317,7 +335,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         description: project.description,
         status: project.status,
         progress: project.progress,
-        end_date: project.dueDate
+        end_date: toISODate(project.dueDate)
       };
       const result = await callExternalDb('insert', 'projects', dbData);
       if (result && result[0]) {
@@ -341,7 +359,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (project.description) dbData.description = project.description;
       if (project.status) dbData.status = project.status;
       if (project.progress !== undefined) dbData.progress = project.progress;
-      if (project.dueDate) dbData.end_date = project.dueDate;
+      if (project.dueDate) dbData.end_date = toISODate(project.dueDate);
       dbData.updated_at = new Date().toISOString();
       
       await callExternalDb('update', 'projects', dbData, id);
@@ -375,7 +393,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         description: task.description,
         status: task.status,
         priority: task.priority,
-        due_date: task.dueDate,
+        due_date: toISODate(task.dueDate),
         assigned_to: task.assignee
       };
       const result = await callExternalDb('insert', 'tasks', dbData);
@@ -401,7 +419,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (task.description) dbData.description = task.description;
       if (task.status) dbData.status = task.status;
       if (task.priority) dbData.priority = task.priority;
-      if (task.dueDate) dbData.due_date = task.dueDate;
+      if (task.dueDate) dbData.due_date = toISODate(task.dueDate);
       if (task.assignee) dbData.assigned_to = task.assignee;
       dbData.updated_at = new Date().toISOString();
       
@@ -435,7 +453,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         title: proposal.title,
         value: parseValue(proposal.value),
         status: proposal.status,
-        valid_until: proposal.validUntil
+        valid_until: toISODate(proposal.validUntil)
       };
       const result = await callExternalDb('insert', 'proposals', dbData);
       if (result && result[0]) {
@@ -459,7 +477,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (proposal.title) dbData.title = proposal.title;
       if (proposal.value) dbData.value = parseValue(proposal.value);
       if (proposal.status) dbData.status = proposal.status;
-      if (proposal.validUntil) dbData.valid_until = proposal.validUntil;
+      if (proposal.validUntil) dbData.valid_until = toISODate(proposal.validUntil);
       dbData.updated_at = new Date().toISOString();
       
       await callExternalDb('update', 'proposals', dbData, id);
@@ -492,11 +510,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         title: contract.title,
         value: parseValue(contract.value),
         status: contract.status,
-        start_date: contract.createdAt,
-        end_date: contract.expiresAt,
+        start_date: toISODate(contract.createdAt),
+        end_date: toISODate(contract.expiresAt),
         document_name: contract.documentName,
         document_data: contract.documentData,
-        signed_at: contract.signedAt
+        signed_at: toISODate(contract.signedAt)
       };
       const result = await callExternalDb('insert', 'contracts', dbData);
       if (result && result[0]) {
@@ -521,10 +539,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (contract.title) dbData.title = contract.title;
       if (contract.value) dbData.value = parseValue(contract.value);
       if (contract.status) dbData.status = contract.status;
-      if (contract.expiresAt) dbData.end_date = contract.expiresAt;
+      if (contract.expiresAt) dbData.end_date = toISODate(contract.expiresAt);
       if (contract.documentName) dbData.document_name = contract.documentName;
       if (contract.documentData) dbData.document_data = contract.documentData;
-      if (contract.signedAt) dbData.signed_at = contract.signedAt;
+      if (contract.signedAt) dbData.signed_at = toISODate(contract.signedAt);
       dbData.updated_at = new Date().toISOString();
       
       await callExternalDb('update', 'contracts', dbData, id);
