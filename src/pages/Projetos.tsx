@@ -391,8 +391,40 @@ export default function Projetos() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="team">Equipe (separados por vírgula)</Label>
-              <Input id="team" value={formData.team} onChange={(e) => setFormData({ ...formData, team: e.target.value })} placeholder="João, Maria, Pedro" className="bg-secondary/50 border-border" />
+              <Label htmlFor="team">Equipe</Label>
+              <Select value={formData.team.split(",")[0]?.trim() || "none"} onValueChange={(value) => {
+                if (value === "none") {
+                  setFormData({ ...formData, team: "" });
+                } else {
+                  const currentTeam = formData.team.split(",").map(t => t.trim()).filter(Boolean);
+                  if (!currentTeam.includes(value)) {
+                    setFormData({ ...formData, team: [...currentTeam, value].join(", ") });
+                  }
+                }
+              }}>
+                <SelectTrigger className="bg-secondary/50 border-border">
+                  <SelectValue placeholder="Adicionar membro" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border">
+                  <SelectItem value="none">Selecione para adicionar</SelectItem>
+                  <SelectItem value="James">James</SelectItem>
+                  <SelectItem value="João">João</SelectItem>
+                  <SelectItem value="Edson">Edson</SelectItem>
+                </SelectContent>
+              </Select>
+              {formData.team && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {formData.team.split(",").map(t => t.trim()).filter(Boolean).map((member, i) => (
+                    <span key={i} className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary text-sm rounded-md">
+                      {member}
+                      <button type="button" onClick={() => {
+                        const newTeam = formData.team.split(",").map(t => t.trim()).filter(t => t !== member).join(", ");
+                        setFormData({ ...formData, team: newTeam });
+                      }} className="hover:text-destructive">×</button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>

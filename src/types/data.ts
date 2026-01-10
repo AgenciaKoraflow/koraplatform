@@ -56,6 +56,9 @@ export interface Contract {
   value: string;
   status: "draft" | "pending_signature" | "signed" | "expired";
   type: "projeto" | "sustentacao" | "consultoria";
+  billingType: "projeto" | "implantacao_recorrencia";
+  recurrenceValue?: string;
+  recurrenceStartDate?: string;
   createdAt: string;
   signedAt?: string;
   expiresAt: string;

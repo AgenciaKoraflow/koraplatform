@@ -469,7 +469,17 @@ export default function Sustentacao() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="assignee">Responsável</Label>
-              <Input id="assignee" value={formData.assignee} onChange={(e) => setFormData({ ...formData, assignee: e.target.value })} placeholder="Nome do responsável" className="bg-secondary/50 border-border" />
+              <Select value={formData.assignee || "none"} onValueChange={(value) => setFormData({ ...formData, assignee: value === "none" ? "" : value })}>
+                <SelectTrigger className="bg-secondary/50 border-border">
+                  <SelectValue placeholder="Selecione o responsável" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border">
+                  <SelectItem value="none">Nenhum</SelectItem>
+                  <SelectItem value="James">James</SelectItem>
+                  <SelectItem value="João">João</SelectItem>
+                  <SelectItem value="Edson">Edson</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>
