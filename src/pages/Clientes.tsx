@@ -43,6 +43,7 @@ export default function Clientes() {
     stage: "prospeccao" as keyof typeof stageConfig,
     value: "",
     anniversary: "",
+    head: "",
   });
 
   const editingClient = editingClientId ? clients.find(c => c.id === editingClientId) : null;
@@ -57,7 +58,7 @@ export default function Clientes() {
 
   const openNewDialog = () => {
     setEditingClientId(null);
-    setFormData({ name: "", company: "", email: "", phone: "", stage: "prospeccao", value: "", anniversary: "" });
+    setFormData({ name: "", company: "", email: "", phone: "", stage: "prospeccao", value: "", anniversary: "", head: "" });
     setIsDialogOpen(true);
   };
 
@@ -73,6 +74,7 @@ export default function Clientes() {
         stage: client.stage,
         value: client.value,
         anniversary: client.anniversary || "",
+        head: client.head || "",
       });
       setIsDialogOpen(true);
     }

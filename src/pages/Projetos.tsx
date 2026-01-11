@@ -43,6 +43,7 @@ export default function Projetos() {
     status: "planning" as Project["status"],
     dueDate: "",
     team: "",
+    head: "",
   });
 
   const filteredProjects = projects.filter((project) => {

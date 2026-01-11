@@ -1,6 +1,6 @@
 import { ReactNode, useState } from "react";
 import { AppSidebar } from "./AppSidebar";
-import { Search, User, Menu, X } from "lucide-react";
+import { Search, User, Menu, X, Bell } from "lucide-react";
 import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { cn } from "@/lib/utils";
@@ -22,7 +22,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
@@ -37,11 +37,11 @@ export function AppLayout({ children }: AppLayoutProps) {
       
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Bar */}
-        <header className="h-14 sm:h-16 border-b border-border flex items-center justify-between px-4 sm:px-6 bg-card/50 backdrop-blur-sm sticky top-0 z-30">
+        <header className="h-16 border-b border-border flex items-center justify-between px-4 sm:px-6 bg-card sticky top-0 z-30">
           {/* Mobile menu button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 -ml-2 rounded-lg hover:bg-secondary transition-colors"
+            className="lg:hidden p-2 -ml-2 rounded-xl hover:bg-secondary transition-colors"
           >
             {mobileMenuOpen ? (
               <X className="w-5 h-5 text-foreground" />
@@ -56,7 +56,7 @@ export function AppLayout({ children }: AppLayoutProps) {
               <input
                 type="text"
                 placeholder="Buscar..."
-                className="w-full h-10 pl-10 pr-4 rounded-lg bg-secondary/50 border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                className="w-full h-10 pl-10 pr-4 rounded-xl bg-secondary border-0 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
               />
             </div>
           </div>
@@ -65,19 +65,19 @@ export function AppLayout({ children }: AppLayoutProps) {
             <ThemeToggle />
             <NotificationDropdown />
             
-            <div className="hidden sm:flex items-center gap-3 pl-3 border-l border-border">
+            <div className="hidden sm:flex items-center gap-3 pl-4 ml-2 border-l border-border">
               <div className="text-right">
-                <p className="text-sm font-medium">Admin</p>
-                <p className="text-xs text-muted-foreground">admin@agencia.ia</p>
+                <p className="text-sm font-semibold text-foreground">João Silva</p>
+                <p className="text-xs text-muted-foreground">Administrador</p>
               </div>
-              <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center">
-                <User className="w-5 h-5 text-primary" />
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                <span className="text-sm font-semibold text-primary-foreground">JS</span>
               </div>
             </div>
             
             {/* Mobile avatar only */}
-            <div className="sm:hidden w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-              <User className="w-4 h-4 text-primary" />
+            <div className="sm:hidden w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+              <span className="text-xs font-semibold text-primary-foreground">JS</span>
             </div>
           </div>
         </header>

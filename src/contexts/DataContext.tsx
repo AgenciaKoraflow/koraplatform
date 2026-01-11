@@ -121,7 +121,7 @@ function mapDbTask(db: any): Task {
     status: db.status || 'todo',
     priority: db.priority || 'medium',
     dueDate: db.due_date || '',
-    assignee: db.assigned_to || ''
+    assignees: db.assigned_to ? db.assigned_to.split(',').map((s: string) => s.trim()).filter(Boolean) : []
   };
 }
 
@@ -397,7 +397,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         status: task.status,
         priority: task.priority,
         due_date: toISODate(task.dueDate),
-        assigned_to: task.assignee
+        assigned_to: task.assignees.join(', ')
       };
       const result = await callExternalDb('insert', 'tasks', dbData);
       if (result && result[0]) {
@@ -423,7 +423,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (task.status) dbData.status = task.status;
       if (task.priority) dbData.priority = task.priority;
       if (task.dueDate) dbData.due_date = toISODate(task.dueDate);
-      if (task.assignee) dbData.assigned_to = task.assignee;
+      if (task.assignees) dbData.assigned_to = task.assignees.join(', ');
       dbData.updated_at = new Date().toISOString();
       
       await callExternalDb('update', 'tasks', dbData, id);

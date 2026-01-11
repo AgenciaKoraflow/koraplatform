@@ -8,6 +8,7 @@ export interface Client {
   value: string;
   lastContact: string;
   anniversary?: string;
+  head?: string;
 }
 
 export interface Project {
@@ -21,6 +22,7 @@ export interface Project {
   team: string[];
   tasks: number;
   completedTasks: number;
+  head?: string;
 }
 
 export interface Task {
@@ -32,7 +34,7 @@ export interface Task {
   status: "todo" | "in_progress" | "review" | "done";
   priority: "low" | "medium" | "high";
   dueDate: string;
-  assignee: string;
+  assignees: string[];
 }
 
 export interface Proposal {
