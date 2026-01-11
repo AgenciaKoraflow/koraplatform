@@ -11,6 +11,7 @@ import { ActionMenu } from "@/components/shared/ActionMenu";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
 import { DatePicker } from "@/components/shared/DatePicker";
+import { MultiSelect, TEAM_OPTIONS } from "@/components/shared/MultiSelect";
 import { toast } from "sonner";
 import { useData } from "@/contexts/DataContext";
 import { Task } from "@/types/data";
@@ -44,7 +45,7 @@ export default function Tarefas() {
     description: "",
     clientId: "",
     projectId: "",
-    assignee: "",
+    assignees: [] as string[],
     status: "todo" as Task["status"],
     priority: "medium" as Task["priority"],
     dueDate: "",
@@ -73,7 +74,7 @@ export default function Tarefas() {
   const openNewDialog = (status: Task["status"] = "todo") => {
     setEditingTask(null);
     setDefaultStatus(status);
-    setFormData({ title: "", description: "", clientId: "", projectId: "", assignee: "", status, priority: "medium", dueDate: "" });
+    setFormData({ title: "", description: "", clientId: "", projectId: "", assignees: [], status, priority: "medium", dueDate: "" });
     setIsDialogOpen(true);
   };
 
@@ -84,7 +85,7 @@ export default function Tarefas() {
       description: task.description,
       clientId: task.clientId,
       projectId: task.projectId || "",
-      assignee: task.assignee,
+      assignees: task.assignees || [],
       status: task.status,
       priority: task.priority,
       dueDate: task.dueDate,
@@ -109,7 +110,7 @@ export default function Tarefas() {
         description: formData.description,
         clientId: formData.clientId,
         projectId: formData.projectId || undefined,
-        assignee: formData.assignee,
+        assignees: formData.assignees,
         status: formData.status,
         priority: formData.priority,
         dueDate: formData.dueDate,
@@ -121,7 +122,7 @@ export default function Tarefas() {
         projectId: formData.projectId || undefined,
         title: formData.title,
         description: formData.description,
-        assignee: formData.assignee,
+        assignees: formData.assignees,
         status: formData.status,
         priority: formData.priority,
         dueDate: formData.dueDate || "A definir",
@@ -149,6 +150,24 @@ export default function Tarefas() {
     if (!projectId) return null;
     const project = projects.find(p => p.id === projectId);
     return project?.name;
+  };
+
+  const renderAssignees = (assignees: string[]) => {
+    if (!assignees || assignees.length === 0) return null;
+    return (
+      <div className="flex -space-x-2">
+        {assignees.slice(0, 3).map((name, i) => (
+          <div key={i} className="w-6 h-6 rounded-full bg-primary/20 border-2 border-card flex items-center justify-center">
+            <span className="text-xs font-medium text-primary">{name.substring(0, 2)}</span>
+          </div>
+        ))}
+        {assignees.length > 3 && (
+          <div className="w-6 h-6 rounded-full bg-secondary border-2 border-card flex items-center justify-center">
+            <span className="text-xs text-muted-foreground">+{assignees.length - 3}</span>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -215,11 +234,7 @@ export default function Tarefas() {
                             <Calendar className="w-3 h-3" />
                             <span>{task.dueDate}</span>
                           </div>
-                          {task.assignee && (
-                            <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-                              <span className="text-xs font-medium text-primary">{task.assignee.substring(0, 2)}</span>
-                            </div>
-                          )}
+                          {renderAssignees(task.assignees)}
                         </div>
                       </div>
                     ))}
@@ -244,6 +259,7 @@ export default function Tarefas() {
                   <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase">Status</th>
                   <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase">Prioridade</th>
                   <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase">Prazo</th>
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase">Responsáveis</th>
                   <th className="text-right px-6 py-4"></th>
                 </tr>
               </thead>
@@ -272,6 +288,7 @@ export default function Tarefas() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-muted-foreground">{task.dueDate}</td>
+                    <td className="px-6 py-4">{renderAssignees(task.assignees)}</td>
                     <td className="px-6 py-4 text-right">
                       <ActionMenu items={[
                         { label: "Visualizar", icon: Eye, onClick: () => openViewDialog(task) },
@@ -311,11 +328,7 @@ export default function Tarefas() {
                 </div>
                 <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
                   <span className="text-xs text-muted-foreground">{task.dueDate}</span>
-                  {task.assignee && (
-                    <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-                      <span className="text-xs font-medium text-primary">{task.assignee.substring(0, 2)}</span>
-                    </div>
-                  )}
+                  {renderAssignees(task.assignees)}
                 </div>
               </div>
             ))}
@@ -344,7 +357,7 @@ export default function Tarefas() {
                 <SelectTrigger className="bg-secondary/50 border-border">
                   <SelectValue placeholder="Selecione um cliente" />
                 </SelectTrigger>
-                <SelectContent className="bg-card border-border">
+                <SelectContent className="bg-popover border-border z-50">
                   {clients.map(client => (
                     <SelectItem key={client.id} value={client.id}>{client.company} - {client.name}</SelectItem>
                   ))}
@@ -358,7 +371,7 @@ export default function Tarefas() {
                   <SelectTrigger className="bg-secondary/50 border-border">
                     <SelectValue placeholder={availableProjects.length > 0 ? "Selecione um projeto" : "Nenhum projeto disponível"} />
                   </SelectTrigger>
-                  <SelectContent className="bg-card border-border">
+                  <SelectContent className="bg-popover border-border z-50">
                     <SelectItem value="none">Nenhum projeto</SelectItem>
                     {availableProjects.map(project => (
                       <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
@@ -374,7 +387,7 @@ export default function Tarefas() {
                   <SelectTrigger className="bg-secondary/50 border-border">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-card border-border">
+                  <SelectContent className="bg-popover border-border z-50">
                     {statusColumns.map(col => <SelectItem key={col.id} value={col.id}>{col.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
@@ -385,7 +398,7 @@ export default function Tarefas() {
                   <SelectTrigger className="bg-secondary/50 border-border">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-card border-border">
+                  <SelectContent className="bg-popover border-border z-50">
                     {Object.entries(priorityConfig).map(([key, config]) => (
                       <SelectItem key={key} value={key}>{config.label}</SelectItem>
                     ))}
@@ -393,29 +406,22 @@ export default function Tarefas() {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="dueDate">Prazo</Label>
-                <DatePicker
-                  value={formData.dueDate}
-                  onChange={(value) => setFormData({ ...formData, dueDate: value })}
-                  placeholder="Selecione o prazo"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="assignee">Responsável</Label>
-                <Select value={formData.assignee || "none"} onValueChange={(value) => setFormData({ ...formData, assignee: value === "none" ? "" : value })}>
-                  <SelectTrigger className="bg-secondary/50 border-border">
-                    <SelectValue placeholder="Selecione o responsável" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-card border-border">
-                    <SelectItem value="none">Nenhum</SelectItem>
-                    <SelectItem value="James">James</SelectItem>
-                    <SelectItem value="João">João</SelectItem>
-                    <SelectItem value="Edson">Edson</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="dueDate">Prazo</Label>
+              <DatePicker
+                value={formData.dueDate}
+                onChange={(value) => setFormData({ ...formData, dueDate: value })}
+                placeholder="Selecione o prazo"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Responsáveis</Label>
+              <MultiSelect
+                options={TEAM_OPTIONS}
+                value={formData.assignees}
+                onChange={(value) => setFormData({ ...formData, assignees: value })}
+                placeholder="Adicionar responsável"
+              />
             </div>
           </div>
           <DialogFooter>
@@ -463,8 +469,16 @@ export default function Tarefas() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1">Responsável</p>
-                  <p className="font-medium">{viewingTask.assignee || "Não atribuído"}</p>
+                  <p className="text-xs text-muted-foreground mb-1">Responsáveis</p>
+                  {viewingTask.assignees && viewingTask.assignees.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {viewingTask.assignees.map((name, i) => (
+                        <span key={i} className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full">{name}</span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="font-medium">Não atribuído</p>
+                  )}
                 </div>
               </div>
             </div>
