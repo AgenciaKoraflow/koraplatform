@@ -36,8 +36,12 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
   const location = useLocation();
 
   const handleNavClick = () => {
+    // No mobile, fecha o menu; no desktop, apenas colapsa se não estiver
     if (onNavigate) {
       onNavigate();
+    } else {
+      // Desktop: colapsa após seleção
+      setCollapsed(true);
     }
   };
 
