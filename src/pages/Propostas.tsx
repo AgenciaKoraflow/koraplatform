@@ -14,6 +14,7 @@ import { DatePicker } from "@/components/shared/DatePicker";
 import { toast } from "sonner";
 import { useData } from "@/contexts/DataContext";
 import { Proposal } from "@/types/data";
+import { CurrencyInput } from "@/components/shared/CurrencyInput";
 
 const statusConfig = {
   draft: { label: "Rascunho", color: "bg-slate-500/10 text-slate-500", icon: FileText },
@@ -343,7 +344,7 @@ export default function Propostas() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="value">Valor *</Label>
-                <Input id="value" value={formData.value} onChange={(e) => setFormData({ ...formData, value: e.target.value })} placeholder="R$ 0,00" className="bg-secondary/50 border-border" />
+                <CurrencyInput id="value" value={formData.value} onChange={(value) => setFormData({ ...formData, value })} placeholder="R$ 0,00" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>

@@ -95,6 +95,7 @@ export default function Projetos() {
         status: formData.status,
         dueDate: formData.dueDate || "A definir",
         team: teamArray,
+        head: formData.head || undefined,
       });
       toast.success("Projeto atualizado com sucesso!");
     } else {
@@ -108,6 +109,7 @@ export default function Projetos() {
         team: teamArray,
         tasks: 0,
         completedTasks: 0,
+        head: formData.head || undefined,
       });
       toast.success("Projeto criado com sucesso!");
     }
@@ -392,41 +394,55 @@ export default function Projetos() {
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="team">Equipe</Label>
-              <Select value={formData.team.split(",")[0]?.trim() || "none"} onValueChange={(value) => {
-                if (value === "none") {
-                  setFormData({ ...formData, team: "" });
-                } else {
-                  const currentTeam = formData.team.split(",").map(t => t.trim()).filter(Boolean);
-                  if (!currentTeam.includes(value)) {
-                    setFormData({ ...formData, team: [...currentTeam, value].join(", ") });
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="team">Equipe</Label>
+                <Select value="none" onValueChange={(value) => {
+                  if (value !== "none") {
+                    const currentTeam = formData.team.split(",").map(t => t.trim()).filter(Boolean);
+                    if (!currentTeam.includes(value)) {
+                      setFormData({ ...formData, team: [...currentTeam, value].join(", ") });
+                    }
                   }
-                }
-              }}>
-                <SelectTrigger className="bg-secondary/50 border-border">
-                  <SelectValue placeholder="Adicionar membro" />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border">
-                  <SelectItem value="none">Selecione para adicionar</SelectItem>
-                  <SelectItem value="James">James</SelectItem>
-                  <SelectItem value="João">João</SelectItem>
-                  <SelectItem value="Edson">Edson</SelectItem>
-                </SelectContent>
-              </Select>
-              {formData.team && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {formData.team.split(",").map(t => t.trim()).filter(Boolean).map((member, i) => (
-                    <span key={i} className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary text-sm rounded-md">
-                      {member}
-                      <button type="button" onClick={() => {
-                        const newTeam = formData.team.split(",").map(t => t.trim()).filter(t => t !== member).join(", ");
-                        setFormData({ ...formData, team: newTeam });
-                      }} className="hover:text-destructive">×</button>
-                    </span>
-                  ))}
-                </div>
-              )}
+                }}>
+                  <SelectTrigger className="bg-secondary/50 border-border">
+                    <SelectValue placeholder="Adicionar membro" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    <SelectItem value="none">Selecione para adicionar</SelectItem>
+                    <SelectItem value="James">James</SelectItem>
+                    <SelectItem value="João">João</SelectItem>
+                    <SelectItem value="Edson">Edson</SelectItem>
+                  </SelectContent>
+                </Select>
+                {formData.team && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {formData.team.split(",").map(t => t.trim()).filter(Boolean).map((member, i) => (
+                      <span key={i} className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary text-sm rounded-md">
+                        {member}
+                        <button type="button" onClick={() => {
+                          const newTeam = formData.team.split(",").map(t => t.trim()).filter(t => t !== member).join(", ");
+                          setFormData({ ...formData, team: newTeam });
+                        }} className="hover:text-destructive">×</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="head">Head</Label>
+                <Select value={formData.head || "none"} onValueChange={(value) => setFormData({ ...formData, head: value === "none" ? "" : value })}>
+                  <SelectTrigger className="bg-secondary/50 border-border">
+                    <SelectValue placeholder="Selecione o Head" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    <SelectItem value="none">Nenhum</SelectItem>
+                    <SelectItem value="James">James</SelectItem>
+                    <SelectItem value="João">João</SelectItem>
+                    <SelectItem value="Edson">Edson</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
           <DialogFooter>
