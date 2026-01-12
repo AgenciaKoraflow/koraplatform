@@ -56,7 +56,7 @@ export default function Projetos() {
 
   const openNewDialog = () => {
     setEditingProject(null);
-    setFormData({ name: "", clientId: "", description: "", status: "planning", dueDate: "", team: "" });
+    setFormData({ name: "", clientId: "", description: "", status: "planning", dueDate: "", team: "", head: "" });
     setIsDialogOpen(true);
   };
 
@@ -69,6 +69,7 @@ export default function Projetos() {
       status: project.status,
       dueDate: project.dueDate,
       team: project.team.join(", "),
+      head: project.head || "",
     });
     setIsDialogOpen(true);
   };
