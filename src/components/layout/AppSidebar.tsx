@@ -110,7 +110,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
                   to="/configuracoes"
                   onClick={handleNavClick}
                   className={cn(
-                    "flex items-center justify-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
+                    "flex items-center justify-center px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
                     "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   )}
                 >
@@ -135,13 +135,29 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
             </NavLink>
           )}
           
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="w-full hidden lg:flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all"
-          >
-            <ChevronLeft className={cn("w-5 h-5 transition-transform duration-300", collapsed && "rotate-180")} />
-            {!collapsed && <span>Recolher</span>}
-          </button>
+          {collapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setCollapsed(!collapsed)}
+                  className="w-full flex items-center justify-center px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all"
+                >
+                  <ChevronLeft className="w-5 h-5 rotate-180" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="bg-popover border-border">
+                Expandir menu
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <button
+              onClick={() => setCollapsed(!collapsed)}
+              className="w-full hidden lg:flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all"
+            >
+              <ChevronLeft className="w-5 h-5 transition-transform duration-300" />
+              <span>Recolher</span>
+            </button>
+          )}
         </div>
       </aside>
     </TooltipProvider>

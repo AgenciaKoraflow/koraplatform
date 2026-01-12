@@ -12,6 +12,7 @@ import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
 import { DatePicker } from "@/components/shared/DatePicker";
 import { useData } from "@/contexts/DataContext";
 import { toast } from "sonner";
+import { CurrencyInput } from "@/components/shared/CurrencyInput";
 
 const statusConfig = {
   draft: { label: "Rascunho", color: "bg-slate-500/10 text-slate-500 border-slate-500/20", icon: FileSignature },
@@ -480,7 +481,7 @@ export default function Contratos() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="value">{formData.billingType === "implantacao_recorrencia" ? "Valor da Implantação *" : "Valor *"}</Label>
-                <Input id="value" value={formData.value} onChange={(e) => setFormData({ ...formData, value: e.target.value })} placeholder="R$ 0,00" className="bg-secondary/50 border-border" />
+                <CurrencyInput id="value" value={formData.value} onChange={(value) => setFormData({ ...formData, value })} placeholder="R$ 0,00" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="type">Tipo de Contrato</Label>
@@ -501,7 +502,7 @@ export default function Contratos() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="recurrenceValue">Valor da Recorrência Mensal *</Label>
-                  <Input id="recurrenceValue" value={formData.recurrenceValue} onChange={(e) => setFormData({ ...formData, recurrenceValue: e.target.value })} placeholder="R$ 0,00" className="bg-secondary/50 border-border" />
+                  <CurrencyInput id="recurrenceValue" value={formData.recurrenceValue} onChange={(value) => setFormData({ ...formData, recurrenceValue: value })} placeholder="R$ 0,00" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="recurrenceStartDate">Data de Início da Recorrência</Label>

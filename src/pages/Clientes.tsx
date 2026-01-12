@@ -13,6 +13,7 @@ import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
 import { DatePicker } from "@/components/shared/DatePicker";
 import { useData } from "@/contexts/DataContext";
 import { toast } from "sonner";
+import { CurrencyInput } from "@/components/shared/CurrencyInput";
 
 const stageConfig = {
   prospeccao: { label: "Prospecção", color: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
@@ -340,16 +341,32 @@ export default function Clientes() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="value">Valor Potencial</Label>
-                <Input id="value" value={formData.value} onChange={(e) => setFormData({ ...formData, value: e.target.value })} placeholder="R$ 0,00" className="bg-secondary/50 border-border" />
+                <CurrencyInput id="value" value={formData.value} onChange={(value) => setFormData({ ...formData, value })} placeholder="R$ 0,00" />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="anniversary">Aniversário de Cliente</Label>
-              <DatePicker
-                value={formData.anniversary}
-                onChange={(value) => setFormData({ ...formData, anniversary: value })}
-                placeholder="Selecione a data"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="anniversary">Aniversário de Cliente</Label>
+                <DatePicker
+                  value={formData.anniversary}
+                  onChange={(value) => setFormData({ ...formData, anniversary: value })}
+                  placeholder="Selecione a data"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="head">Head</Label>
+                <Select value={formData.head || "none"} onValueChange={(value) => setFormData({ ...formData, head: value === "none" ? "" : value })}>
+                  <SelectTrigger className="bg-secondary/50 border-border">
+                    <SelectValue placeholder="Selecione o Head" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    <SelectItem value="none">Nenhum</SelectItem>
+                    <SelectItem value="James">James</SelectItem>
+                    <SelectItem value="João">João</SelectItem>
+                    <SelectItem value="Edson">Edson</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
           <DialogFooter>

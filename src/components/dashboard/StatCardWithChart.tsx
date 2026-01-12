@@ -65,41 +65,45 @@ export function StatCardWithChart({
       </div>
 
       {/* Chart overlay on hover */}
-      <div className={cn(
-        "absolute inset-0 bg-card/95 transition-all duration-300 flex flex-col p-4",
-        isHovered && monthlyData.length > 0 ? "opacity-100" : "opacity-0 pointer-events-none"
-      )}>
-        <p className="text-xs text-muted-foreground mb-2">{title} - Últimos 6 meses</p>
-        <div className="flex-1 min-h-[80px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={monthlyData}>
-              <XAxis 
-                dataKey="month" 
-                axisLine={false} 
-                tickLine={false} 
-                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px',
-                  fontSize: '12px'
-                }}
-                formatter={(value: number) => [value.toLocaleString('pt-BR'), '']}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="value" 
-                stroke={chartColor}
-                strokeWidth={2}
-                dot={{ r: 3, fill: chartColor }}
-                activeDot={{ r: 5, fill: chartColor }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+      {monthlyData.length > 0 && (
+        <div className={cn(
+          "absolute inset-0 bg-card transition-all duration-300 flex flex-col p-4 rounded-xl border border-border shadow-lg z-20",
+          isHovered ? "opacity-100" : "opacity-0 pointer-events-none"
+        )}>
+          <p className="text-xs text-muted-foreground mb-2 font-medium">{title} - Últimos 6 meses</p>
+          <div className="flex-1 min-h-[80px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={monthlyData}>
+                <XAxis 
+                  dataKey="month" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                  }}
+                  formatter={(value: number) => [value.toLocaleString('pt-BR'), '']}
+                  labelStyle={{ fontWeight: 600 }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke={chartColor}
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: chartColor }}
+                  activeDot={{ r: 5, fill: chartColor }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
