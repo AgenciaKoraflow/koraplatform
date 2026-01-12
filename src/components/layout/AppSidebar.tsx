@@ -50,13 +50,16 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
       <aside
         className={cn(
           "flex flex-col h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300",
-          collapsed ? "w-[68px]" : "w-64"
+          collapsed ? "w-[72px]" : "w-64"
         )}
       >
         {/* Logo */}
-        <div className="flex items-center h-16 px-4 border-b border-sidebar-border">
+        <div className={cn(
+          "flex items-center h-16 border-b border-sidebar-border",
+          collapsed ? "px-3 justify-center" : "px-4"
+        )}>
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg flex-shrink-0">
               <Zap className="w-5 h-5 text-primary-foreground" />
             </div>
             {!collapsed && (
@@ -68,7 +71,10 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        <nav className={cn(
+          "flex-1 py-4 space-y-1 overflow-y-auto",
+          collapsed ? "px-2" : "px-3"
+        )}>
           {navigation.map((item) => {
             const isActive = location.pathname === item.href;
             const linkContent = (
@@ -77,13 +83,14 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
                 to={item.href}
                 onClick={handleNavClick}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
+                  "flex items-center rounded-xl text-sm font-medium transition-all duration-200",
+                  collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5",
                   isActive
                     ? "bg-primary text-primary-foreground shadow-lg"
                     : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 )}
               >
-                <item.icon className={cn("w-5 h-5 flex-shrink-0")} />
+                <item.icon className="w-5 h-5 flex-shrink-0" />
                 {!collapsed && <span>{item.name}</span>}
               </NavLink>
             );
@@ -106,7 +113,10 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
         </nav>
 
         {/* Footer */}
-        <div className="p-3 border-t border-sidebar-border space-y-1">
+        <div className={cn(
+          "border-t border-sidebar-border space-y-1",
+          collapsed ? "p-2" : "p-3"
+        )}>
           {collapsed ? (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -114,7 +124,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
                   to="/configuracoes"
                   onClick={handleNavClick}
                   className={cn(
-                    "flex items-center justify-center px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
+                    "flex items-center justify-center px-2 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
                     "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   )}
                 >
@@ -143,8 +153,8 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
-                  onClick={() => setCollapsed(!collapsed)}
-                  className="w-full flex items-center justify-center px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all"
+                  onClick={() => setCollapsed(false)}
+                  className="w-full flex items-center justify-center px-2 py-2.5 rounded-xl text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all"
                 >
                   <ChevronLeft className="w-5 h-5 rotate-180" />
                 </button>
@@ -155,8 +165,8 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
             </Tooltip>
           ) : (
             <button
-              onClick={() => setCollapsed(!collapsed)}
-              className="w-full hidden lg:flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all"
+              onClick={() => setCollapsed(true)}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all"
             >
               <ChevronLeft className="w-5 h-5 transition-transform duration-300" />
               <span>Recolher</span>
