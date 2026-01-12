@@ -202,7 +202,7 @@ export default function Clientes() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="font-semibold text-foreground">{client.value}</span>
+                      <span className="font-semibold text-foreground">{client.value ? (client.value.startsWith('R$') ? client.value : `R$ ${client.value}`) : 'R$ 0,00'}</span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -246,7 +246,7 @@ export default function Clientes() {
                           <p className="text-xs text-muted-foreground truncate">{client.company}</p>
                         </div>
                       </div>
-                      <p className="text-lg font-bold text-foreground">{client.value}</p>
+                      <p className="text-lg font-bold text-foreground">{client.value ? (client.value.startsWith('R$') ? client.value : `R$ ${client.value}`) : 'R$ 0,00'}</p>
                       <p className="text-xs text-muted-foreground mt-1">{client.lastContact}</p>
                     </div>
                   ))}
@@ -292,7 +292,7 @@ export default function Clientes() {
                 </div>
                 <div className="flex items-center justify-between pt-4 border-t border-border">
                   <span className={cn("px-3 py-1 rounded-full text-xs font-medium border", stageConfig[client.stage].color)}>{stageConfig[client.stage].label}</span>
-                  <span className="font-bold text-foreground">{client.value}</span>
+                  <span className="font-bold text-foreground">{client.value ? (client.value.startsWith('R$') ? client.value : `R$ ${client.value}`) : 'R$ 0,00'}</span>
                 </div>
               </div>
             ))}
