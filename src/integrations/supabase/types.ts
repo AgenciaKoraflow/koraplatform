@@ -14,7 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      financial_transactions: {
+        Row: {
+          category: string
+          client_id: string | null
+          created_at: string
+          description: string
+          due_date: string | null
+          id: string
+          is_recurring: boolean | null
+          notes: string | null
+          paid_date: string | null
+          project_id: string | null
+          recurrence_type: string | null
+          status: string
+          type: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          category: string
+          client_id?: string | null
+          created_at?: string
+          description: string
+          due_date?: string | null
+          id?: string
+          is_recurring?: boolean | null
+          notes?: string | null
+          paid_date?: string | null
+          project_id?: string | null
+          recurrence_type?: string | null
+          status?: string
+          type: string
+          updated_at?: string
+          value: number
+        }
+        Update: {
+          category?: string
+          client_id?: string | null
+          created_at?: string
+          description?: string
+          due_date?: string | null
+          id?: string
+          is_recurring?: boolean | null
+          notes?: string | null
+          paid_date?: string | null
+          project_id?: string | null
+          recurrence_type?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+          value?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
