@@ -3,25 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { FinancialTransaction } from "@/types/financial";
 
-// Helper to call the external-db edge function
-async function callExternalDb(action: string, table: string, data?: any, id?: string) {
-  const { data: result, error } = await supabase.functions.invoke('external-db', {
-    body: { action, table, data, id }
-  });
-  
-  if (error) {
-    console.error('External DB error:', error);
-    throw error;
-  }
-  
-  if (result.error) {
-    console.error('External DB result error:', result.error);
-    throw new Error(result.error);
-  }
-  
-  return result.data;
-}
-
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
   return date.toLocaleDateString('pt-BR');
@@ -77,7 +58,12 @@ export function useFinancial() {
   const loadTransactions = async () => {
     setLoading(true);
     try {
-      const data = await callExternalDb('select', 'financial_transactions');
+      const { data, error } = await supabase
+        .from('financial_transactions')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
       setTransactions((data || []).map(mapDbTransaction));
     } catch (error) {
       console.error('Error loading transactions:', error);
@@ -108,7 +94,13 @@ export function useFinancial() {
         notes: transaction.notes || null
       };
       
-      const result = await callExternalDb('insert', 'financial_transactions', dbData);
+      const { data: result, error } = await supabase
+        .from('financial_transactions')
+        .insert(dbData)
+        .select();
+      
+      if (error) throw error;
+      
       if (result && result[0]) {
         const newTransaction = mapDbTransaction(result[0]);
         setTransactions(prev => [newTransaction, ...prev]);
@@ -117,6 +109,7 @@ export function useFinancial() {
       }
       return null;
     } catch (error) {
+      console.error('Error adding transaction:', error);
       toast.error('Erro ao adicionar transação');
       return null;
     }
@@ -137,22 +130,35 @@ export function useFinancial() {
       if (transaction.clientId !== undefined) dbData.client_id = transaction.clientId || null;
       if (transaction.projectId !== undefined) dbData.project_id = transaction.projectId || null;
       if (transaction.notes !== undefined) dbData.notes = transaction.notes || null;
-      dbData.updated_at = new Date().toISOString();
       
-      await callExternalDb('update', 'financial_transactions', dbData, id);
+      const { error } = await supabase
+        .from('financial_transactions')
+        .update(dbData)
+        .eq('id', id);
+      
+      if (error) throw error;
+      
       setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...transaction } : t));
       toast.success('Transação atualizada com sucesso');
     } catch (error) {
+      console.error('Error updating transaction:', error);
       toast.error('Erro ao atualizar transação');
     }
   };
 
   const deleteTransaction = async (id: string) => {
     try {
-      await callExternalDb('delete', 'financial_transactions', undefined, id);
+      const { error } = await supabase
+        .from('financial_transactions')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
       setTransactions(prev => prev.filter(t => t.id !== id));
       toast.success('Transação excluída com sucesso');
     } catch (error) {
+      console.error('Error deleting transaction:', error);
       toast.error('Erro ao excluir transação');
     }
   };
