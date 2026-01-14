@@ -16,7 +16,6 @@ import {
   DollarSign,
   BarChart3,
 } from "lucide-react";
-import { useState } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const navigation = [
@@ -34,18 +33,23 @@ const navigation = [
 
 interface AppSidebarProps {
   onNavigate?: () => void;
+  collapsed?: boolean;
+  onCollapsedChange?: (collapsed: boolean) => void;
 }
 
-export function AppSidebar({ onNavigate }: AppSidebarProps) {
-  const [collapsed, setCollapsed] = useState(false);
+export function AppSidebar({ onNavigate, collapsed = false, onCollapsedChange }: AppSidebarProps) {
   const location = useLocation();
 
   const handleNavClick = () => {
-    // No mobile, fecha o menu overlay
     if (onNavigate) {
       onNavigate();
     }
-    // No desktop, não colapsa automaticamente ao clicar
+  };
+
+  const toggleCollapsed = () => {
+    if (onCollapsedChange) {
+      onCollapsedChange(!collapsed);
+    }
   };
 
   const renderNavItem = (item: typeof navigation[0]) => {
@@ -164,7 +168,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
-                  onClick={() => setCollapsed(false)}
+                  onClick={toggleCollapsed}
                   className="flex items-center justify-center w-10 h-10 mx-auto rounded-lg text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all"
                 >
                   <ChevronRight className="w-5 h-5" />
@@ -176,7 +180,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
             </Tooltip>
           ) : (
             <button
-              onClick={() => setCollapsed(true)}
+              onClick={toggleCollapsed}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all"
             >
               <ChevronLeft className="w-5 h-5" />

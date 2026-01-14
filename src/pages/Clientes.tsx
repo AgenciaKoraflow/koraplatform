@@ -114,6 +114,27 @@ export default function Clientes() {
   const getClientsByStage = (stage: string) => 
     filteredClients.filter(c => c.stage === stage);
 
+  // Calculate potential value from contracts (sum of values, with recurrence averaged to 12 months)
+  const calculateClientPotentialValue = (clientId: string): string => {
+    const clientContracts = getContractsByClient(clientId);
+    if (clientContracts.length === 0) return "R$ 0,00";
+    
+    let total = 0;
+    clientContracts.forEach(contract => {
+      // Parse main contract value
+      const mainValue = parseFloat(contract.value.replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+      total += mainValue;
+      
+      // For recurring contracts, add 12 months of recurrence
+      if (contract.billingType === 'implantacao_recorrencia' && contract.recurrenceValue) {
+        const recurrenceValue = parseFloat(contract.recurrenceValue.replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+        total += recurrenceValue * 12; // Annual value
+      }
+    });
+    
+    return `R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+  };
+
   // Get related data for viewing client
   const clientProjects = viewingClientId ? getProjectsByClient(viewingClientId) : [];
   const clientProposals = viewingClientId ? getProposalsByClient(viewingClientId) : [];
@@ -202,7 +223,7 @@ export default function Clientes() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="font-semibold text-foreground">{client.value ? (client.value.startsWith('R$') ? client.value : `R$ ${client.value}`) : 'R$ 0,00'}</span>
+                      <span className="font-semibold text-foreground">{calculateClientPotentialValue(client.id)}</span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -246,7 +267,7 @@ export default function Clientes() {
                           <p className="text-xs text-muted-foreground truncate">{client.company}</p>
                         </div>
                       </div>
-                      <p className="text-lg font-bold text-foreground">{client.value ? (client.value.startsWith('R$') ? client.value : `R$ ${client.value}`) : 'R$ 0,00'}</p>
+                      <p className="text-lg font-bold text-foreground">{calculateClientPotentialValue(client.id)}</p>
                       <p className="text-xs text-muted-foreground mt-1">{client.lastContact}</p>
                     </div>
                   ))}
@@ -292,7 +313,7 @@ export default function Clientes() {
                 </div>
                 <div className="flex items-center justify-between pt-4 border-t border-border">
                   <span className={cn("px-3 py-1 rounded-full text-xs font-medium border", stageConfig[client.stage].color)}>{stageConfig[client.stage].label}</span>
-                  <span className="font-bold text-foreground">{client.value ? (client.value.startsWith('R$') ? client.value : `R$ ${client.value}`) : 'R$ 0,00'}</span>
+                  <span className="font-bold text-foreground">{calculateClientPotentialValue(client.id)}</span>
                 </div>
               </div>
             ))}
