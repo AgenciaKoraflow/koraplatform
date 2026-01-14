@@ -332,12 +332,12 @@ export default function Financeiro() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Cliente (opcional)</Label>
-                      <Select value={formData.clientId} onValueChange={(v) => setFormData({ ...formData, clientId: v })}>
+                      <Select value={formData.clientId || "none"} onValueChange={(v) => setFormData({ ...formData, clientId: v === "none" ? "" : v })}>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione..." />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Nenhum</SelectItem>
+                          <SelectItem value="none">Nenhum</SelectItem>
                           {clients.map(client => (
                             <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
                           ))}
@@ -346,12 +346,12 @@ export default function Financeiro() {
                     </div>
                     <div className="space-y-2">
                       <Label>Projeto (opcional)</Label>
-                      <Select value={formData.projectId} onValueChange={(v) => setFormData({ ...formData, projectId: v })}>
+                      <Select value={formData.projectId || "none"} onValueChange={(v) => setFormData({ ...formData, projectId: v === "none" ? "" : v })}>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione..." />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Nenhum</SelectItem>
+                          <SelectItem value="none">Nenhum</SelectItem>
                           {projects.map(project => (
                             <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
                           ))}
