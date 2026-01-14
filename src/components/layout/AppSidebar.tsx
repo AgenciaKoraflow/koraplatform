@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Zap,
   DollarSign,
+  BarChart3,
 } from "lucide-react";
 import { useState } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -28,6 +29,7 @@ const navigation = [
   { name: "Conhecimento", href: "/conhecimento", icon: BookOpen },
   { name: "Sustentação", href: "/sustentacao", icon: HeadphonesIcon },
   { name: "Financeiro", href: "/financeiro", icon: DollarSign },
+  { name: "Indicadores", href: "/indicadores", icon: BarChart3 },
 ];
 
 interface AppSidebarProps {
