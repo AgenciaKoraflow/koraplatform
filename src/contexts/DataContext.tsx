@@ -140,17 +140,24 @@ function mapDbProposal(db: any): Proposal {
 }
 
 function mapDbContract(db: any): Contract {
+  const formatContractValue = (val: any): string => {
+    if (!val) return 'R$ 0,00';
+    const num = typeof val === 'number' ? val : parseFloat(val);
+    if (isNaN(num)) return 'R$ 0,00';
+    return `R$ ${num.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+  };
+
   return {
     id: db.id,
     clientId: db.client_id,
     projectId: db.project_id,
     proposalId: db.proposal_id,
     title: db.title || '',
-    value: db.value ? `R$ ${db.value.toLocaleString()}` : 'R$ 0',
+    value: formatContractValue(db.value),
     status: db.status || 'draft',
     type: db.type || 'projeto',
     billingType: db.billing_type || 'projeto',
-    recurrenceValue: db.recurrence_value ? `R$ ${db.recurrence_value.toLocaleString()}` : undefined,
+    recurrenceValue: db.recurrence_value ? formatContractValue(db.recurrence_value) : undefined,
     recurrenceStartDate: db.recurrence_start_date || undefined,
     createdAt: db.created_at ? formatDate(db.created_at) : '',
     signedAt: db.signed_at ? formatDate(db.signed_at) : undefined,

@@ -38,7 +38,7 @@ const Index = () => {
     return !isNaN(parsed.getTime()) ? parsed : null;
   };
 
-  // Generate monthly data for charts
+  // Generate monthly data for charts (real data only)
   const generateMonthlyData = useMemo(() => {
     const months: { month: string; date: Date }[] = [];
     for (let i = 5; i >= 0; i--) {
@@ -49,13 +49,13 @@ const Index = () => {
       });
     }
 
-    // Clients per month (simulated based on lastContact)
+    // Clients per month (based on lastContact)
     const clientsMonthly = months.map(m => ({
       month: m.month,
       value: clients.filter(c => {
         const date = parseDate(c.lastContact);
         return date && format(date, "MM/yyyy") === format(m.date, "MM/yyyy");
-      }).length || Math.floor(Math.random() * 5) + 1
+      }).length
     }));
 
     // Projects per month (based on dueDate)
@@ -64,7 +64,7 @@ const Index = () => {
       value: projects.filter(p => {
         const date = parseDate(p.dueDate);
         return date && format(date, "MM/yyyy") === format(m.date, "MM/yyyy");
-      }).length || Math.floor(Math.random() * 4) + 1
+      }).length
     }));
 
     // Proposals per month
@@ -73,7 +73,7 @@ const Index = () => {
       value: proposals.filter(p => {
         const date = parseDate(p.createdAt);
         return date && format(date, "MM/yyyy") === format(m.date, "MM/yyyy");
-      }).length || Math.floor(Math.random() * 3) + 1
+      }).length
     }));
 
     // Revenue per month (from contracts)
@@ -84,7 +84,7 @@ const Index = () => {
           const date = parseDate(c.createdAt);
           return date && format(date, "MM/yyyy") === format(m.date, "MM/yyyy") && c.status === "signed";
         })
-        .reduce((acc, c) => acc + parseInt(c.value.replace(/\D/g, "") || "0"), 0) || Math.floor(Math.random() * 50000) + 20000
+        .reduce((acc, c) => acc + parseInt(c.value.replace(/\D/g, "") || "0"), 0)
     }));
 
     return { clientsMonthly, projectsMonthly, proposalsMonthly, revenueMonthly };
@@ -141,33 +141,33 @@ const Index = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCardWithChart
             title="Clientes Ativos"
-            value={stats.activeClients || 24}
-            change={`+${Math.floor(Math.random() * 5) + 1} este mês`}
-            changeType="positive"
+            value={stats.activeClients}
+            change={`${clients.length} clientes no total`}
+            changeType="neutral"
             icon={Users}
             monthlyData={generateMonthlyData.clientsMonthly}
           />
           <StatCardWithChart
             title="Projetos em Andamento"
-            value={stats.inProgressProjects || 12}
-            change={`${Math.floor(Math.random() * 3) + 1} entregas esta semana`}
+            value={stats.inProgressProjects}
+            change={`${projects.length} projetos no total`}
             changeType="neutral"
             icon={FolderKanban}
             monthlyData={generateMonthlyData.projectsMonthly}
           />
           <StatCardWithChart
             title="Propostas Pendentes"
-            value={stats.pendingProposals || 8}
-            change={`${formatCurrency(stats.pendingValue || 320000)} em negociação`}
+            value={stats.pendingProposals}
+            change={stats.pendingValue > 0 ? `${formatCurrency(stats.pendingValue)} em negociação` : "Nenhuma em negociação"}
             changeType="neutral"
             icon={FileText}
             monthlyData={generateMonthlyData.proposalsMonthly}
           />
           <StatCardWithChart
-            title="Receita Mensal"
-            value={formatCurrency(stats.monthlyRevenue || 85000)}
-            change="+12% vs mês anterior"
-            changeType="positive"
+            title="Receita Total"
+            value={formatCurrency(stats.monthlyRevenue)}
+            change={`${contracts.filter(c => c.status === "signed").length} contratos assinados`}
+            changeType="neutral"
             icon={DollarSign}
             monthlyData={generateMonthlyData.revenueMonthly}
           />
