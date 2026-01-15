@@ -427,7 +427,7 @@ export default function Clientes() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Valor Potencial</p>
-                  <p className="text-lg font-bold text-foreground">{viewingClient.value}</p>
+                  <p className="text-lg font-bold text-foreground">{calculateClientPotentialValue(viewingClient.id)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Último Contato</p>
