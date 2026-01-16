@@ -1,8 +1,10 @@
 export function formatCurrency(value: string | number): string {
   if (typeof value === 'string') {
-    // Remove any existing formatting
-    const numericValue = value.replace(/[^\d,.-]/g, '').replace(',', '.');
-    const num = parseFloat(numericValue);
+    // Remove currency symbol and spaces
+    const cleaned = value.replace(/[R$\s]/g, '');
+    // Handle Brazilian format: remove thousand separators (dots) and replace decimal comma
+    const normalized = cleaned.replace(/\./g, '').replace(',', '.');
+    const num = parseFloat(normalized);
     if (isNaN(num)) return value;
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -13,6 +15,15 @@ export function formatCurrency(value: string | number): string {
     style: 'currency',
     currency: 'BRL',
   }).format(value);
+}
+
+export function parseCurrencyToNumber(value: string): number {
+  if (!value) return 0;
+  // Remove currency symbol and spaces
+  const cleaned = value.replace(/[R$\s]/g, '');
+  // Handle Brazilian format: remove thousand separators (dots) and replace decimal comma
+  const normalized = cleaned.replace(/\./g, '').replace(',', '.');
+  return parseFloat(normalized) || 0;
 }
 
 export function parseCurrencyInput(value: string): string {
