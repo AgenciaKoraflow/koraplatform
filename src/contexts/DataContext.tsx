@@ -206,8 +206,12 @@ function formatDate(dateString: string): string {
 
 function parseValue(value: string): number | null {
   if (!value) return null;
-  const num = value.replace(/[^\d,.-]/g, '').replace(',', '.');
-  return parseFloat(num) || null;
+  // Remove currency symbol, spaces, and handle Brazilian number format
+  // Brazilian format: 1.234,56 (dot for thousands, comma for decimals)
+  const cleaned = value.replace(/[R$\s]/g, '');
+  // Remove thousand separators (dots) and replace decimal comma with dot
+  const normalized = cleaned.replace(/\./g, '').replace(',', '.');
+  return parseFloat(normalized) || null;
 }
 
 // Convert DD/MM/YYYY to YYYY-MM-DD for PostgreSQL
