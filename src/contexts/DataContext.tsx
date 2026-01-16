@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Client, Project, Task, Proposal, Contract, KnowledgeItem, SupportTicket } from "@/types/data";
+import { parseCurrencyToNumber } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -126,12 +127,13 @@ function mapDbTask(db: any): Task {
 }
 
 function mapDbProposal(db: any): Proposal {
+  const num = db.value === null || db.value === undefined ? 0 : Number(db.value);
   return {
     id: db.id,
     clientId: db.client_id,
     projectId: db.project_id,
     title: db.title || '',
-    value: db.value ? `R$ ${db.value.toLocaleString()}` : 'R$ 0',
+    value: new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(isNaN(num) ? 0 : num),
     status: db.status || 'draft',
     services: [],
     createdAt: db.created_at ? formatDate(db.created_at) : '',
@@ -141,10 +143,14 @@ function mapDbProposal(db: any): Proposal {
 
 function mapDbContract(db: any): Contract {
   const formatContractValue = (val: any): string => {
-    if (!val) return 'R$ 0,00';
-    const num = typeof val === 'number' ? val : parseFloat(val);
-    if (isNaN(num)) return 'R$ 0,00';
-    return `R$ ${num.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+    if (val === null || val === undefined || val === '') return 'R$ 0,00';
+
+    const num = typeof val === 'number' ? val : parseCurrencyToNumber(String(val));
+
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(isNaN(num) ? 0 : num);
   };
 
   return {

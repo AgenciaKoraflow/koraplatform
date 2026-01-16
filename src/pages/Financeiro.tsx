@@ -15,6 +15,8 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { DatePicker } from "@/components/shared/DatePicker";
 import { CurrencyInput } from "@/components/shared/CurrencyInput";
 import { ActionMenu } from "@/components/shared/ActionMenu";
+import { ClientFinancialSummary } from "@/components/financeiro/ClientFinancialSummary";
+import { parseCurrencyToNumber } from "@/lib/currency";
 import { useFinancial } from "@/hooks/useFinancial";
 import { useData } from "@/contexts/DataContext";
 import { FinancialTransaction, EXPENSE_CATEGORIES, REVENUE_CATEGORIES } from "@/types/financial";
@@ -39,7 +41,7 @@ import { ptBR } from "date-fns/locale";
 
 export default function Financeiro() {
   const { transactions, loading, addTransaction, updateTransaction, deleteTransaction } = useFinancial();
-  const { clients, projects } = useData();
+  const { clients, projects, contracts } = useData();
   
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<"all" | "receita" | "despesa">("all");
@@ -148,12 +150,17 @@ export default function Financeiro() {
   }, [transactions, searchTerm, filterType, filterStatus]);
 
   const summary = useMemo(() => {
-    const receitas = transactions.filter(t => t.type === "receita" && t.status === "pago")
-      .reduce((sum, t) => sum + parseFloat(t.value.replace(/[^\d,.-]/g, '').replace(',', '.')), 0);
-    const despesas = transactions.filter(t => t.type === "despesa" && t.status === "pago")
-      .reduce((sum, t) => sum + parseFloat(t.value.replace(/[^\d,.-]/g, '').replace(',', '.')), 0);
-    const pendentes = transactions.filter(t => t.status === "pendente")
-      .reduce((sum, t) => sum + parseFloat(t.value.replace(/[^\d,.-]/g, '').replace(',', '.')), 0);
+    const receitas = transactions
+      .filter(t => t.type === "receita" && t.status === "pago")
+      .reduce((sum, t) => sum + parseCurrencyToNumber(t.value), 0);
+
+    const despesas = transactions
+      .filter(t => t.type === "despesa" && t.status === "pago")
+      .reduce((sum, t) => sum + parseCurrencyToNumber(t.value), 0);
+
+    const pendentes = transactions
+      .filter(t => t.status === "pendente" || t.status === "atrasado")
+      .reduce((sum, t) => sum + parseCurrencyToNumber(t.value), 0);
     
     return {
       receitas,
@@ -432,6 +439,8 @@ export default function Financeiro() {
             </CardContent>
           </Card>
         </div>
+
+        <ClientFinancialSummary clients={clients} contracts={contracts} transactions={transactions} />
 
         {/* Filters */}
         <Card>

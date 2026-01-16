@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { FinancialTransaction } from "@/types/financial";
+import { parseCurrencyToNumber } from "@/lib/currency";
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
@@ -26,9 +27,7 @@ function toISODate(dateString: string | undefined): string | null {
 }
 
 function parseValue(value: string): number {
-  if (!value) return 0;
-  const num = value.replace(/[^\d,.-]/g, '').replace(',', '.');
-  return parseFloat(num) || 0;
+  return parseCurrencyToNumber(value);
 }
 
 function mapDbTransaction(db: any): FinancialTransaction {
