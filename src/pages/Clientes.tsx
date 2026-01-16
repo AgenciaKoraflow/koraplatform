@@ -1,6 +1,7 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { parseCurrencyToNumber } from "@/lib/currency";
 import { Plus, Search, Building2, Mail, Phone, Calendar, Eye, Edit, Trash2, FileText, FolderOpen, ClipboardList, FileSignature, CheckSquare } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -118,21 +119,19 @@ export default function Clientes() {
   const calculateClientPotentialValue = (clientId: string): string => {
     const clientContracts = getContractsByClient(clientId);
     if (clientContracts.length === 0) return "R$ 0,00";
-    
+
     let total = 0;
     clientContracts.forEach(contract => {
-      // Parse main contract value
-      const mainValue = parseFloat(contract.value.replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+      const mainValue = parseCurrencyToNumber(contract.value);
       total += mainValue;
-      
-      // For recurring contracts, add 12 months of recurrence
+
       if (contract.billingType === 'implantacao_recorrencia' && contract.recurrenceValue) {
-        const recurrenceValue = parseFloat(contract.recurrenceValue.replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
-        total += recurrenceValue * 12; // Annual value
+        const recurrenceValue = parseCurrencyToNumber(contract.recurrenceValue);
+        total += recurrenceValue * 12;
       }
     });
-    
-    return `R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total);
   };
 
   // Get related data for viewing client
