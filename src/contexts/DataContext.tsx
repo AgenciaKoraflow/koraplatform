@@ -127,17 +127,25 @@ function mapDbTask(db: any): Task {
 }
 
 function mapDbProposal(db: any): Proposal {
-  const num = db.value === null || db.value === undefined ? 0 : Number(db.value);
+  const num =
+    db.value === null || db.value === undefined || db.value === ""
+      ? 0
+      : typeof db.value === "number"
+        ? db.value
+        : parseCurrencyToNumber(String(db.value));
+
   return {
     id: db.id,
     clientId: db.client_id,
     projectId: db.project_id,
-    title: db.title || '',
-    value: new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(isNaN(num) ? 0 : num),
-    status: db.status || 'draft',
+    title: db.title || "",
+    value: new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+      Number.isFinite(num) ? num : 0
+    ),
+    status: db.status || "draft",
     services: [],
-    createdAt: db.created_at ? formatDate(db.created_at) : '',
-    validUntil: db.valid_until || ''
+    createdAt: db.created_at ? formatDate(db.created_at) : "",
+    validUntil: db.valid_until || "",
   };
 }
 
