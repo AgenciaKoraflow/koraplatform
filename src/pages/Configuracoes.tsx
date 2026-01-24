@@ -1,6 +1,7 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { cn } from "@/lib/utils";
 import { User, Building2, Bell, Shield, Palette, Database, Mail, CreditCard } from "lucide-react";
+import { IntegrationsTab } from "@/components/settings/IntegrationsTab";
 import { useState } from "react";
 
 const tabs = [
@@ -165,7 +166,11 @@ export default function Configuracoes() {
                 </div>
               )}
 
-              {activeTab !== "profile" && activeTab !== "company" && (
+              {activeTab === "integrations" && (
+                <IntegrationsTab />
+              )}
+
+              {activeTab !== "profile" && activeTab !== "company" && activeTab !== "integrations" && (
                 <div className="text-center py-12">
                   <p className="text-muted-foreground">Configurações de {tabs.find(t => t.id === activeTab)?.label} em breve.</p>
                 </div>
