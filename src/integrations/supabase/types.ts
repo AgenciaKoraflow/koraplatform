@@ -68,6 +68,42 @@ export type Database = {
         }
         Relationships: []
       }
+      insights_boards: {
+        Row: {
+          content: string | null
+          created_at: string
+          description: string | null
+          elements: Json | null
+          id: string
+          name: string
+          thumbnail_url: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          description?: string | null
+          elements?: Json | null
+          id?: string
+          name: string
+          thumbnail_url?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          description?: string | null
+          elements?: Json | null
+          id?: string
+          name?: string
+          thumbnail_url?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
