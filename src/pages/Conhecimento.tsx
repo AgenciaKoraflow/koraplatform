@@ -12,7 +12,7 @@ import { ActionMenu } from "@/components/shared/ActionMenu";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
 import { KnowledgeGroupedByClient } from "@/components/conhecimento/KnowledgeGroupedByClient";
-import { InsightsCanvas } from "@/components/insights/InsightsCanvas";
+import { InsightsManager } from "@/components/insights/InsightsManager";
 import { toast } from "sonner";
 import { useData } from "@/contexts/DataContext";
 import { KnowledgeItem } from "@/types/data";
@@ -368,7 +368,7 @@ export default function Conhecimento() {
           </TabsContent>
 
           <TabsContent value="insights" className="mt-6">
-            <InsightsCanvas />
+            <InsightsManager />
           </TabsContent>
         </Tabs>
       </div>
