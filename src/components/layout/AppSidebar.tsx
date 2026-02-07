@@ -13,17 +13,22 @@ import {
   Zap,
   DollarSign,
   BarChart3,
+  Filter,
+  Activity,
+  Heart,
 } from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Clientes", href: "/clientes", icon: Users },
+  { name: "Funil", href: "/funil", icon: Filter },
+  { name: "Clientes", href: "/clientes", icon: Heart },
   { name: "Projetos", href: "/projetos", icon: FolderKanban },
   { name: "Tarefas", href: "/tarefas", icon: CheckSquare },
   { name: "Propostas", href: "/propostas", icon: FileText },
   { name: "Contratos", href: "/contratos", icon: FileSignature },
   { name: "Conhecimento", href: "/conhecimento", icon: BookOpen },
   { name: "Sustentação", href: "/sustentacao", icon: HeadphonesIcon },
+  { name: "Observabilidade", href: "/observabilidade", icon: Activity },
   { name: "Financeiro", href: "/financeiro", icon: DollarSign },
   { name: "Indicadores", href: "/indicadores", icon: BarChart3 },
 ];
