@@ -5,13 +5,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { DataProvider } from "@/contexts/DataContext";
 import Index from "./pages/Index";
-import Clientes from "./pages/Clientes";
+import Funil from "./pages/Funil";
+import ClientesAtivos from "./pages/ClientesAtivos";
 import Projetos from "./pages/Projetos";
 import Tarefas from "./pages/Tarefas";
 import Propostas from "./pages/Propostas";
 import Contratos from "./pages/Contratos";
 import Conhecimento from "./pages/Conhecimento";
 import Sustentacao from "./pages/Sustentacao";
+import Observabilidade from "./pages/Observabilidade";
 import Financeiro from "./pages/Financeiro";
 import Indicadores from "./pages/Indicadores";
 import Configuracoes from "./pages/Configuracoes";
@@ -34,13 +36,15 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/clientes" element={<Clientes />} />
+            <Route path="/funil" element={<Funil />} />
+            <Route path="/clientes" element={<ClientesAtivos />} />
             <Route path="/projetos" element={<Projetos />} />
             <Route path="/tarefas" element={<Tarefas />} />
             <Route path="/propostas" element={<Propostas />} />
             <Route path="/contratos" element={<Contratos />} />
             <Route path="/conhecimento" element={<Conhecimento />} />
             <Route path="/sustentacao" element={<Sustentacao />} />
+            <Route path="/observabilidade" element={<Observabilidade />} />
             <Route path="/financeiro" element={<Financeiro />} />
             <Route path="/indicadores" element={<Indicadores />} />
             <Route path="/configuracoes" element={<Configuracoes />} />
