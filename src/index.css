@@ -1,0 +1,131 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* LIGHT MODE - Branco/Preto com Laranja (#FF8800) como destaque principal */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+
+    /* Primary - Laranja vibrante (#FF8800) */
+    --primary: 33 100% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - Cinza neutro (sem roxo) */
+    --secondary: 0 0% 95%;
+    --secondary-foreground: 0 0% 20%;
+
+    /* Muted - Cinza claro */
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 40%;
+
+    /* Accent - Laranja (destaque principal) */
+    --accent: 33 100% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 90%;
+    --input: 0 0% 98%;
+    --ring: 33 100% 50%;
+    --radius: 0.75rem;
+
+    /* Sidebar - Branco com laranja */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 0%;
+    --sidebar-primary: 33 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 95%;
+    --sidebar-accent-foreground: 0 0% 0%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-ring: 33 100% 50%;
+
+    /* Custom tokens - Laranja e Cinza */
+    --gradient-primary: linear-gradient(135deg, hsl(33 100% 50%) 0%, hsl(33 100% 40%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(0 0% 95%) 0%, hsl(0 0% 90%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(0 0% 99%) 100%);
+    --gradient-background: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(0 0% 99%) 100%);
+    --gradient-sidebar: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(0 0% 99%) 100%);
+    --shadow-soft: 0 1px 3px 0 rgb(0 0 0 / 0.08);
+    --shadow-medium: 0 4px 12px -1px rgb(0 0 0 / 0.1), 0 2px 6px -2px rgb(0 0 0 / 0.08);
+    --shadow-glow: 0 0 0 1px rgb(0 0 0 / 0.06), 0 1px 2px 0 rgb(0 0 0 / 0.06);
+  }
+
+  html.dark {
+    /* DARK MODE - Preto/Branco com Laranja */
+    --background: 0 0% 10%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 15%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 15%;
+    --popover-foreground: 0 0% 100%;
+
+    /* Primary - Laranja mais claro em dark */
+    --primary: 33 100% 55%;
+    --primary-foreground: 0 0% 0%;
+
+    /* Secondary - Cinza neutro em dark */
+    --secondary: 0 0% 25%;
+    --secondary-foreground: 0 0% 95%;
+
+    /* Muted - Cinza escuro */
+    --muted: 0 0% 30%;
+    --muted-foreground: 0 0% 85%;
+
+    /* Accent - Laranja em dark */
+    --accent: 33 100% 55%;
+    --accent-foreground: 0 0% 0%;
+
+    --destructive: 0 84% 65%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 25%;
+    --input: 0 0% 20%;
+    --ring: 33 100% 55%;
+
+    /* Sidebar dark */
+    --sidebar-background: 0 0% 12%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 33 100% 55%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 25%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 25%;
+    --sidebar-ring: 33 100% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  /* Melhorar contraste para leitura */
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-foreground;
+  }
+  
+  p {
+    @apply text-foreground/90;
+  }
+  
+  /* Labels com melhor contraste */
+  label {
+    @apply text-foreground/90;
+  }
+  
+  /* Placeholders mais visíveis */
+  ::placeholder {
+    @apply text-foreground/50;
+  }
+}
