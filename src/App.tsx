@@ -21,6 +21,7 @@ import Configuracoes from "./pages/Configuracoes";
 import SignContract from "./pages/SignContract";
 import NotFound from "./pages/NotFound";
 import OKR from "./pages/OKR";
+import Buscar from "./pages/Buscar";
 import Login from "./pages/Login";
 
 const queryClient = new QueryClient({
@@ -73,6 +74,7 @@ const App = () => (
               <Route path="/processos" element={<ProtectedRoute><Processos /></ProtectedRoute>} />
               <Route path="/okr" element={<ProtectedRoute><OKR /></ProtectedRoute>} />
               <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
+              <Route path="/buscar" element={<ProtectedRoute><Buscar /></ProtectedRoute>} />
               {/* Public routes */}
               <Route path="/login" element={<Login />} />
               <Route path="/sign/:token" element={<SignContract />} />

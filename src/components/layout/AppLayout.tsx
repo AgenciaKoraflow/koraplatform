@@ -1,4 +1,5 @@
 import { ReactNode, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AppSidebar } from "./AppSidebar";
 import { Search, Menu, X, Bell, Sun, Moon } from "lucide-react";
 import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
@@ -14,8 +15,17 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const userName = useUser();
   const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
+
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && searchTerm.trim()) {
+      navigate(`/buscar?q=${encodeURIComponent(searchTerm)}`);
+      setSearchTerm("");
+    }
+  };
 
   return (
     <div className="flex min-h-screen w-full">
@@ -88,7 +98,10 @@ export function AppLayout({ children }: AppLayoutProps) {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Q Buscar qualquer coisa.."
+                placeholder="⌘ Buscar qualquer coisa..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={handleSearch}
                 className="w-full h-9 pl-10 pr-4 rounded-xl bg-input border border-input text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 transition-all"
               />
             </div>
