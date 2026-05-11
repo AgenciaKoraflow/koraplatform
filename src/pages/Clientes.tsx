@@ -210,7 +210,7 @@ export default function Clientes() {
               </thead>
               <tbody className="divide-y divide-border">
                 {filteredClients.map((client, index) => (
-                  <tr key={client.id} className="hover:bg-muted/20 transition-colors animate-slide-up" style={{ animationDelay: `${index * 50}ms` }}>
+                  <tr key={client.id} className="cursor-pointer hover:bg-muted/50 transition-colors animate-slide-up" style={{ animationDelay: `${index * 50}ms` }} onClick={() => openViewDialog(client.id)}>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -251,7 +251,7 @@ export default function Clientes() {
                         {client.lastContact}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                       <ActionMenu items={[
                         { label: "Visualizar", icon: Eye, onClick: () => openViewDialog(client.id) },
                         { label: "Editar", icon: Edit, onClick: () => openEditDialog(client.id) },
@@ -304,7 +304,7 @@ export default function Clientes() {
         {viewMode === "grid" && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredClients.map((client, index) => (
-              <div key={client.id} className="p-5 rounded-xl bg-card border border-border shadow-soft hover:shadow-medium transition-all animate-scale-in" style={{ animationDelay: `${index * 50}ms` }}>
+              <div key={client.id} className="p-5 rounded-xl bg-card border border-border shadow-soft hover:shadow-lg hover:border-primary/50 transition-all animate-scale-in cursor-pointer" style={{ animationDelay: `${index * 50}ms` }} onClick={() => openViewDialog(client.id)}>
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -315,11 +315,13 @@ export default function Clientes() {
                       <p className="text-sm text-muted-foreground">{client.company}</p>
                     </div>
                   </div>
-                  <ActionMenu items={[
-                    { label: "Visualizar", icon: Eye, onClick: () => openViewDialog(client.id) },
-                    { label: "Editar", icon: Edit, onClick: () => openEditDialog(client.id) },
-                    { label: "Excluir", icon: Trash2, onClick: () => { setDeletingClientId(client.id); setIsDeleteDialogOpen(true); }, variant: "destructive" },
-                  ]} />
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <ActionMenu items={[
+                      { label: "Visualizar", icon: Eye, onClick: () => openViewDialog(client.id) },
+                      { label: "Editar", icon: Edit, onClick: () => openEditDialog(client.id) },
+                      { label: "Excluir", icon: Trash2, onClick: () => { setDeletingClientId(client.id); setIsDeleteDialogOpen(true); }, variant: "destructive" },
+                    ]} />
+                  </div>
                 </div>
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
