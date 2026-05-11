@@ -47,13 +47,25 @@ export function useOKRData() {
         supabase.from('okr_updates').select('*').order('date', { ascending: false }),
       ]);
 
-      if (objResponse.error) throw objResponse.error;
-      if (updateResponse.error) throw updateResponse.error;
+      if (objResponse.error) {
+        console.error('Erro ao carregar objectives:', objResponse.error);
+        throw objResponse.error;
+      }
+      if (updateResponse.error) {
+        console.error('Erro ao carregar updates:', updateResponse.error);
+        throw updateResponse.error;
+      }
 
+      console.log('OKRs carregados:', objResponse.data?.length);
       setObjectives((objResponse.data || []).map(mapDbObjective));
       setUpdates((updateResponse.data || []).map(mapDbUpdate));
-    } catch (error) {
-      console.error('Erro ao carregar OKRs:', error);
+    } catch (error: any) {
+      console.error('Erro ao carregar OKRs:', {
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        fullError: error
+      });
       toast.error('Erro ao carregar OKRs');
     } finally {
       setLoading(false);
@@ -83,14 +95,24 @@ export function useOKRData() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro do Supabase:', error);
+        throw error;
+      }
       const mapped = mapDbObjective(result);
       setObjectives(prev => [mapped, ...prev]);
       toast.success('OKR criado com sucesso!');
       return mapped;
-    } catch (error) {
-      console.error('Erro ao criar OKR:', error);
-      toast.error('Erro ao criar OKR');
+    } catch (error: any) {
+      console.error('Erro ao criar OKR:', {
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint,
+        status: error?.status,
+        fullError: error
+      });
+      toast.error(`Erro ao criar OKR: ${error?.message || 'Erro desconhecido'}`);
       return null;
     }
   }, []);
