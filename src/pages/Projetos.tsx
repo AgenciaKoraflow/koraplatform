@@ -42,6 +42,8 @@ export default function Projetos() {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [selectedBU, setSelectedBU] = useState<BU | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -61,7 +63,7 @@ export default function Projetos() {
     type: "projeto" as "projeto" | "sustentacao" | "consultoria",
     recurrenceValue: "",
     recurrenceStartDate: "",
-    bu: "kora-dev" as BU,
+    bu: [] as BU[],
   });
 
   const filteredProjects = projects.filter((project) => {
@@ -69,12 +71,14 @@ export default function Projetos() {
     const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       client?.company.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = !selectedStatus || project.status === selectedStatus;
-    return matchesSearch && matchesStatus;
+    const matchesClient = !selectedClientId || project.clientId === selectedClientId;
+    const matchesBU = !selectedBU || (Array.isArray(project.bu) ? project.bu.includes(selectedBU) : project.bu === selectedBU);
+    return matchesSearch && matchesStatus && matchesClient && matchesBU;
   });
 
   const openNewDialog = () => {
     setEditingProject(null);
-    setFormData({ name: "", clientId: "", description: "", status: "planning", dueDate: "", team: "", head: "", value: "", billingType: "projeto", type: "projeto", recurrenceValue: "", recurrenceStartDate: "", bu: "kora-dev" });
+    setFormData({ name: "", clientId: "", description: "", status: "planning", dueDate: "", team: "", head: "", value: "", billingType: "projeto", type: "projeto", recurrenceValue: "", recurrenceStartDate: "", bu: [] });
     setIsDialogOpen(true);
   };
 
@@ -278,6 +282,42 @@ export default function Projetos() {
                 </button>
               );
             })}
+          </div>
+        </div>
+
+        {/* Additional Filters - Cliente e BU */}
+        <div className="flex flex-wrap items-center gap-4">
+          {/* Cliente Filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-foreground">Cliente:</span>
+            <select
+              value={selectedClientId || ""}
+              onChange={(e) => setSelectedClientId(e.target.value || null)}
+              className="px-3 py-2 rounded-lg bg-input border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              <option value="">Todos</option>
+              {clients.map(client => (
+                <option key={client.id} value={client.id}>
+                  {client.company}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* BU Filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-foreground">BU:</span>
+            <select
+              value={selectedBU || ""}
+              onChange={(e) => setSelectedBU((e.target.value as BU) || null)}
+              className="px-3 py-2 rounded-lg bg-input border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              <option value="">Todas</option>
+              <option value="kora-agents">Kora Agents</option>
+              <option value="kora-dev">Kora Dev</option>
+              <option value="kora-studio">Kora Studio</option>
+              <option value="kora-corp">Kora Corp</option>
+            </select>
           </div>
         </div>
 
