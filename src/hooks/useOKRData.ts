@@ -21,7 +21,7 @@ export function useOKRData() {
     endDate: db.end_date,
     priority: db.priority,
     category: db.category,
-    bu: db.bu,
+    bu: Array.isArray(db.bu) ? db.bu : (typeof db.bu === 'string' ? [db.bu] : []),
     progress: db.progress || 0,
     lastUpdate: db.last_update ? new Date(db.last_update).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
     createdAt: db.created_at,

@@ -15,7 +15,7 @@ export interface OKRObjective {
   endDate: string;
   priority: "high" | "medium" | "low";
   category: "revenue" | "growth" | "efficiency" | "quality" | "satisfaction" | "innovation" | "team" | "other";
-  bu: BU;
+  bu: BU[];
   progress: number;
   lastUpdate: string;
   createdAt: string;
@@ -43,7 +43,7 @@ export interface OKRFormData {
   endDate: string;
   priority: "high" | "medium" | "low";
   category: "revenue" | "growth" | "efficiency" | "quality" | "satisfaction" | "innovation" | "team" | "other";
-  bu: BU;
+  bu: BU[];
 }
 
 export const CATEGORY_LABELS: Record<NonNullable<OKRObjective['category']>, string> = {

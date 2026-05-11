@@ -41,7 +41,7 @@ export default function OKR() {
     title: "", description: "", target: 100, current: 0, unit: "%",
     status: "not_started", startDate: format(new Date(), "yyyy-MM-dd"),
     endDate: format(new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"),
-    priority: "medium", category: "revenue", bu: "kora-agents"
+    priority: "medium", category: "revenue", bu: []
   });
   const [updateFormData, setUpdateFormData] = useState({ value: 0, comment: "" });
 
@@ -49,7 +49,7 @@ export default function OKR() {
     setFormData({ title: "", description: "", target: 100, current: 0, unit: "%",
       status: "not_started", startDate: format(new Date(), "yyyy-MM-dd"),
       endDate: format(new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"),
-      priority: "medium", category: "revenue", bu: "kora-agents" });
+      priority: "medium", category: "revenue", bu: [] });
     setEditingObjective(null);
   };
 
@@ -295,7 +295,10 @@ export default function OKR() {
                         <span className="flex items-center gap-1"><Calendar className="w-4 h-4 text-slate-500" />{formatDateSafely(objective.startDate)} - {formatDateSafely(objective.endDate)}</span>
                         <span className="flex items-center gap-1"><Target className="w-4 h-4 text-slate-500" />Meta: {objective.current.toLocaleString()} / {objective.target.toLocaleString()} {objective.unit}</span>
                         <span className="flex items-center gap-1"><BarChart3 className="w-4 h-4 text-slate-500" />Progresso: {objective.progress}%</span>
-                        <span className="flex items-center gap-1"><Flag className="w-4 h-4 text-slate-500" />BU: {objective.bu}</span>
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <Flag className="w-4 h-4 text-slate-500" />
+                          <span>BUs: {Array.isArray(objective.bu) ? objective.bu.join(", ") : objective.bu}</span>
+                        </div>
                       </div>
                     </div>
                     <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
@@ -360,15 +363,34 @@ export default function OKR() {
                     <SelectTrigger className="bg-background border-border text-foreground"><SelectValue /></SelectTrigger>
                     <SelectContent className="bg-card border-border">
                       {Object.entries(PRIORITY_LABELS).map(([key, label]) => (<SelectItem key={key} value={key} className="text-foreground">{label}</SelectItem>))}</SelectContent></Select></div>
-                <div className="space-y-2"><Label className="text-foreground/90">BU</Label>
-                  <Select value={formData.bu} onValueChange={(v) => setFormData({ ...formData, bu: v })}>
-                    <SelectTrigger className="bg-background border-border text-foreground"><SelectValue /></SelectTrigger>
-                    <SelectContent className="bg-card border-border">
-                      <SelectItem value="kora-agents" className="text-foreground">Kora Agents (James)</SelectItem>
-                      <SelectItem value="kora-dev" className="text-foreground">Kora Dev (Joao)</SelectItem>
-                      <SelectItem value="kora-studio" className="text-foreground">Kora Studio (Ryan)</SelectItem>
-                      <SelectItem value="kora-corp" className="text-foreground">Kora Corp (Edson)</SelectItem>
-                    </SelectContent></Select></div></div>
+                <div className="space-y-2"><Label className="text-foreground/90">BU (Selecione uma ou mais)</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {(["kora-agents", "kora-dev", "kora-studio", "kora-corp"] as const).map((bu) => {
+                      const isSelected = formData.bu.includes(bu);
+                      const buConfig = { "kora-agents": "Kora Agents (James)", "kora-dev": "Kora Dev (João)", "kora-studio": "Kora Studio (Ryan)", "kora-corp": "Kora Corp (Edson)" };
+                      return (
+                        <button
+                          key={bu}
+                          type="button"
+                          onClick={() => {
+                            setFormData({
+                              ...formData,
+                              bu: isSelected ? formData.bu.filter(b => b !== bu) : [...formData.bu, bu]
+                            });
+                          }}
+                          className={cn(
+                            "px-3 py-2 rounded-lg text-sm font-medium transition-all border",
+                            isSelected
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-input text-foreground border-border hover:bg-muted"
+                          )}
+                        >
+                          {buConfig[bu]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div></div>
               <div className="grid grid-cols-2 gap-4"><div className="space-y-2">
                   <Label className={typographyClasses.label}>Data de Inicio</Label>
                   <DatePicker value={formData.startDate} onChange={(date) => setFormData({ ...formData, startDate: date })} /></div>
@@ -454,8 +476,12 @@ export default function OKR() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-foreground/80">BU</Label>
-                    <p className="text-foreground font-medium mt-1">{viewingObjective.bu}</p>
+                    <Label className="text-foreground/80">BUs</Label>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {Array.isArray(viewingObjective.bu) ? viewingObjective.bu.map(bu => (
+                        <Badge key={bu} variant="secondary" className="bg-primary/10 text-primary border-primary/20">{bu}</Badge>
+                      )) : <Badge variant="secondary">{viewingObjective.bu}</Badge>}
+                    </div>
                   </div>
                   <div>
                     <Label className="text-foreground/80">Última Atualização</Label>
