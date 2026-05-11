@@ -253,13 +253,12 @@ export default function Conhecimento() {
                     {filteredItems.map((item, index) => {
                       const CategoryIcon = categoryConfig[item.category].icon;
                       return (
-                        <div key={item.id} className="p-5 rounded-xl bg-card border border-border shadow-soft hover:shadow-medium transition-all duration-200 animate-scale-in" style={{ animationDelay: `${index * 50}ms` }}>
-                          <div className="flex items-start justify-between mb-4">
+                        <div key={item.id} className="p-5 rounded-xl bg-card border border-border shadow-soft hover:shadow-lg hover:border-primary/50 transition-all duration-200 animate-scale-in cursor-pointer" style={{ animationDelay: `${index * 50}ms` }} onClick={() => openViewDialog(item)}>
+                          <div className="flex items-start justify-between mb-4" onClick={(e) => e.stopPropagation()}>
                             <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", categoryConfig[item.category].color)}>
                               <CategoryIcon className="w-5 h-5" />
                             </div>
                             <ActionMenu items={[
-                              { label: "Visualizar", icon: Eye, onClick: () => openViewDialog(item) },
                               { label: "Editar", icon: Edit, onClick: () => openEditDialog(item) },
                               { label: "Excluir", icon: Trash2, onClick: () => { setDeletingItemId(item.id); setIsDeleteDialogOpen(true); }, variant: "destructive" },
                             ]} />
@@ -318,7 +317,7 @@ export default function Conhecimento() {
                         {filteredItems.map((item) => {
                           const CategoryIcon = categoryConfig[item.category].icon;
                           return (
-                            <tr key={item.id} className="hover:bg-muted/20 transition-colors">
+                            <tr key={item.id} className="hover:bg-muted/20 transition-colors cursor-pointer" onClick={() => openViewDialog(item)}>
                               <td className="px-6 py-4">
                                 <div className="flex items-center gap-3">
                                   <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", categoryConfig[item.category].color)}>

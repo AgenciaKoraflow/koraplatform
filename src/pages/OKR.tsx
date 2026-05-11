@@ -31,8 +31,10 @@ export default function OKR() {
   const [filterPriority, setFilterPriority] = useState<"all" | OKRObjective["priority"]>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [editingObjective, setEditingObjective] = useState<OKRObjective | null>(null);
   const [selectedObjective, setSelectedObjective] = useState<OKRObjective | null>(null);
+  const [viewingObjective, setViewingObjective] = useState<OKRObjective | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState<OKRFormData>({
@@ -49,6 +51,11 @@ export default function OKR() {
       endDate: format(new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"),
       priority: "medium", category: "revenue", bu: "kora-agents" });
     setEditingObjective(null);
+  };
+
+  const handleViewObjective = (objective: OKRObjective) => {
+    setViewingObjective(objective);
+    setIsViewDialogOpen(true);
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -271,7 +278,7 @@ export default function OKR() {
                 <p className="text-foreground/70">Nenhum OKR encontrado</p>
                 <p className="text-sm text-muted-foreground">Crie seu primeiro OKR para começar</p>
               </div>) : (filteredObjectives.map((objective) => (
-                <div key={objective.id} className="border border-border/50 rounded-lg p-6 space-y-4 hover:shadow-lg transition-shadow bg-card/50">
+                <div key={objective.id} className="border border-border/50 rounded-lg p-6 space-y-4 hover:shadow-lg hover:border-primary/50 transition-all bg-card/50 cursor-pointer" onClick={() => handleViewObjective(objective)}>
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
@@ -291,7 +298,7 @@ export default function OKR() {
                         <span className="flex items-center gap-1"><Flag className="w-4 h-4 text-slate-500" />BU: {objective.bu}</span>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                       <Button variant="outline" size="sm" onClick={() => { setSelectedObjective(objective); setIsUpdateDialogOpen(true); }}
                         className="border-border/50 text-foreground hover:bg-muted/50"><History className="w-4 h-4 mr-1" />Atualizar</Button>
                       <ActionMenu items={[
@@ -395,6 +402,73 @@ export default function OKR() {
                     className="border-border/50 text-foreground hover:bg-muted/50">Cancelar</Button>
                   <Button type="submit" disabled={isSaving}>{isSaving ? "Salvando..." :"Registrar Atualizacao"}</Button></div>
               </form>)}
+          </DialogContent>
+        </Dialog>
+
+        {/* View OKR Dialog */}
+        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+          <DialogContent className="max-w-2xl bg-card border-border">
+            <DialogHeader>
+              <DialogTitle className={typographyClasses.subsectionTitle}>{viewingObjective?.title}</DialogTitle>
+            </DialogHeader>
+            {viewingObjective && (
+              <div className="space-y-6">
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline" className={cn(STATUS_COLORS[viewingObjective.status], "border-border/50")}>
+                    {getStatusIcon(viewingObjective.status)}<span className="ml-1">{STATUS_LABELS[viewingObjective.status]}</span>
+                  </Badge>
+                  <Badge variant="secondary" className={cn(PRIORITY_COLORS[viewingObjective.priority], "border-border/50")}>
+                    <Flag className="w-3 h-3 mr-1" />{PRIORITY_LABELS[viewingObjective.priority]}
+                  </Badge>
+                  <Badge variant="outline" className="border-border/50 bg-muted/50 text-foreground/80">
+                    {CATEGORY_LABELS[viewingObjective.category]}
+                  </Badge>
+                </div>
+
+                {viewingObjective.description && (
+                  <div>
+                    <Label className="text-foreground/80">Descrição</Label>
+                    <p className={cn(typographyClasses.description, "mt-2")}>{viewingObjective.description}</p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-foreground/80">Data Início</Label>
+                    <p className="text-foreground font-medium mt-1">{formatDateSafely(viewingObjective.startDate)}</p>
+                  </div>
+                  <div>
+                    <Label className="text-foreground/80">Data Término</Label>
+                    <p className="text-foreground font-medium mt-1">{formatDateSafely(viewingObjective.endDate)}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-foreground/80 mb-2 block">Progresso: {viewingObjective.progress}%</Label>
+                  <Progress value={viewingObjective.progress} className="h-3" />
+                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                    <span>{viewingObjective.current.toLocaleString()} {viewingObjective.unit}</span>
+                    <span>{viewingObjective.target.toLocaleString()} {viewingObjective.unit}</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-foreground/80">BU</Label>
+                    <p className="text-foreground font-medium mt-1">{viewingObjective.bu}</p>
+                  </div>
+                  <div>
+                    <Label className="text-foreground/80">Última Atualização</Label>
+                    <p className="text-foreground font-medium mt-1">{formatDateSafely(viewingObjective.lastUpdate)}</p>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-4 border-t border-border">
+                  <Button variant="outline" onClick={() => setIsViewDialogOpen(false)} className="border-border/50">Fechar</Button>
+                  <Button onClick={() => { setIsViewDialogOpen(false); handleEdit(viewingObjective); }}>Editar</Button>
+                </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
 

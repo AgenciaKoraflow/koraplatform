@@ -205,7 +205,7 @@ export default function Propostas() {
             {filteredProposals.map((proposal, index) => {
               const StatusIcon = statusConfig[proposal.status].icon;
               return (
-                <div key={proposal.id} className="p-6 rounded-xl bg-card border border-border shadow-soft hover:shadow-medium transition-all duration-200 animate-slide-up" style={{ animationDelay: `${index * 100}ms` }}>
+                <div key={proposal.id} className="p-6 rounded-xl bg-card border border-border shadow-soft hover:shadow-medium transition-all duration-200 animate-slide-up cursor-pointer hover:border-primary/50" style={{ animationDelay: `${index * 100}ms` }} onClick={() => openViewDialog(proposal)}>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
@@ -233,12 +233,9 @@ export default function Propostas() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
+                  <div className="flex items-center justify-between mt-6 pt-4 border-t border-border" onClick={(e) => e.stopPropagation()}>
                     <p className="text-sm text-muted-foreground">Criada em {proposal.createdAt}</p>
                     <div className="flex items-center gap-2">
-                      <button onClick={() => openViewDialog(proposal)} className="p-2 rounded-lg hover:bg-secondary transition-colors" title="Visualizar">
-                        <Eye className="w-4 h-4 text-muted-foreground" />
-                      </button>
                       <button onClick={() => handleDuplicate(proposal)} className="p-2 rounded-lg hover:bg-secondary transition-colors" title="Duplicar">
                         <Copy className="w-4 h-4 text-muted-foreground" />
                       </button>
@@ -264,14 +261,13 @@ export default function Propostas() {
             {filteredProposals.map((proposal, index) => {
               const StatusIcon = statusConfig[proposal.status].icon;
               return (
-                <div key={proposal.id} className="p-5 rounded-xl bg-card border border-border shadow-soft hover:shadow-medium transition-all animate-scale-in" style={{ animationDelay: `${index * 50}ms` }}>
-                  <div className="flex items-start justify-between mb-4">
+                <div key={proposal.id} className="p-5 rounded-xl bg-card border border-border shadow-soft hover:shadow-lg hover:border-primary/50 transition-all animate-scale-in cursor-pointer" style={{ animationDelay: `${index * 50}ms` }} onClick={() => openViewDialog(proposal)}>
+                  <div className="flex items-start justify-between mb-4" onClick={(e) => e.stopPropagation()}>
                     <span className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium", statusConfig[proposal.status].color)}>
                       <StatusIcon className="w-3 h-3" />
                       {statusConfig[proposal.status].label}
                     </span>
                     <ActionMenu items={[
-                      { label: "Visualizar", icon: Eye, onClick: () => openViewDialog(proposal) },
                       { label: "Editar", icon: Edit, onClick: () => openEditDialog(proposal) },
                       { label: "Duplicar", icon: Copy, onClick: () => handleDuplicate(proposal) },
                       { label: "Excluir", icon: Trash2, onClick: () => { setDeletingProposalId(proposal.id); setIsDeleteDialogOpen(true); }, variant: "destructive" },
