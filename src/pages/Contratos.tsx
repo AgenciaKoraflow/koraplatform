@@ -216,6 +216,9 @@ export default function Contratos() {
     billingType: "projeto" as "projeto" | "implantacao_recorrencia",
     recurrenceValue: "",
     recurrenceStartDate: "",
+    implementationValue: "",
+    recurrenceType: "" as "" | "monthly" | "quarterly" | "semi_annual" | "annual",
+    recurrenceEndDate: "",
     expiresAt: "",
     documentName: "",
     documentData: "",
@@ -247,7 +250,7 @@ export default function Contratos() {
 
   const openNewDialog = () => {
     setEditingContractId(null);
-    setFormData({ title: "", clientId: "", projectIds: [], value: "", status: "draft", type: "prestacao_servico", billingType: "projeto", recurrenceValue: "", recurrenceStartDate: "", expiresAt: "", documentName: "", documentData: "", documentType: "", bu: "kora-agents" });
+    setFormData({ title: "", clientId: "", projectIds: [], value: "", status: "draft", type: "prestacao_servico", billingType: "projeto", recurrenceValue: "", recurrenceStartDate: "", implementationValue: "", recurrenceType: "", recurrenceEndDate: "", expiresAt: "", documentName: "", documentData: "", documentType: "", bu: "kora-agents" });
     setDocumentPreview(null);
     setIsDialogOpen(true);
   };
@@ -266,6 +269,9 @@ export default function Contratos() {
         billingType: contract.billingType || "projeto",
         recurrenceValue: contract.recurrenceValue || "",
         recurrenceStartDate: contract.recurrenceStartDate || "",
+        implementationValue: (contract as any).implementationValue || "",
+        recurrenceType: (contract as any).recurrenceType || "",
+        recurrenceEndDate: (contract as any).recurrenceEndDate || "",
         expiresAt: contract.expiresAt,
         documentName: contract.documentName || "",
         documentData: contract.documentData || "",
@@ -352,12 +358,15 @@ export default function Contratos() {
         billingType: formData.billingType,
         recurrenceValue: formData.recurrenceValue || undefined,
         recurrenceStartDate: formData.recurrenceStartDate || undefined,
+        implementationValue: formData.implementationValue || undefined,
+        recurrenceType: formData.recurrenceType || undefined,
+        recurrenceEndDate: formData.recurrenceEndDate || undefined,
         expiresAt: formData.expiresAt,
         documentName: formData.documentName || undefined,
         documentData: formData.documentData || undefined,
         documentType: formData.documentType || undefined,
         bu: formData.bu,
-      });
+      } as any);
       toast.success("Contrato atualizado com sucesso!");
     } else {
       addContract({
@@ -370,13 +379,16 @@ export default function Contratos() {
         billingType: formData.billingType,
         recurrenceValue: formData.recurrenceValue || undefined,
         recurrenceStartDate: formData.recurrenceStartDate || undefined,
+        implementationValue: formData.implementationValue || undefined,
+        recurrenceType: formData.recurrenceType || undefined,
+        recurrenceEndDate: formData.recurrenceEndDate || undefined,
         createdAt: today,
         expiresAt: formData.expiresAt,
         documentName: formData.documentName || undefined,
         documentData: formData.documentData || undefined,
         documentType: formData.documentType || undefined,
         bu: formData.bu,
-      });
+      } as any);
       toast.success("Contrato criado com sucesso!");
     }
     setIsDialogOpen(false);
@@ -1138,6 +1150,55 @@ export default function Contratos() {
                 placeholder="R$ 0,00"
               />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="implementationValue">Valor da Implementação</Label>
+              <CurrencyInput
+                id="implementationValue"
+                value={formData.implementationValue}
+                onChange={(value) => setFormData({ ...formData, implementationValue: value })}
+                placeholder="R$ 0,00"
+              />
+              <p className="text-xs text-muted-foreground">Valor específico para implementação do contrato</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="recurrenceType">Recorrência</Label>
+              <Select value={formData.recurrenceType} onValueChange={(value) => setFormData({ ...formData, recurrenceType: value as any })}>
+                <SelectTrigger className="bg-input border-border">
+                  <SelectValue placeholder="Sem recorrência" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border">
+                  <SelectItem value="">Sem recorrência</SelectItem>
+                  <SelectItem value="monthly">Mensal</SelectItem>
+                  <SelectItem value="quarterly">Trimestral</SelectItem>
+                  <SelectItem value="semi_annual">Semestral</SelectItem>
+                  <SelectItem value="annual">Anual</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {formData.recurrenceType && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="recurrenceStartDate">Data de Início da Recorrência</Label>
+                  <DatePicker
+                    value={formData.recurrenceStartDate}
+                    onChange={(date) => setFormData({ ...formData, recurrenceStartDate: date })}
+                    placeholder="Selecione a data de início"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="recurrenceEndDate">Data de Término da Recorrência (Opcional)</Label>
+                  <DatePicker
+                    value={formData.recurrenceEndDate}
+                    onChange={(date) => setFormData({ ...formData, recurrenceEndDate: date })}
+                    placeholder="Selecione a data de término"
+                  />
+                </div>
+              </>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="expiresAt">Data de Validade *</Label>

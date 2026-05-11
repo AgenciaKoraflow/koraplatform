@@ -685,7 +685,11 @@ export default function Financeiro() {
                   </TableRow>
                 ) : (
                   filteredTransactions.map((transaction) => (
-                    <TableRow key={transaction.id}>
+                    <TableRow
+                      key={transaction.id}
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleEdit(transaction)}
+                    >
                       <TableCell>
                         {transaction.type === "receita" ? (
                           <div className="flex items-center gap-2 text-green-500">
@@ -714,9 +718,14 @@ export default function Financeiro() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={getStatusColor(transaction.status)}>
-                          {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className={getStatusColor(transaction.status)}>
+                            {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
+                          </Badge>
+                          {transaction.status === "pago" && (
+                            <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">✓ Pago</span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         {transaction.isRecurring ? (
@@ -756,7 +765,7 @@ export default function Financeiro() {
                           <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <ActionMenu
                           items={[
                             { label: "Editar", icon: Edit, onClick: () => handleEdit(transaction) },
