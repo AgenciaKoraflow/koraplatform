@@ -20,6 +20,7 @@ import { BU_CONFIG, BU } from "@/types/bu";
 import { cn } from "@/lib/utils";
 import { typographyClasses } from "@/lib/typography";
 import { useOKRData } from "@/hooks/useOKRData";
+import { BUMultiSelect } from "@/components/shared/BUMultiSelect";
 
 export default function OKR() {
   const { objectives, updates, loading, addObjective, updateObjective, deleteObjective, addUpdate } = useOKRData();
@@ -363,34 +364,11 @@ export default function OKR() {
                     <SelectTrigger className="bg-background border-border text-foreground"><SelectValue /></SelectTrigger>
                     <SelectContent className="bg-card border-border">
                       {Object.entries(PRIORITY_LABELS).map(([key, label]) => (<SelectItem key={key} value={key} className="text-foreground">{label}</SelectItem>))}</SelectContent></Select></div>
-                <div className="space-y-2"><Label className="text-foreground/90">BU (Selecione uma ou mais)</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {(["kora-agents", "kora-dev", "kora-studio", "kora-corp"] as const).map((bu) => {
-                      const isSelected = formData.bu.includes(bu);
-                      const buConfig = { "kora-agents": "Kora Agents (James)", "kora-dev": "Kora Dev (João)", "kora-studio": "Kora Studio (Ryan)", "kora-corp": "Kora Corp (Edson)" };
-                      return (
-                        <button
-                          key={bu}
-                          type="button"
-                          onClick={() => {
-                            setFormData({
-                              ...formData,
-                              bu: isSelected ? formData.bu.filter(b => b !== bu) : [...formData.bu, bu]
-                            });
-                          }}
-                          className={cn(
-                            "px-3 py-2 rounded-lg text-sm font-medium transition-all border",
-                            isSelected
-                              ? "bg-primary text-primary-foreground border-primary"
-                              : "bg-input text-foreground border-border hover:bg-muted"
-                          )}
-                        >
-                          {buConfig[bu]}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div></div>
+                <BUMultiSelect
+                  value={formData.bu}
+                  onChange={(bus) => setFormData({ ...formData, bu: bus })}
+                />
+                </div>
               <div className="grid grid-cols-2 gap-4"><div className="space-y-2">
                   <Label className={typographyClasses.label}>Data de Inicio</Label>
                   <DatePicker value={formData.startDate} onChange={(date) => setFormData({ ...formData, startDate: date })} /></div>
