@@ -30,7 +30,7 @@ export interface Client {
   head?: string;
   briefing?: string;
   proposalSentDate?: string;
-  bu?: BU;
+  bu?: BU[];
 }
 
 export interface Project {
@@ -50,7 +50,7 @@ export interface Project {
   type?: "projeto" | "sustentacao" | "consultoria";
   recurrenceValue?: string;
   recurrenceStartDate?: string;
-  bu?: BU;
+  bu?: BU[];
 }
 
 export interface Task {
@@ -63,7 +63,7 @@ export interface Task {
   priority: "low" | "medium" | "high";
   dueDate: string;
   assignees: string[];
-  bu?: BU;
+  bu?: BU[];
 }
 
 export interface Contract {
@@ -108,7 +108,7 @@ export interface Contract {
   contractorSignatureData?: string;
   contractorSignerName?: string;
   contractorSignerEmail?: string;
-  bu?: BU;
+  bu?: BU[];
 }
 
 // Signature status for tracking
