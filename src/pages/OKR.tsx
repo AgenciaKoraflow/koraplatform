@@ -55,11 +55,18 @@ export default function OKR() {
     e.preventDefault();
     setIsSaving(true);
     try {
+      // Converter datas para formato ISO antes de enviar
+      const normalizedData = {
+        ...formData,
+        startDate: convertDateToISO(formData.startDate),
+        endDate: convertDateToISO(formData.endDate),
+      };
+
       if (editingObjective) {
-        await updateObjective(editingObjective.id, formData);
+        await updateObjective(editingObjective.id, normalizedData);
       } else {
         const newObj: Omit<OKRObjective, 'id' | 'createdAt' | 'updatedAt'> = {
-          ...formData,
+          ...normalizedData,
           progress: 0,
           lastUpdate: format(new Date(), "yyyy-MM-dd"),
         };
@@ -107,8 +114,21 @@ export default function OKR() {
     }
   };
 
+  // Helper para converter datas do DatePicker (dd/MM/yyyy) para ISO (yyyy-MM-dd)
+  const convertDateToISO = (date: string): string => {
+    if (!date) return "";
+    // Se já está em formato ISO (yyyy-MM-dd), retorna como está
+    if (date.match(/^\d{4}-\d{2}-\d{2}$/)) return date;
+    // Se está em formato brasileiro (dd/MM/yyyy), converte
+    if (date.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+      const [day, month, year] = date.split('/');
+      return `${year}-${month}-${day}`;
+    }
+    return date;
+  };
+
   const getStatusFromProgress = (progress: number, endDate: string) => {
-    const end = parseISO(endDate);
+    const end = parseISO(convertDateToISO(endDate));
     const start = parseISO(objectives[0]?.startDate || new Date().toISOString());
     if (!isValid(end) || !isValid(start)) return progress >= 100 ? "completed" : "not_started";
     const daysRemaining = differenceInDays(end, new Date());
