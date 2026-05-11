@@ -15,7 +15,7 @@ export function useOKRData() {
     description: db.description || '',
     target: db.target,
     current: db.current || 0,
-    unit: db.unit || '%',
+    unit: db.unit || '',
     status: db.status,
     startDate: db.start_date,
     endDate: db.end_date,

@@ -15,6 +15,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { Progress } from "@/components/ui/progress";
 import { Target, Plus, Search, TrendingUp, TrendingDown, CheckCircle2, AlertCircle, Clock, Flag, BarChart3, Edit, Trash2, History, Calendar, Filter } from "lucide-react";
 import { format, parseISO, differenceInDays, isValid } from "date-fns";
+import { toast } from "sonner";
 import { OKRObjective, OKRUpdate, OKRFormData, OKRStatus, CATEGORY_LABELS, STATUS_LABELS, STATUS_COLORS, PRIORITY_LABELS, PRIORITY_COLORS } from "@/types/okr";
 import { BU_CONFIG, BU } from "@/types/bu";
 import { cn } from "@/lib/utils";
@@ -39,7 +40,7 @@ export default function OKR() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState<OKRFormData>({
-    title: "", description: "", target: 100, current: 0, unit: "%",
+    title: "", description: "", target: 100, current: 0, unit: "",
     status: "not_started", startDate: format(new Date(), "yyyy-MM-dd"),
     endDate: format(new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"),
     priority: "medium", category: "revenue", bu: []
@@ -47,7 +48,7 @@ export default function OKR() {
   const [updateFormData, setUpdateFormData] = useState({ value: 0, comment: "" });
 
   const resetForm = () => {
-    setFormData({ title: "", description: "", target: 100, current: 0, unit: "%",
+    setFormData({ title: "", description: "", target: 100, current: 0, unit: "",
       status: "not_started", startDate: format(new Date(), "yyyy-MM-dd"),
       endDate: format(new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"),
       priority: "medium", category: "revenue", bu: [] });
@@ -63,27 +64,53 @@ export default function OKR() {
     e.preventDefault();
     setIsSaving(true);
     try {
-      // Converter datas para formato ISO antes de enviar
-      const normalizedData = {
-        ...formData,
-        startDate: convertDateToISO(formData.startDate),
-        endDate: convertDateToISO(formData.endDate),
-      };
+      const startDate = convertDateToISO(formData.startDate);
+      const endDate = convertDateToISO(formData.endDate);
 
       if (editingObjective) {
-        await updateObjective(editingObjective.id, normalizedData);
+        const success = await updateObjective(editingObjective.id, {
+          title: formData.title,
+          description: formData.description,
+          target: formData.target,
+          current: formData.current,
+          unit: formData.unit,
+          status: formData.status,
+          startDate,
+          endDate,
+          priority: formData.priority,
+          category: formData.category,
+          bu: formData.bu,
+        });
+        if (success) {
+          toast.success('OKR atualizado com sucesso!');
+          setIsDialogOpen(false);
+          resetForm();
+        }
       } else {
         const newObj: Omit<OKRObjective, 'id' | 'createdAt' | 'updatedAt'> = {
-          ...normalizedData,
+          title: formData.title,
+          description: formData.description,
+          target: formData.target,
+          current: formData.current,
+          unit: formData.unit,
+          status: formData.status,
+          startDate,
+          endDate,
+          priority: formData.priority,
+          category: formData.category,
+          bu: formData.bu,
           progress: 0,
           lastUpdate: format(new Date(), "yyyy-MM-dd"),
         };
-        await addObjective(newObj);
+        const result = await addObjective(newObj);
+        if (result) {
+          setIsDialogOpen(false);
+          resetForm();
+        }
       }
-      setIsDialogOpen(false);
-      resetForm();
     } catch (error) {
       console.error("Erro ao salvar OKR:", error);
+      toast.error("Erro ao salvar OKR");
     } finally {
       setIsSaving(false);
     }
