@@ -39,7 +39,7 @@ create index if not exists idx_okr_objectives_bu on okr_objectives(bu);
 create index if not exists idx_okr_objectives_status on okr_objectives(status);
 create index if not exists idx_okr_objectives_category on okr_objectives(category);
 create index if not exists idx_okr_objectives_priority on okr_objectives(priority);
-create index if not_exists idx_okr_objectives_dates on okr_objectives(start_date, end_date);
+create index if not exists idx_okr_objectives_dates on okr_objectives(start_date, end_date);
 create index if not exists idx_okr_updates_objective on okr_updates(objective_id);
 create index if not exists idx_okr_updates_date on okr_updates(date);
 
