@@ -1164,12 +1164,12 @@ export default function Contratos() {
 
             <div className="space-y-2">
               <Label htmlFor="recurrenceType">Recorrência</Label>
-              <Select value={formData.recurrenceType} onValueChange={(value) => setFormData({ ...formData, recurrenceType: value as any })}>
+              <Select value={formData.recurrenceType || "none"} onValueChange={(value) => setFormData({ ...formData, recurrenceType: value === "none" ? "" : value as any })}>
                 <SelectTrigger className="bg-input border-border">
                   <SelectValue placeholder="Sem recorrência" />
                 </SelectTrigger>
                 <SelectContent className="bg-card border-border">
-                  <SelectItem value="">Sem recorrência</SelectItem>
+                  <SelectItem value="none">Sem recorrência</SelectItem>
                   <SelectItem value="monthly">Mensal</SelectItem>
                   <SelectItem value="quarterly">Trimestral</SelectItem>
                   <SelectItem value="semi_annual">Semestral</SelectItem>
