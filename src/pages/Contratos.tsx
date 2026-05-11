@@ -210,13 +210,13 @@ export default function Contratos() {
     title: "",
     clientId: "",
     projectIds: [] as string[],
-    value: "",
+    value: "", // Mantém para compatibilidade com addContract/updateContract
+    implementationValue: "",
     status: "draft" as "draft" | "awaiting_koraflow_signature" | "awaiting_client_signature" | "signed" | "expired",
     type: "prestacao_servico" as "prestacao_servico" | "projeto_unico",
     billingType: "projeto" as "projeto" | "implantacao_recorrencia",
     recurrenceValue: "",
     recurrenceStartDate: "",
-    implementationValue: "",
     recurrenceType: "" as "" | "monthly" | "quarterly" | "semi_annual" | "annual",
     recurrenceEndDate: "",
     expiresAt: "",
@@ -250,7 +250,7 @@ export default function Contratos() {
 
   const openNewDialog = () => {
     setEditingContractId(null);
-    setFormData({ title: "", clientId: "", projectIds: [], value: "", status: "draft", type: "prestacao_servico", billingType: "projeto", recurrenceValue: "", recurrenceStartDate: "", implementationValue: "", recurrenceType: "", recurrenceEndDate: "", expiresAt: "", documentName: "", documentData: "", documentType: "", bu: "kora-agents" });
+    setFormData({ title: "", clientId: "", projectIds: [], value: "", implementationValue: "", status: "draft", type: "prestacao_servico", billingType: "projeto", recurrenceValue: "", recurrenceStartDate: "", recurrenceType: "", recurrenceEndDate: "", expiresAt: "", documentName: "", documentData: "", documentType: "", bu: "kora-agents" });
     setDocumentPreview(null);
     setIsDialogOpen(true);
   };
@@ -264,12 +264,12 @@ export default function Contratos() {
         clientId: contract.clientId,
         projectIds: contract.projectIds || [],
         value: contract.value,
+        implementationValue: (contract as any).implementationValue || "",
         status: contract.status,
         type: contract.type,
         billingType: contract.billingType || "projeto",
         recurrenceValue: contract.recurrenceValue || "",
         recurrenceStartDate: contract.recurrenceStartDate || "",
-        implementationValue: (contract as any).implementationValue || "",
         recurrenceType: (contract as any).recurrenceType || "",
         recurrenceEndDate: (contract as any).recurrenceEndDate || "",
         expiresAt: contract.expiresAt,
@@ -340,7 +340,7 @@ export default function Contratos() {
   };
 
   const handleSave = () => {
-    if (!formData.title || !formData.clientId || !formData.value) {
+    if (!formData.title || !formData.clientId || !formData.implementationValue) {
       toast.error("Preencha os campos obrigatórios");
       return;
     }
@@ -1142,24 +1142,13 @@ export default function Contratos() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="value">Valor do Contrato *</Label>
-              <CurrencyInput
-                id="value"
-                value={formData.value}
-                onChange={(value) => setFormData({ ...formData, value })}
-                placeholder="R$ 0,00"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="implementationValue">Valor da Implementação</Label>
+              <Label htmlFor="implementationValue">Valor *</Label>
               <CurrencyInput
                 id="implementationValue"
                 value={formData.implementationValue}
-                onChange={(value) => setFormData({ ...formData, implementationValue: value })}
+                onChange={(value) => setFormData({ ...formData, implementationValue: value, value })}
                 placeholder="R$ 0,00"
               />
-              <p className="text-xs text-muted-foreground">Valor específico para implementação do contrato</p>
             </div>
 
             <div className="space-y-2">
