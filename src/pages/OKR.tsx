@@ -200,7 +200,7 @@ export default function OKR() {
                            obj.description?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = filterStatus === "all" || obj.status === filterStatus;
       const matchesCategory = filterCategory === "all" || obj.category === filterCategory;
-      const matchesBU = filterBU.length === 0 || filterBU.includes(obj.bu);
+      const matchesBU = filterBU.length === 0 || (Array.isArray(obj.bu) ? obj.bu.some(bu => filterBU.includes(bu)) : filterBU.includes(obj.bu));
       const matchesPriority = filterPriority === "all" || obj.priority === filterPriority;
       return matchesSearch && matchesStatus && matchesCategory && matchesBU && matchesPriority;
     });
@@ -311,7 +311,7 @@ export default function OKR() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <h3 className="text-base font-semibold text-foreground">{objective.title}</h3>
-                        <Badge variant="outline" className={cn(STATUS_COLORS[objective.status], "border-border/50")}>
+                        <Badge variant="outline" className={cn(STATUS_COLORS[objective.status], "border-border/50", objective.status === "not_started" && "text-white")}>
                           {getStatusIcon(objective.status)}<span className="ml-1">{STATUS_LABELS[objective.status]}</span></Badge>
                         <Badge variant="secondary" className={cn(PRIORITY_COLORS[objective.priority], "border-border/50")}>
                           <Flag className="w-3 h-3 mr-1" />{PRIORITY_LABELS[objective.priority]}</Badge>
@@ -372,7 +372,7 @@ export default function OKR() {
                   <Input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     placeholder="Ex: Aumentar receita recorrente" required className="bg-background border-border text-foreground" /></div>
                 <div className="space-y-2"><Label className="text-foreground/90">Categoria</Label>
-                  <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
+                  <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v as OKRFormData["category"] })}>
                     <SelectTrigger className="bg-background border-border text-foreground"><SelectValue /></SelectTrigger>
                     <SelectContent className="bg-card border-border">
                       {Object.entries(CATEGORY_LABELS).map(([key, label]) => (<SelectItem key={key} value={key} className="text-foreground">{label}</SelectItem>))}</SelectContent></Select></div></div>
@@ -387,7 +387,7 @@ export default function OKR() {
                   <Input value={formData.unit} onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                     placeholder="R$, %, dias..." className="bg-background border-border text-foreground" /></div>
                 <div className="space-y-2"><Label className="text-foreground/90">Prioridade</Label>
-                  <Select value={formData.priority} onValueChange={(v) => setFormData({ ...formData, priority: v })}>
+                  <Select value={formData.priority} onValueChange={(v) => setFormData({ ...formData, priority: v as OKRFormData["priority"] })}>
                     <SelectTrigger className="bg-background border-border text-foreground"><SelectValue /></SelectTrigger>
                     <SelectContent className="bg-card border-border">
                       {Object.entries(PRIORITY_LABELS).map(([key, label]) => (<SelectItem key={key} value={key} className="text-foreground">{label}</SelectItem>))}</SelectContent></Select></div>

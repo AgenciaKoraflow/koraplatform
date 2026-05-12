@@ -276,7 +276,7 @@ export default function Contratos() {
         documentName: contract.documentName || "",
         documentData: contract.documentData || "",
         documentType: contract.documentType || "",
-        bu: contract.bu || "kora-agents",
+        bu: (Array.isArray(contract.bu) ? contract.bu[0] : contract.bu) || "kora-agents" as BU,
       });
       setDocumentPreview(contract.documentName ? { name: contract.documentName, data: contract.documentData || "", type: contract.documentType || "" } : null);
       setIsDialogOpen(true);
@@ -365,7 +365,7 @@ export default function Contratos() {
         documentName: formData.documentName || undefined,
         documentData: formData.documentData || undefined,
         documentType: formData.documentType || undefined,
-        bu: formData.bu,
+        bu: formData.bu ? [formData.bu] : undefined,
       } as any);
       toast.success("Contrato atualizado com sucesso!");
     } else {
@@ -387,7 +387,7 @@ export default function Contratos() {
         documentName: formData.documentName || undefined,
         documentData: formData.documentData || undefined,
         documentType: formData.documentType || undefined,
-        bu: formData.bu,
+        bu: formData.bu ? [formData.bu] : undefined,
       } as any);
       toast.success("Contrato criado com sucesso!");
     }
@@ -830,7 +830,7 @@ export default function Contratos() {
                             <StatusIcon className="w-3 h-3" />
                             {statusConfig[contract.status]?.label || "Rascunho"}
                           </span>
-                          {contract.bu && <BUBadge bu={contract.bu} showLabel={false} />}
+                          {contract.bu?.[0] && <BUBadge bu={contract.bu[0]} showLabel={false} />}
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -966,7 +966,7 @@ export default function Contratos() {
                       <StatusIcon className="w-3 h-3 inline mr-1" />
                       {statusConfig[contract.status]?.label || "Rascunho"}
                     </span>
-                    {contract.bu && <BUBadge bu={contract.bu} />}
+                    {contract.bu?.[0] && <BUBadge bu={contract.bu[0]} />}
                   </div>
                   
                   {/* Signature Status */}
@@ -1261,7 +1261,7 @@ export default function Contratos() {
                 <span className={cn("px-3 py-1.5 rounded-full text-sm font-medium", typeConfig[viewingContract.type]?.color || typeConfig.prestacao_servico.color)}>
                   {getContractTypeLabel(viewingContract, projects)}
                 </span>
-                {viewingContract.bu && <BUBadge bu={viewingContract.bu} size="md" />}
+                {viewingContract.bu?.[0] && <BUBadge bu={viewingContract.bu[0]} size="md" />}
               </div>
 
               {/* Client Info */}

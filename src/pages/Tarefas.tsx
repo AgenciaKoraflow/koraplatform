@@ -201,7 +201,7 @@ export default function Tarefas() {
       status: task.status,
       priority: task.priority,
       dueDate: task.dueDate,
-      bu: task.bu || "kora-dev",
+      bu: (Array.isArray(task.bu) ? task.bu[0] : task.bu) || "kora-dev" as BU,
     });
     setIsDialogOpen(true);
   };
@@ -227,7 +227,7 @@ export default function Tarefas() {
         status: formData.status,
         priority: formData.priority,
         dueDate: formData.dueDate,
-        bu: formData.bu,
+        bu: formData.bu ? [formData.bu] : undefined,
       });
       toast.success("Tarefa atualizada com sucesso!");
     } else {
@@ -240,7 +240,7 @@ export default function Tarefas() {
         status: formData.status,
         priority: formData.priority,
         dueDate: formData.dueDate || "A definir",
-        bu: formData.bu,
+        bu: formData.bu ? [formData.bu] : undefined,
       });
       toast.success("Tarefa criada com sucesso!");
     }
@@ -343,7 +343,7 @@ export default function Tarefas() {
                           <div className="flex items-center gap-2">
                             <div className={cn("w-2 h-2 rounded-full", priorityConfig[task.priority].color)} />
                             <span className="text-xs text-muted-foreground">{priorityConfig[task.priority].label}</span>
-                            {task.bu && <BUBadge bu={task.bu} showLabel={false} />}
+                            {task.bu?.[0] && <BUBadge bu={task.bu[0]} showLabel={false} />}
                           </div>
                           <ActionMenu items={[
                             { label: "Visualizar", icon: Eye, onClick: () => openViewDialog(task) },

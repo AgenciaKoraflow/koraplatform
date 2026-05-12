@@ -109,7 +109,7 @@ function mapDbClient(db: any): Client {
     briefing: db.briefing || undefined,
     proposalSentDate: db.proposal_sent_date || undefined,
     head: db.head || undefined,
-    bu: db.bu || undefined,
+    bu: Array.isArray(db.bu) ? db.bu : (db.bu ? [db.bu] : undefined),
   };
 }
 
@@ -131,7 +131,7 @@ function mapDbProject(db: any): Project {
     type: db.type || 'projeto',
     recurrenceValue: db.recurrence_value ? formatValue(db.recurrence_value) : undefined,
     recurrenceStartDate: db.recurrence_start_date ? formatDate(db.recurrence_start_date) : undefined,
-    bu: db.bu || undefined,
+    bu: Array.isArray(db.bu) ? db.bu : (db.bu ? [db.bu] : undefined),
   };
 }
 
@@ -146,7 +146,7 @@ function mapDbTask(db: any): Task {
     priority: db.priority || 'medium',
     dueDate: formatDisplayDate(db.due_date) || '',
     assignees: db.assigned_to ? db.assigned_to.split(',').map((s: string) => s.trim()).filter(Boolean) : [],
-    bu: db.bu || undefined,
+    bu: Array.isArray(db.bu) ? db.bu : (db.bu ? [db.bu] : undefined),
   };
 }
 
@@ -217,7 +217,7 @@ function mapDbContract(db: any): Contract {
     contractorSignatureData: db.contractor_signature_data,
     contractorSignerName: db.contractor_signer_name,
     contractorSignerEmail: db.contractor_signer_email,
-    bu: db.bu || undefined,
+    bu: Array.isArray(db.bu) ? db.bu : (db.bu ? [db.bu] : undefined),
   };
 }
 
@@ -225,7 +225,7 @@ function mapDbKnowledge(db: any): KnowledgeItem {
   return {
     id: db.id,
     clientId: db.client_id,
-    projectId: db.project_id,
+    projectIds: db.project_ids ? (Array.isArray(db.project_ids) ? db.project_ids : [db.project_ids]) : (db.project_id ? [db.project_id] : []),
     title: db.title || '',
     category: db.category || 'documento',
     content: db.content || '',
@@ -242,7 +242,7 @@ function mapDbTicket(db: any): SupportTicket {
   return {
     id: db.id,
     clientId: db.client_id,
-    projectId: db.project_id,
+    projectIds: db.project_ids ? (Array.isArray(db.project_ids) ? db.project_ids : [db.project_ids]) : (db.project_id ? [db.project_id] : []),
     title: db.title || '',
     description: db.description || '',
     status: db.status || 'open',
@@ -333,7 +333,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         const totalTasks = projectTasks.length;
         // If there are tasks, calculate progress; otherwise use the stored value
         const calculatedProgress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : (project.progress || 0);
-        return { ...project, progress: calculatedProgress };
+        return mapDbProject({ ...project, progress: calculatedProgress });
       }));
       setTasks((tasksData || []).map(mapDbTask));
       setContracts((contractsData || []).map(mapDbContract));
@@ -730,7 +730,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     try {
       const dbData = {
         client_id: item.clientId || null,
-        project_id: item.projectId || null,
+        project_id: item.projectIds && item.projectIds.length > 0 ? item.projectIds[0] : null,
         title: item.title,
         category: item.category,
         content: item.content,
@@ -757,7 +757,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     try {
       const dbData: any = {};
       if (item.clientId !== undefined) dbData.client_id = item.clientId || null;
-      if (item.projectId !== undefined) dbData.project_id = item.projectId || null;
+      if (item.projectIds !== undefined) dbData.project_id = item.projectIds && item.projectIds.length > 0 ? item.projectIds[0] : null;
       if (item.title) dbData.title = item.title;
       if (item.category) dbData.category = item.category;
       if (item.content !== undefined) dbData.content = item.content;
@@ -792,7 +792,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     try {
       const dbData = {
         client_id: ticket.clientId,
-        project_id: ticket.projectId || null,
+        project_id: ticket.projectIds && ticket.projectIds.length > 0 ? ticket.projectIds[0] : null,
         title: ticket.title,
         description: ticket.description,
         status: ticket.status,
@@ -816,7 +816,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     try {
       const dbData: any = {};
       if (ticket.clientId) dbData.client_id = ticket.clientId;
-      if (ticket.projectId !== undefined) dbData.project_id = ticket.projectId || null;
+      if (ticket.projectIds !== undefined) dbData.project_id = ticket.projectIds && ticket.projectIds.length > 0 ? ticket.projectIds[0] : null;
       if (ticket.title) dbData.title = ticket.title;
       if (ticket.description) dbData.description = ticket.description;
       if (ticket.status) dbData.status = ticket.status;

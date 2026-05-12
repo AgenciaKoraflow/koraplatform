@@ -169,7 +169,7 @@ export default function Funil() {
         head: client.head || "",
         briefing: (client as any).briefing || "",
         proposalSentDate: client.proposalSentDate || "",
-        bu: client.bu || "kora-agents",
+        bu: (Array.isArray(client.bu) ? client.bu[0] : client.bu) || "kora-agents" as BU,
       });
       setIsDialogOpen(true);
     }
@@ -198,12 +198,12 @@ export default function Funil() {
       if (formData.head) updateData.head = formData.head;
       if (formData.briefing) updateData.briefing = formData.briefing;
       if (formData.proposalSentDate) updateData.proposalSentDate = formData.proposalSentDate;
-      if (formData.bu) updateData.bu = formData.bu;
+      if (formData.bu) updateData.bu = [formData.bu];
 
       const updated = await updateClient(editingClientId, updateData);
       if (updated) setIsDialogOpen(false);
     } else {
-      const created = await addClient({ ...formData, lastContact: "Agora" });
+      const created = await addClient({ ...formData, bu: formData.bu ? [formData.bu] : [], lastContact: "Agora" });
       if (created) setIsDialogOpen(false);
     }
   };
@@ -437,7 +437,7 @@ export default function Funil() {
                               <div>
                                 <div className="flex items-center gap-2">
                                   <p className="font-medium text-foreground">{client.name}</p>
-                                  {client.bu && <BUBadge bu={client.bu} showLabel={false} />}
+                                  {client.bu?.[0] && <BUBadge bu={client.bu[0]} showLabel={false} />}
                                 </div>
                                 <p className="text-sm text-muted-foreground">{client.company}</p>
                               </div>
@@ -535,7 +535,7 @@ export default function Funil() {
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-1">
                                 <p className="font-medium text-foreground text-sm truncate">{client.name}</p>
-                                {client.bu && <BUBadge bu={client.bu} showLabel={false} />}
+                                {client.bu?.[0] && <BUBadge bu={client.bu[0]} showLabel={false} />}
                               </div>
                               <p className="text-xs text-muted-foreground truncate">{client.company}</p>
                             </div>
@@ -648,7 +648,7 @@ export default function Funil() {
                           <span className={cn("px-3 py-1 rounded-full text-xs font-medium border w-fit", stageConfig[client.stage].bgColor, stageConfig[client.stage].textColor, stageConfig[client.stage].borderColor)}>
                             {stageConfig[client.stage].label}
                           </span>
-                          {client.bu && <BUBadge bu={client.bu} />}
+                          {client.bu?.[0] && <BUBadge bu={client.bu[0]} />}
                         </div>
                         {proposalStatus && (
                           <span className={cn(

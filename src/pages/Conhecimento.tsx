@@ -84,7 +84,7 @@ export default function Conhecimento() {
       title: item.title,
       category: item.category,
       clientId: item.clientId || "",
-      projectId: item.projectId || "",
+      projectId: item.projectIds?.[0] || "",
       content: item.content,
       username: item.username || "",
       password: item.password || "",
@@ -112,7 +112,7 @@ export default function Conhecimento() {
         title: formData.title,
         category: formData.category,
         clientId: formData.clientId || undefined,
-        projectId: formData.projectId || undefined,
+        projectIds: formData.projectId ? [formData.projectId] : [],
         content: formData.content,
         username: formData.username || undefined,
         password: formData.password || undefined,
@@ -124,7 +124,7 @@ export default function Conhecimento() {
     } else {
       addKnowledgeItem({
         clientId: formData.clientId || undefined,
-        projectId: formData.projectId || undefined,
+        projectIds: formData.projectId ? [formData.projectId] : [],
         title: formData.title,
         category: formData.category,
         content: formData.content,
@@ -265,8 +265,8 @@ export default function Conhecimento() {
                           </div>
                           <h3 className="font-semibold text-foreground mb-1">{item.title}</h3>
                           <p className="text-sm text-muted-foreground mb-3">{getClientName(item.clientId)}</p>
-                          {getProjectName(item.projectId) && (
-                            <p className="text-xs text-primary mb-3">{getProjectName(item.projectId)}</p>
+                          {getProjectName(item.projectIds?.[0]) && (
+                            <p className="text-xs text-primary mb-3">{getProjectName(item.projectIds?.[0])}</p>
                           )}
                           <div className="flex flex-wrap gap-2 mb-4">
                             {item.tags.slice(0, 3).map((tag) => (
@@ -325,8 +325,8 @@ export default function Conhecimento() {
                                   </div>
                                   <div>
                                     <p className="font-medium text-foreground">{item.title}</p>
-                                    {getProjectName(item.projectId) && (
-                                      <p className="text-xs text-primary">{getProjectName(item.projectId)}</p>
+                                    {getProjectName(item.projectIds?.[0]) && (
+                                      <p className="text-xs text-primary">{getProjectName(item.projectIds?.[0])}</p>
                                     )}
                                   </div>
                                 </div>
@@ -483,8 +483,8 @@ export default function Conhecimento() {
                   <div>
                     <h3 className="text-xl font-bold text-foreground">{viewingItem.title}</h3>
                     <p className="text-muted-foreground">{getClientName(viewingItem.clientId)}</p>
-                    {getProjectName(viewingItem.projectId) && (
-                      <p className="text-sm text-primary">{getProjectName(viewingItem.projectId)}</p>
+                    {getProjectName(viewingItem.projectIds?.[0]) && (
+                      <p className="text-sm text-primary">{getProjectName(viewingItem.projectIds?.[0])}</p>
                     )}
                   </div>
                 </div>

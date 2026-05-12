@@ -196,6 +196,7 @@ export default function Processos() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingProcess, setEditingProcess] = useState<Process | null>(null);
   const [deletingProcessId, setDeletingProcessId] = useState<string | null>(null);
+  const [dragOverStatus, setDragOverStatus] = useState<string | null>(null);
 
 
   const [formData, setFormData] = useState<{
@@ -272,10 +273,13 @@ export default function Processos() {
     setFormData({
       name: "",
       description: "",
-      category: tab as "sops" | "reunioes" | "comercial" | "financeiro" | "kpis",
+      category: "kora-agents",
+      subcategory: "",
       status: "pendente",
       assigned_to: "",
       due_date: "",
+      documents: [],
+      newDocument: "",
     });
     setIsDialogOpen(true);
   };
@@ -673,11 +677,8 @@ export default function Processos() {
               <div className="space-y-2">
                 <Label htmlFor="due_date">Data de Vencimento</Label>
                 <DatePicker
-                  date={formData.due_date ? new Date(formData.due_date) : undefined}
-                  onChange={(date) => setFormData({ 
-                    ...formData, 
-                    due_date: date ? date.toISOString().split("T")[0] : "" 
-                  })}
+                  value={formData.due_date}
+                  onChange={(val) => setFormData({ ...formData, due_date: val })}
                 />
               </div>
               {/* Documentos */}

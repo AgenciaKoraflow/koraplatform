@@ -4,7 +4,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { useData } from "@/contexts/DataContext";
 import { useOKRData } from "@/hooks/useOKRData";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { Search, FileText, Users, Briefcase, CheckSquare, DollarSign, Target } from "lucide-react";
+import { Search, FileText, Users, Briefcase, CheckSquare, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Buscar() {
@@ -15,35 +15,32 @@ export default function Buscar() {
   useEffect(() => {
     setSearchTerm(initialSearch);
   }, [initialSearch]);
-  const { clients, projects, tasks, contracts, proposals } = useData();
-  const { objectives } = useOKRData();
+  const { clients = [], projects = [], tasks = [], contracts = [] } = useData();
+  const { objectives = [] } = useOKRData();
 
   const results = useMemo(() => {
-    if (!searchTerm.trim()) return { clients: [], projects: [], tasks: [], contracts: [], proposals: [], okrs: [] };
+    if (!searchTerm.trim()) return { clients: [], projects: [], tasks: [], contracts: [], okrs: [] };
 
     const term = searchTerm;
 
     return {
-      clients: clients.filter(c =>
+      clients: (clients || []).filter(c =>
         c.name.includes(term) || c.company.includes(term) || c.email.includes(term)
       ),
-      projects: projects.filter(p =>
+      projects: (projects || []).filter(p =>
         p.name.includes(term) || p.description.includes(term)
       ),
-      tasks: tasks.filter(t =>
+      tasks: (tasks || []).filter(t =>
         t.title.includes(term) || t.description.includes(term)
       ),
-      contracts: contracts.filter(c =>
+      contracts: (contracts || []).filter(c =>
         c.title.includes(term)
       ),
-      proposals: proposals.filter(p =>
-        p.title.includes(term)
-      ),
-      okrs: objectives.filter(o =>
+      okrs: (objectives || []).filter(o =>
         o.title.includes(term) || o.description.includes(term)
       ),
     };
-  }, [searchTerm, clients, projects, tasks, contracts, proposals, objectives]);
+  }, [searchTerm, clients, projects, tasks, contracts, objectives]);
 
   const totalResults = Object.values(results).reduce((sum, arr) => sum + arr.length, 0);
 
@@ -141,24 +138,6 @@ export default function Buscar() {
                   <div key={contract.id} className="p-4 rounded-lg bg-card border border-border hover:shadow-md transition-all">
                     <p className="font-medium text-foreground">{contract.title}</p>
                     <p className="text-sm text-muted-foreground">{contract.value}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Propostas */}
-          {results.proposals.length > 0 && (
-            <section>
-              <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                Propostas ({results.proposals.length})
-              </h2>
-              <div className="space-y-2">
-                {results.proposals.map(proposal => (
-                  <div key={proposal.id} className="p-4 rounded-lg bg-card border border-border hover:shadow-md transition-all">
-                    <p className="font-medium text-foreground">{proposal.title}</p>
-                    <p className="text-sm text-muted-foreground">{proposal.value}</p>
                   </div>
                 ))}
               </div>

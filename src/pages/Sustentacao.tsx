@@ -53,7 +53,7 @@ export default function Sustentacao() {
 
   const filteredTickets = tickets.filter((ticket) => {
     const client = getClient(ticket.clientId);
-    const project = projects.find(p => p.id === ticket.projectId);
+    const project = projects.find(p => p.id === ticket.projectIds?.[0]);
     const matchesSearch = ticket.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       client?.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
       ticket.id.toLowerCase().includes(searchQuery.toLowerCase());
@@ -87,7 +87,7 @@ export default function Sustentacao() {
       title: ticket.title,
       description: ticket.description,
       clientId: ticket.clientId,
-      projectId: ticket.projectId || "",
+      projectId: ticket.projectIds?.[0] || "",
       status: ticket.status,
       priority: ticket.priority,
       assignee: ticket.assignee || "",
@@ -113,7 +113,7 @@ export default function Sustentacao() {
         title: formData.title,
         description: formData.description,
         clientId: formData.clientId,
-        projectId: formData.projectId || undefined,
+        projectIds: formData.projectId ? [formData.projectId] : [],
         status: formData.status,
         priority: formData.priority,
         assignee: formData.assignee || undefined,
@@ -123,7 +123,7 @@ export default function Sustentacao() {
     } else {
       addTicket({
         clientId: formData.clientId,
-        projectId: formData.projectId || undefined,
+        projectIds: formData.projectId ? [formData.projectId] : [],
         title: formData.title,
         description: formData.description,
         status: formData.status,
@@ -270,8 +270,8 @@ export default function Sustentacao() {
                       </td>
                       <td className="px-6 py-4">
                         <p className="font-medium text-foreground">{getClientName(ticket.clientId)}</p>
-                        {getProjectName(ticket.projectId) && (
-                          <p className="text-sm text-primary">{getProjectName(ticket.projectId)}</p>
+                        {getProjectName(ticket.projectIds?.[0]) && (
+                          <p className="text-sm text-primary">{getProjectName(ticket.projectIds?.[0])}</p>
                         )}
                       </td>
                       <td className="px-6 py-4">
@@ -336,8 +336,8 @@ export default function Sustentacao() {
                         </div>
                         <h4 className="font-medium text-foreground mb-2">{ticket.title}</h4>
                         <p className="text-sm text-muted-foreground mb-2">{getClientName(ticket.clientId)}</p>
-                        {getProjectName(ticket.projectId) && (
-                          <p className="text-xs text-primary mb-2">{getProjectName(ticket.projectId)}</p>
+                        {getProjectName(ticket.projectIds?.[0]) && (
+                          <p className="text-xs text-primary mb-2">{getProjectName(ticket.projectIds?.[0])}</p>
                         )}
                         <div className="flex items-center justify-between text-xs text-muted-foreground">
                           <span>{ticket.updatedAt}</span>
@@ -375,8 +375,8 @@ export default function Sustentacao() {
                   </div>
                   <h4 className="font-semibold text-foreground mb-2">{ticket.title}</h4>
                   <p className="text-sm text-muted-foreground mb-1">{getClientName(ticket.clientId)}</p>
-                  {getProjectName(ticket.projectId) && (
-                    <p className="text-xs text-primary mb-3">{getProjectName(ticket.projectId)}</p>
+                  {getProjectName(ticket.projectIds?.[0]) && (
+                    <p className="text-xs text-primary mb-3">{getProjectName(ticket.projectIds?.[0])}</p>
                   )}
                   <div className="flex items-center gap-2 mb-4">
                     <div className={cn("w-2 h-2 rounded-full", priorityConfig[ticket.priority].color)} />
@@ -508,8 +508,8 @@ export default function Sustentacao() {
               <div>
                 <h3 className="text-xl font-bold text-foreground">{viewingTicket.title}</h3>
                 <p className="text-muted-foreground">{getClientName(viewingTicket.clientId)}</p>
-                {getProjectName(viewingTicket.projectId) && (
-                  <p className="text-sm text-primary mt-1">{getProjectName(viewingTicket.projectId)}</p>
+                {getProjectName(viewingTicket.projectIds?.[0]) && (
+                  <p className="text-sm text-primary mt-1">{getProjectName(viewingTicket.projectIds?.[0])}</p>
                 )}
               </div>
               {viewingTicket.description && (

@@ -11,7 +11,8 @@ import { Users, FolderKanban, FileText, DollarSign } from "lucide-react";
 import { useData } from "@/contexts/DataContext";
 
 const Index = () => {
-  const { clients, projects, proposals, contracts } = useData();
+  const { clients, projects, contracts } = useData();
+  const proposals: any[] = [];
   
   // Date filter state
   const [startDate, setStartDate] = useState(() => startOfMonth(subMonths(new Date(), 5)));

@@ -108,24 +108,65 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    /* Prevent horizontal scroll on mobile */
+    overflow-x: hidden;
+    /* Smooth scrolling */
+    -webkit-overflow-scrolling: touch;
   }
-  
-  /* Melhorar contraste para leitura */
+
+  /* Improve font rendering */
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
   h1, h2, h3, h4, h5, h6 {
     @apply text-foreground;
   }
-  
+
   p {
     @apply text-foreground/90;
   }
-  
-  /* Labels com melhor contraste */
+
   label {
     @apply text-foreground/90;
   }
-  
-  /* Placeholders mais visíveis */
+
   ::placeholder {
     @apply text-foreground/50;
+  }
+
+  /* Tap highlight removal for custom interactive elements */
+  button, a, [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Better focus outlines for accessibility */
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-1 ring-offset-background;
+  }
+}
+
+@layer utilities {
+  /* iOS safe area padding for bottom nav */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Smooth momentum scrolling on iOS */
+  .scroll-smooth-mobile {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  /* Touch-friendly minimum size */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Table scroll wrapper for mobile */
+  .table-scroll {
+    @apply overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0;
   }
 }

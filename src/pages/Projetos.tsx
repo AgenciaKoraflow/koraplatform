@@ -18,7 +18,7 @@ import { useData } from "@/contexts/DataContext";
 import { Project } from "@/types/data";
 import { BU } from "@/types/bu";
 import { BUBadge } from "@/components/shared/BUBadge";
-import { BUSelect } from "@/components/shared/BUSelect";
+import { BUMultiSelect } from "@/components/shared/BUMultiSelect";
 import { differenceInDays, parse, isValid } from "date-fns";
 
 const typeConfig = {
@@ -97,7 +97,7 @@ export default function Projetos() {
       type: project.type || "projeto",
       recurrenceValue: project.recurrenceValue || "",
       recurrenceStartDate: project.recurrenceStartDate || "",
-      bu: project.bu || "kora-dev",
+      bu: (Array.isArray(project.bu) ? project.bu : (project.bu ? [project.bu] : [])) as BU[],
     });
     setIsDialogOpen(true);
   };
@@ -339,7 +339,7 @@ export default function Projetos() {
                     <span className={cn("px-2.5 py-1 rounded-full text-xs font-medium", statusConfig[project.status].color)}>
                       {statusConfig[project.status].label}
                     </span>
-                    {project.bu && <BUBadge bu={project.bu} />}
+                    {project.bu?.[0] && <BUBadge bu={project.bu[0]} />}
                   </div>
                   <div onClick={(e) => e.stopPropagation()}>
                     <ActionMenu
@@ -682,7 +682,7 @@ export default function Projetos() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="bu">BU</Label>
-              <BUSelect value={formData.bu} onChange={(bu) => setFormData({ ...formData, bu })} />
+              <BUMultiSelect value={formData.bu} onChange={(bu) => setFormData({ ...formData, bu })} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

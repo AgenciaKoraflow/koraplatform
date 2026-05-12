@@ -34,6 +34,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Area, AreaChart, Tooltip as RechartsTooltip } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useData } from "@/contexts/DataContext";
+import { useOKRData } from "@/hooks/useOKRData";
 import { cn } from "@/lib/utils";
 
 interface HistoryPoint {
@@ -261,45 +262,6 @@ const calculateKPIs = (
       ],
       history: [{ month: "Atual", value: projects.filter(p => p.status === "in_progress").length }],
       isCalculated: true
-    },
-    // Operations KPIs
-    {
-      id: "total-projects",
-      name: "Total de Projetos",
-      description: "Quantidade total de projetos no sistema.",
-      currentValue: projects.length || null,
-      benchmarkValue: 20,
-      unit: "",
-      format: "number",
-      category: "operations",
-      trend: projects.length > 10 ? "up" : "stable",
-      isHigherBetter: true,
-      explanation: `${projects.length} projetos cadastrados.`,
-      recommendations: projects.length > 0 ? [
-        "Acompanhar progresso dos projetos",
-        "Registrar conclusão de projetos"
-      ] : ["Adicione projetos para começar"],
-      history: [{ month: "Total", value: projects.length }],
-      isCalculated: true
-    },
-    {
-      id: "projects-in-progress",
-      name: "Projetos em Andamento",
-      description: "Projetos com status 'in_progress'.",
-      currentValue: projects.filter(p => p.status === "in_progress").length || null,
-      benchmarkValue: 8,
-      unit: "",
-      format: "number",
-      category: "operations",
-      trend: "stable",
-      isHigherBetter: true,
-      explanation: `${projects.filter(p => p.status === "in_progress").length} projetos em andamento.`,
-      recommendations: [
-        "Manter projetos atualizados",
-        "Registrar progresso regularmente"
-      ],
-      history: [{ month: "Atual", value: projects.filter(p => p.status === "in_progress").length }],
-      isCalculated: true
     }
   ];
 
@@ -485,19 +447,37 @@ function BenchmarkCard({ benchmark, onClick }: { benchmark: Benchmark; onClick: 
   );
 }
 
-function BenchmarkDetailDialog({ 
-  benchmark, 
-  open, 
-  onOpenChange 
-}: { 
-  benchmark: Benchmark | null; 
-  open: boolean; 
+function BenchmarkDetailDialog({
+  benchmark,
+  open,
+  onOpenChange
+}: {
+  benchmark: Benchmark | null;
+  open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { objectives } = useOKRData();
+
   if (!benchmark) return null;
 
   const status = getPerformanceStatus(benchmark);
   const chartColor = getChartColor(status);
+
+  // Map benchmark category to OKR categories (multiple possible matches)
+  const getCategoryMappings = (benchmarkCategory: string): string[] => {
+    const mapping: Record<string, string[]> = {
+      'financial': ['revenue', 'efficiency'],
+      'clients': ['satisfaction', 'growth'],
+      'operations': ['efficiency', 'quality', 'team'],
+      'growth': ['growth', 'innovation']
+    };
+    return mapping[benchmarkCategory] || [benchmarkCategory];
+  };
+
+  // Filter OKRs by matching category
+  const relatedOKRs = objectives.filter(okr =>
+    getCategoryMappings(benchmark.category).includes(okr.category)
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -616,6 +596,53 @@ function BenchmarkDetailDialog({
                   </li>
                 ))}
               </ul>
+            </div>
+          )}
+
+          {/* Related OKRs */}
+          {relatedOKRs.length > 0 && (
+            <div>
+              <h4 className="font-medium mb-3 flex items-center gap-2">
+                <Target className="h-4 w-4 text-primary" />
+                OKRs Relacionados ({relatedOKRs.length})
+              </h4>
+              <div className="space-y-2">
+                {relatedOKRs.map((okr) => (
+                  <div key={okr.id} className="p-3 rounded-lg border border-primary/20 bg-primary/5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-foreground">{okr.title}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{okr.description}</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+                            <div
+                              className="h-full bg-primary transition-all"
+                              style={{ width: `${Math.min((okr.current / okr.target) * 100, 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {okr.current}/{okr.target} {okr.unit}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Estes OKRs podem ajudar a alcançar o objetivo deste indicador.
+              </p>
+            </div>
+          )}
+
+          {relatedOKRs.length === 0 && (
+            <div className="p-4 rounded-lg border border-dashed border-border bg-muted/20">
+              <p className="text-sm text-muted-foreground text-center">
+                Nenhum OKR relacionado a esta categoria ainda.
+              </p>
+              <p className="text-xs text-muted-foreground text-center mt-1">
+                Crie OKRs para estruturar seus objetivos nesta área.
+              </p>
             </div>
           )}
         </div>

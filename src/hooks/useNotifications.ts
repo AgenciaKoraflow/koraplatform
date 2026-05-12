@@ -71,7 +71,7 @@ export function useNotifications() {
 
     // Pending contracts
     contracts
-      .filter((c) => c.status === "pending_signature")
+      .filter((c) => c.status === "awaiting_client_signature" || c.status === "awaiting_koraflow_signature")
       .forEach((contract) => {
         const createdAt = parseDate(contract.createdAt);
         if (createdAt) {
