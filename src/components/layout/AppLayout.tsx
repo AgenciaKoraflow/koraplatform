@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect, useRef } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { AppSidebar } from "./AppSidebar";
 import {
@@ -11,6 +11,33 @@ import { cn } from "@/lib/utils";
 import { KoraSystemLogoIcon } from "@/components/shared/KoraSystemLogo";
 import { useUser } from "@/hooks/useUser";
 import { useTheme } from "@/contexts/ThemeContext";
+
+function PageTransition({ children }: { children: ReactNode }) {
+  const location = useLocation();
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.opacity = "0.92";
+    el.style.transform = "translateY(2px)";
+    el.style.transition = "none";
+    const raf = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        el.style.transition = "opacity 0.12s ease, transform 0.12s ease";
+        el.style.opacity = "1";
+        el.style.transform = "translateY(0)";
+      });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [location.pathname]);
+
+  return (
+    <div ref={ref} className="h-full">
+      {children}
+    </div>
+  );
+}
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -109,11 +136,11 @@ export function AppLayout({ children }: AppLayoutProps) {
           </div>
         </header>
 
-        {/* Page content — key triggers the CSS entrance animation on every route change */}
+        {/* Page content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 xl:p-10 overflow-auto pb-24 lg:pb-8">
-          <div key={location.pathname} className="animate-page-enter h-full">
+          <PageTransition>
             {children}
-          </div>
+          </PageTransition>
         </main>
       </div>
 

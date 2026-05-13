@@ -300,6 +300,16 @@ export default function Processos() {
     setIsDialogOpen(true);
   };
 
+  const convertDateToISO = (date: string): string | null => {
+    if (!date) return null;
+    if (date.match(/^\d{4}-\d{2}-\d{2}$/)) return date;
+    if (date.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+      const [day, month, year] = date.split('/');
+      return `${year}-${month}-${day}`;
+    }
+    return date;
+  };
+
   const handleSave = async () => {
     if (!formData.name) {
       toast.error("Nome é obrigatório");
@@ -314,7 +324,7 @@ export default function Processos() {
         category: formData.category,
         status: formData.status,
         assigned_to: formData.assigned_to || null,
-        due_date: formData.due_date || null,
+        due_date: convertDateToISO(formData.due_date),
       };
       
       // Add subcategory only if it has a value and is not empty

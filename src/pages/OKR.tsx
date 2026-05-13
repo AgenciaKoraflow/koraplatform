@@ -126,11 +126,11 @@ export default function OKR() {
         date: format(new Date(), "yyyy-MM-dd"),
         value: updateFormData.value,
         comment: updateFormData.comment,
-        updatedBy: "current-user",
+        updatedBy: "",
       };
       await addUpdate(selectedObjective.id, newUpdateData);
 
-      const progress = Math.min(100, Math.max(0, (updateFormData.value / selectedObjective.target) * 100));
+      const progress = Math.max(0, Math.round((updateFormData.value / selectedObjective.target) * 100));
       const newStatus = getStatusFromProgress(progress, selectedObjective.endDate);
       await updateObjective(selectedObjective.id, {
         current: updateFormData.value,
@@ -169,7 +169,7 @@ export default function OKR() {
     const daysRemaining = differenceInDays(end, new Date());
     const totalDays = differenceInDays(end, start);
     const progressExpected = totalDays > 0 ? Math.max(0, 100 - (daysRemaining / totalDays) * 100) : 0;
-    if (progress >= 100) return "completed";
+    if (progress >= 100) return "completed"; // includes > 100% (superação da meta)
     if (progress >= progressExpected * 0.9) return "on_track";
     if (progress >= progressExpected * 0.7) return "in_progress";
     if (progress >= progressExpected * 0.5) return "at_risk";
@@ -339,9 +339,9 @@ export default function OKR() {
                   </div>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm"><span className="text-muted-foreground">Progresso Geral</span>
-                      <span className="font-medium text-foreground">{objective.progress}%</span></div>
-                    <Progress value={objective.progress} className="h-3" />
-                    <div className="flex justify-between text-xs text-muted-foreground"><span>0%</span><span>100%</span></div>
+                      <span className={cn("font-medium", objective.progress > 100 ? "text-emerald-600" : "text-foreground")}>{objective.progress}%{objective.progress > 100 && " ✓ Meta superada"}</span></div>
+                    <Progress value={Math.min(100, objective.progress)} className={cn("h-3", objective.progress > 100 && "[&>div]:bg-emerald-500")} />
+                    <div className="flex justify-between text-xs text-muted-foreground"><span>0%</span><span>{objective.progress > 100 ? <span className="text-emerald-600 font-medium">{objective.progress}%</span> : "100%"}</span></div>
                   </div>
                   {updates.filter(u => u.objectiveId === objective.id).slice(0, 3).length > 0 && (
                     <div className="border-t border-border/50 pt-4">
@@ -471,8 +471,10 @@ export default function OKR() {
                 </div>
 
                 <div>
-                  <Label className="text-foreground/80 mb-2 block">Progresso: {viewingObjective.progress}%</Label>
-                  <Progress value={viewingObjective.progress} className="h-3" />
+                  <Label className={cn("mb-2 block", viewingObjective.progress > 100 ? "text-emerald-600" : "text-foreground/80")}>
+                    Progresso: {viewingObjective.progress}%{viewingObjective.progress > 100 && " — Meta superada!"}
+                  </Label>
+                  <Progress value={Math.min(100, viewingObjective.progress)} className={cn("h-3", viewingObjective.progress > 100 && "[&>div]:bg-emerald-500")} />
                   <div className="flex justify-between text-xs text-muted-foreground mt-1">
                     <span>{viewingObjective.current.toLocaleString()} {viewingObjective.unit}</span>
                     <span>{viewingObjective.target.toLocaleString()} {viewingObjective.unit}</span>

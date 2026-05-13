@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Project, Contract } from "@/types/data";
 import { BU } from "@/types/bu";
 import { BUBadge } from "@/components/shared/BUBadge";
+import { ClientAvatar } from "@/components/shared/ClientAvatar";
 import { BUSelect } from "@/components/shared/BUSelect";
 import {
   Plus, FileSignature, CheckCircle, Clock, AlertCircle, Send, Download, Eye, Edit, Trash2,
@@ -40,17 +41,17 @@ const KORAFLOW_PARTNERS: { name: string; email: string }[] = [
 const statusConfig = {
   draft: { label: "Rascunho", color: "bg-slate-500/10 text-slate-500 border-slate-500/20", icon: FileSignature, description: "Contrato anexado sem assinaturas" },
   awaiting_koraflow_signature: { label: "Aguardando Koraflow", color: "bg-amber-500/10 text-amber-500 border-amber-500/20", icon: Clock, description: "Aguardando assinatura da Koraflow" },
-  awaiting_client_signature: { label: "Aguardando Cliente", color: "bg-primary/10 text-primary border-blue-500/20", icon: Send, description: "Enviado para cliente assinar" },
+  awaiting_client_signature: { label: "Aguardando Cliente", color: "bg-blue-500/10 text-blue-500 border-blue-500/20", icon: Send, description: "Enviado para cliente assinar" },
   signed: { label: "Totalmente Assinado", color: "bg-green-500/10 text-green-500 border-green-500/20", icon: CheckCircle, description: "Contrato concluído" },
   expired: { label: "Expirado", color: "bg-red-500/10 text-red-500 border-red-500/20", icon: AlertCircle, description: "Link expirado sem assinatura" },
 };
 
 const typeConfig = {
-  prestacao_servico: { label: "Prestação de Serviço", color: "bg-primary/10 text-primary" },
-  projeto: { label: "Projeto", color: "bg-primary/10 text-primary" },
-  projeto_unico: { label: "Projeto Único", color: "bg-primary/10 text-primary" },
-  sustentacao: { label: "Sustentação", color: "bg-muted/10 text-muted-foreground" },
-  consultoria: { label: "Consultoria", color: "bg-amber-500/10 text-amber-500" },
+  prestacao_servico:     { label: "Prestação de Serviço", color: "bg-slate-500/10 text-slate-500" },
+  projeto:               { label: "Projeto",              color: "bg-indigo-500/10 text-indigo-500" },
+  projeto_unico:         { label: "Projeto Único",        color: "bg-violet-500/10 text-violet-500" },
+  sustentacao:           { label: "Sustentação",          color: "bg-muted/10 text-muted-foreground" },
+  consultoria:           { label: "Consultoria",          color: "bg-amber-500/10 text-amber-500" },
   implantacao_recorrencia: { label: "Impl. + Recorrência", color: "bg-green-500/10 text-green-500" },
 };
 
@@ -149,7 +150,7 @@ function getSignatureStatus(contract: Contract): {
   }
   
   if (koraflowSigned && !clientSigned) {
-    return { status: "awaiting_client", label: "Aguardando Cliente", color: "text-primary", icon: Send };
+    return { status: "awaiting_client", label: "Aguardando Cliente", color: "text-blue-500", icon: Send };
   }
   
   return { status: "draft", label: "Rascunho", color: "text-slate-500", icon: FileSignature };
@@ -603,12 +604,11 @@ export default function Contratos() {
     <AppLayout>
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/10 p-6">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none" />
+        <div className="relative overflow-hidden rounded-2xl bg-card border border-border p-6">
           <div className="relative flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/25">
-                <FileSignature className="w-7 h-7 text-primary-foreground" />
+              <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center">
+                <FileSignature className="w-7 h-7 text-foreground" />
               </div>
               <div>
                 <h1 className="text-xl font-bold text-foreground tracking-tight">Contratos</h1>
@@ -751,8 +751,8 @@ export default function Contratos() {
         {/* Empty State */}
         {filteredContracts.length === 0 && (
           <div className="bg-card rounded-2xl border border-dashed border-border p-12 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-              <FileSignature className="w-8 h-8 text-primary" />
+            <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+              <FileSignature className="w-8 h-8 text-muted-foreground" />
             </div>
             <h3 className="text-lg font-semibold mb-1">
               {contracts.length === 0 ? "Nenhum contrato ainda" : "Nenhum contrato encontrado"}
@@ -804,13 +804,18 @@ export default function Contratos() {
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <FileSignature className="w-5 h-5 text-primary" />
+                          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                            <FileSignature className="w-5 h-5 text-muted-foreground" />
                           </div>
                           <span className="font-medium text-foreground">{contract.title}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-foreground">{client?.company || "—"}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <ClientAvatar client={client} size="sm" />
+                          <span className="text-foreground text-sm">{client?.company || "—"}</span>
+                        </div>
+                      </td>
                       <td className="px-6 py-4">
                         <span className={cn("inline-block px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap", (() => {
                           const label = getContractTypeLabel(contract, projects);
@@ -818,7 +823,7 @@ export default function Contratos() {
                           if (label === "Projeto") return typeConfig.projeto?.color;
                           if (label === "Sustentação") return typeConfig.sustentacao?.color;
                           if (label === "Consultoria") return typeConfig.consultoria?.color;
-                          if (label === "Projeto + Impl. + Recorrência") return "bg-gradient-to-r from-primary/10 to-green-500/10 text-primary border border-blue-500/20";
+                          if (label === "Projeto + Impl. + Recorrência") return "bg-gradient-to-r from-indigo-500/10 to-green-500/10 text-indigo-500 border border-indigo-500/20";
                           return typeConfig.prestacao_servico?.color;
                         })())}>
                           {getContractTypeLabel(contract, projects)}
@@ -948,8 +953,8 @@ export default function Contratos() {
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <div className="flex items-start justify-between mb-4">
-                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <FileSignature className="w-5 h-5 text-primary" />
+                    <div className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <FileSignature className="w-5 h-5 text-muted-foreground" />
                     </div>
                     <div onClick={(e) => e.stopPropagation()}>
                       <ActionMenu items={[
@@ -960,7 +965,10 @@ export default function Contratos() {
                     </div>
                   </div>
                   <h3 className="font-semibold text-foreground mb-1">{contract.title}</h3>
-                  <p className="text-sm text-muted-foreground mb-3">{client?.company || "—"}</p>
+                  <div className="flex items-center gap-2 mb-3">
+                    <ClientAvatar client={client} size="xs" />
+                    <p className="text-sm text-muted-foreground">{client?.company || "—"}</p>
+                  </div>
                   <div className="flex items-center gap-2 mb-3 flex-wrap">
                     <span className={cn("inline-block px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap", statusConfig[contract.status]?.color || statusConfig.draft.color)}>
                       <StatusIcon className="w-3 h-3 inline mr-1" />

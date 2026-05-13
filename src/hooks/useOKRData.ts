@@ -34,7 +34,10 @@ export function useOKRData() {
     date: db.date,
     value: db.value,
     comment: db.comment || '',
-    updatedBy: db.updated_by || 'system',
+    // updated_by is a UUID in the DB — show "equipe" for legacy records
+    updatedBy: db.updated_by
+      ? (db.updated_by.includes('@') ? db.updated_by : 'equipe')
+      : 'sistema',
     createdAt: db.created_at,
   });
 
@@ -179,6 +182,10 @@ export function useOKRData() {
   // Add update
   const addUpdate = useCallback(async (objectiveId: string, data: Omit<OKRUpdate, 'id' | 'createdAt'>): Promise<OKRUpdate | null> => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id ?? null;
+      const displayName = session?.user?.email || data.updatedBy || 'sistema';
+
       const { data: result, error } = await supabase
         .from('okr_updates')
         .insert([{
@@ -186,14 +193,14 @@ export function useOKRData() {
           date: data.date,
           value: data.value,
           comment: data.comment,
-          updated_by: data.updatedBy,
+          updated_by: userId,
         }])
         .select()
         .single();
 
       if (error) throw error;
 
-      const mapped = mapDbUpdate(result);
+      const mapped = { ...mapDbUpdate(result), updatedBy: displayName };
       setUpdates(prev => [mapped, ...prev]);
       toast.success('Atualização adicionada com sucesso!');
       return mapped;

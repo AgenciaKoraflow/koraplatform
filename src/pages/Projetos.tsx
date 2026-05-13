@@ -1,7 +1,7 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Plus, Calendar, Clock, Search, Eye, Edit, Trash2, User, AlertTriangle, CheckCircle, Timer, FolderKanban } from "lucide-react";
+import { Plus, Calendar, Clock, Search, Eye, Edit, Trash2, AlertTriangle, CheckCircle, Timer, FolderKanban } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,9 @@ import { Project } from "@/types/data";
 import { BU } from "@/types/bu";
 import { BUBadge } from "@/components/shared/BUBadge";
 import { BUMultiSelect } from "@/components/shared/BUMultiSelect";
+import { ClientAvatar } from "@/components/shared/ClientAvatar";
+import { UserAvatar } from "@/components/shared/UserAvatar";
+import { useUserAvatar } from "@/hooks/useUserAvatar";
 import { differenceInDays, parse, isValid } from "date-fns";
 
 const typeConfig = {
@@ -39,6 +42,7 @@ const statusOrder: (keyof typeof statusConfig)[] = ["planning", "in_progress", "
 
 export default function Projetos() {
   const { projects, clients, addProject, updateProject, deleteProject, getClient, getTasksByProject } = useData();
+  const { getAvatarForName } = useUserAvatar();
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
@@ -174,19 +178,20 @@ export default function Projetos() {
   };
 
   // Calculate deadline status for visual indicator
-  const getDeadlineStatus = (dueDate: string, progress: number): { 
-    daysRemaining: number | null; 
-    isOverdue: boolean; 
-    isAtRisk: boolean; 
+  const getDeadlineStatus = (dueDate: string, progress: number, projectStatus?: Project["status"]): {
+    daysRemaining: number | null;
+    isOverdue: boolean;
+    isAtRisk: boolean;
     isOnTrack: boolean;
     status: 'overdue' | 'at_risk' | 'on_track' | 'completed' | 'no_date';
   } => {
+    // Project explicitly marked as completed — never show overdue
+    if (projectStatus === "completed" || progress >= 100) {
+      return { daysRemaining: null, isOverdue: false, isAtRisk: false, isOnTrack: true, status: 'completed' };
+    }
+
     if (!dueDate || dueDate === "A definir") {
       return { daysRemaining: null, isOverdue: false, isAtRisk: false, isOnTrack: false, status: 'no_date' };
-    }
-    
-    if (progress >= 100) {
-      return { daysRemaining: null, isOverdue: false, isAtRisk: false, isOnTrack: true, status: 'completed' };
     }
     
     // Parse date in DD/MM/YYYY format
@@ -325,7 +330,7 @@ export default function Projetos() {
         {viewMode === "grid" && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredProjects.map((project, index) => {
-              const deadlineStatus = getDeadlineStatus(project.dueDate, project.progress);
+              const deadlineStatus = getDeadlineStatus(project.dueDate, project.progress, project.status);
               
               return (
               <div
@@ -352,18 +357,19 @@ export default function Projetos() {
                   </div>
                 </div>
                 <h3 className="text-lg font-semibold text-foreground mb-1">{project.name}</h3>
-                <p className="text-sm text-muted-foreground mb-3">{getClientName(project.clientId)}</p>
+                <div className="flex items-center gap-1.5 mb-3">
+                  <ClientAvatar client={getClient(project.clientId)} size="xs" />
+                  <p className="text-sm text-muted-foreground">{getClientName(project.clientId)}</p>
+                </div>
                 
                 {/* Head do projeto */}
                 {project.head && (
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-                      <User className="w-3 h-3 text-primary" />
-                    </div>
+                    <UserAvatar name={project.head} src={getAvatarForName(project.head)} size="xs" />
                     <span className="text-xs text-muted-foreground">Head: <span className="font-medium text-foreground">{project.head}</span></span>
                   </div>
                 )}
-                
+
                 {/* Deadline status indicator */}
                 {deadlineStatus.status !== 'no_date' && deadlineStatus.status !== 'completed' && (
                   <div className={cn(
@@ -420,9 +426,7 @@ export default function Projetos() {
                     </div>
                     <div className="flex -space-x-2">
                       {project.team.slice(0, 3).map((member, i) => (
-                        <div key={i} className="w-7 h-7 rounded-full bg-primary/20 border-2 border-card flex items-center justify-center">
-                          <span className="text-xs font-medium text-primary">{member.substring(0, 2)}</span>
-                        </div>
+                        <UserAvatar key={i} name={member} src={getAvatarForName(member)} size="sm" />
                       ))}
                       {project.team.length > 3 && (
                         <div className="w-7 h-7 rounded-full bg-muted border-2 border-card flex items-center justify-center">
@@ -451,7 +455,7 @@ export default function Projetos() {
                 </div>
                 <div className="space-y-3">
                   {getProjectsByStatus(status).map((project) => {
-                    const deadlineStatus = getDeadlineStatus(project.dueDate, project.progress);
+                    const deadlineStatus = getDeadlineStatus(project.dueDate, project.progress, project.status);
                     
                     return (
                     <div
@@ -460,12 +464,15 @@ export default function Projetos() {
                       className="p-4 rounded-xl bg-card border border-border shadow-soft hover:shadow-medium transition-all cursor-pointer"
                     >
                       <h4 className="font-medium text-foreground mb-1">{project.name}</h4>
-                      <p className="text-sm text-muted-foreground mb-2">{getClientName(project.clientId)}</p>
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <ClientAvatar client={getClient(project.clientId)} size="xs" />
+                        <p className="text-sm text-muted-foreground">{getClientName(project.clientId)}</p>
+                      </div>
                       
                       {/* Head do projeto */}
                       {project.head && (
                         <div className="flex items-center gap-1.5 mb-2">
-                          <User className="w-3 h-3 text-muted-foreground" />
+                          <UserAvatar name={project.head} src={getAvatarForName(project.head)} size="xs" />
                           <span className="text-xs text-muted-foreground">{project.head}</span>
                         </div>
                       )}
@@ -531,7 +538,7 @@ export default function Projetos() {
               </thead>
               <tbody className="divide-y divide-border">
                 {filteredProjects.map((project) => {
-                  const deadlineStatus = getDeadlineStatus(project.dueDate, project.progress);
+                  const deadlineStatus = getDeadlineStatus(project.dueDate, project.progress, project.status);
                   
                   return (
                   <tr 
@@ -540,13 +547,16 @@ export default function Projetos() {
                     onClick={() => openEditDialog(project)}
                   >
                     <td className="px-6 py-4 font-medium text-foreground">{project.name}</td>
-                    <td className="px-6 py-4 text-muted-foreground">{getClientName(project.clientId)}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <ClientAvatar client={getClient(project.clientId)} size="xs" />
+                        <span className="text-muted-foreground text-sm">{getClientName(project.clientId)}</span>
+                      </div>
+                    </td>
                     <td className="px-6 py-4">
                       {project.head ? (
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-                            <User className="w-3 h-3 text-primary" />
-                          </div>
+                          <UserAvatar name={project.head} src={getAvatarForName(project.head)} size="sm" />
                           <span className="text-sm text-foreground">{project.head}</span>
                         </div>
                       ) : (

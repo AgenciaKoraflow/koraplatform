@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.n8n-api]
 verify_jwt = false
+
+[functions.signature-notifications]
+verify_jwt = false
