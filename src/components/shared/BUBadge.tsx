@@ -11,6 +11,7 @@ interface BUBadgeProps {
 export function BUBadge({ bu, size = "sm", showLabel = true, className }: BUBadgeProps) {
   if (!bu) return null;
   const cfg = BU_CONFIG[bu];
+  if (!cfg) return null; // guard against invalid/legacy bu values
   const Icon = cfg.icon;
   return (
     <span
@@ -30,5 +31,6 @@ export function BUBadge({ bu, size = "sm", showLabel = true, className }: BUBadg
 export function BUDot({ bu, className }: { bu?: BU; className?: string }) {
   if (!bu) return null;
   const cfg = BU_CONFIG[bu];
+  if (!cfg) return null;
   return <span className={cn("inline-block w-1.5 h-1.5 rounded-full", cfg.dotClass, className)} />;
 }

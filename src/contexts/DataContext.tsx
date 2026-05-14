@@ -6,6 +6,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatSupabaseInvokeError } from "@/lib/supabaseFunctions";
 import { toast } from "sonner";
 
+const VALID_BUS = new Set(["kora-agents", "kora-dev", "kora-studio", "kora-corp"]);
+
+function sanitizeBU(raw: any): import("@/types/bu").BU[] | undefined {
+  const arr: string[] = Array.isArray(raw) ? raw : (raw ? [String(raw)] : []);
+  const valid = arr.filter(b => VALID_BUS.has(b)) as import("@/types/bu").BU[];
+  return valid.length > 0 ? valid : undefined;
+}
+
 // Helper function to format values from database
 function formatValue(val: string | number | null | undefined): string {
   if (val === null || val === undefined || val === '') return 'R$ 0,00';
@@ -109,7 +117,8 @@ function mapDbClient(db: any): Client {
     briefing: db.briefing || undefined,
     proposalSentDate: db.proposal_sent_date || undefined,
     head: db.head || undefined,
-    bu: Array.isArray(db.bu) ? db.bu : (db.bu ? [db.bu] : undefined),
+    bu: sanitizeBU(db.bu),
+    logo: db.logo || undefined,
   };
 }
 
@@ -131,7 +140,7 @@ function mapDbProject(db: any): Project {
     type: db.type || 'projeto',
     recurrenceValue: db.recurrence_value ? formatValue(db.recurrence_value) : undefined,
     recurrenceStartDate: db.recurrence_start_date ? formatDate(db.recurrence_start_date) : undefined,
-    bu: Array.isArray(db.bu) ? db.bu : (db.bu ? [db.bu] : undefined),
+    bu: sanitizeBU(db.bu),
   };
 }
 
@@ -145,8 +154,9 @@ function mapDbTask(db: any): Task {
     status: db.status || 'todo',
     priority: db.priority || 'medium',
     dueDate: formatDisplayDate(db.due_date) || '',
+    createdAt: db.created_at || undefined,
     assignees: db.assigned_to ? db.assigned_to.split(',').map((s: string) => s.trim()).filter(Boolean) : [],
-    bu: Array.isArray(db.bu) ? db.bu : (db.bu ? [db.bu] : undefined),
+    bu: sanitizeBU(db.bu),
   };
 }
 
@@ -217,7 +227,7 @@ function mapDbContract(db: any): Contract {
     contractorSignatureData: db.contractor_signature_data,
     contractorSignerName: db.contractor_signer_name,
     contractorSignerEmail: db.contractor_signer_email,
-    bu: Array.isArray(db.bu) ? db.bu : (db.bu ? [db.bu] : undefined),
+    bu: sanitizeBU(db.bu),
   };
 }
 
@@ -372,6 +382,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (client.briefing?.trim()) dbData.briefing = client.briefing.trim();
       if (client.head?.trim()) dbData.head = client.head.trim();
       if (client.bu) dbData.bu = client.bu;
+      if (client.logo?.trim()) dbData.logo = client.logo.trim();
 
       const result = await callExternalDb("insert", "clients", dbData);
       if (result && result[0]) {
@@ -404,6 +415,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (client.proposalSentDate !== undefined) dbData.proposal_sent_date = toISODate(client.proposalSentDate);
       if (client.head !== undefined) dbData.head = client.head?.trim() || null;
       if (client.bu !== undefined) dbData.bu = client.bu;
+      if (client.logo !== undefined) dbData.logo = client.logo || null;
       dbData.updated_at = new Date().toISOString();
 
       console.log("updateClient - sending data:", dbData);
@@ -479,6 +491,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
   
   const updateProject = async (id: string, project: Partial<Project>) => {
     try {
+      // Block marking as completed if there are open tasks
+      if (project.status === 'completed') {
+        const openTasks = tasks.filter(t => t.projectId === id && t.status !== 'done');
+        if (openTasks.length > 0) {
+          toast.error(`Conclua as ${openTasks.length} tarefa(s) pendente(s) antes de marcar o projeto como concluído.`);
+          return;
+        }
+      }
+
       const dbData: any = {};
       if (project.clientId) dbData.client_id = project.clientId;
       if (project.name) dbData.name = project.name;
@@ -541,6 +562,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
   
   const getProjectsByClient = (clientId: string) => projects.filter(p => p.clientId === clientId);
 
+  // Sync project progress from task completion ratio
+  const syncProjectProgress = (projectId: string | null | undefined, tasksList: Task[]) => {
+    if (!projectId) return;
+    const projectTasks = tasksList.filter(t => t.projectId === projectId);
+    if (projectTasks.length === 0) return; // no tasks, keep existing progress
+    const completed = projectTasks.filter(t => t.status === 'done').length;
+    const progress = Math.round((completed / projectTasks.length) * 100);
+    setProjects(prev => prev.map(p => p.id === projectId ? { ...p, progress } : p));
+  };
+
   // Task methods
   const addTask = async (task: Omit<Task, "id">): Promise<Task | null> => {
     try {
@@ -558,7 +589,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const result = await callExternalDb('insert', 'tasks', dbData);
       if (result && result[0]) {
         const newTask = mapDbTask(result[0]);
-        setTasks(prev => [...prev, newTask]);
+        const updatedTasks = [...tasks, newTask];
+        setTasks(updatedTasks);
+        if (newTask.projectId) syncProjectProgress(newTask.projectId, updatedTasks);
         toast.success('Tarefa adicionada com sucesso');
         return newTask;
       }
@@ -584,7 +617,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
       dbData.updated_at = new Date().toISOString();
       
       await callExternalDb('update', 'tasks', dbData, id);
-      setTasks(prev => prev.map(t => t.id === id ? { ...t, ...task } : t));
+      const oldTask = tasks.find(t => t.id === id);
+      const updatedTasks = tasks.map(t => t.id === id ? { ...t, ...task } : t);
+      setTasks(updatedTasks);
+      const projectId = task.projectId ?? oldTask?.projectId;
+      if (projectId) syncProjectProgress(projectId, updatedTasks);
       toast.success('Tarefa atualizada com sucesso');
     } catch (error) {
       toast.error(`Erro ao atualizar tarefa: ${mutationErrorMessage(error)}`);
@@ -593,8 +630,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
   
   const deleteTask = async (id: string) => {
     try {
+      const taskToDelete = tasks.find(t => t.id === id);
       await callExternalDb('delete', 'tasks', undefined, id);
-      setTasks(prev => prev.filter(t => t.id !== id));
+      const updatedTasks = tasks.filter(t => t.id !== id);
+      setTasks(updatedTasks);
+      if (taskToDelete?.projectId) syncProjectProgress(taskToDelete.projectId, updatedTasks);
       toast.success('Tarefa excluída com sucesso');
     } catch (error) {
       toast.error(`Erro ao excluir tarefa: ${mutationErrorMessage(error)}`);

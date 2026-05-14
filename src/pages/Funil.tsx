@@ -1,8 +1,9 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { parseCurrencyToNumber } from "@/lib/currency";
-import { Plus, Search, Building2, Mail, Phone, Calendar, Eye, Edit, Trash2, TrendingUp, Users, DollarSign, Target, ChevronRight, FileText, Clock, AlertTriangle, CheckCircle, GitBranch } from "lucide-react";
+import { Plus, Search, Building2, Mail, Phone, Calendar, Eye, Edit, Trash2, TrendingUp, Users, DollarSign, Target, ChevronRight, FileText, Clock, AlertTriangle, CheckCircle, GitBranch, Camera, X } from "lucide-react";
+import { ClientAvatar } from "@/components/shared/ClientAvatar";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -92,6 +93,7 @@ export default function Funil() {
     setDraggedClientId(null);
     setDragOverStage(null);
   };
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     name: "",
     company: "",
@@ -104,6 +106,7 @@ export default function Funil() {
     briefing: "",
     proposalSentDate: "",
     bu: "kora-agents" as BU,
+    logo: "",
   });
 
   // Função para calcular status da proposta (30 dias para expirar)
@@ -150,7 +153,7 @@ export default function Funil() {
 
   const openNewDialog = () => {
     setEditingClientId(null);
-    setFormData({ name: "", company: "", email: "", phone: "", stage: "prospeccao", value: "", anniversary: "", head: "", briefing: "", proposalSentDate: "", bu: "kora-agents" });
+    setFormData({ name: "", company: "", email: "", phone: "", stage: "prospeccao", value: "", anniversary: "", head: "", briefing: "", proposalSentDate: "", bu: "kora-agents", logo: "" });
     setIsDialogOpen(true);
   };
 
@@ -170,6 +173,7 @@ export default function Funil() {
         briefing: (client as any).briefing || "",
         proposalSentDate: client.proposalSentDate || "",
         bu: (Array.isArray(client.bu) ? client.bu[0] : client.bu) || "kora-agents" as BU,
+        logo: client.logo || "",
       });
       setIsDialogOpen(true);
     }
@@ -199,6 +203,7 @@ export default function Funil() {
       if (formData.briefing) updateData.briefing = formData.briefing;
       if (formData.proposalSentDate) updateData.proposalSentDate = formData.proposalSentDate;
       if (formData.bu) updateData.bu = [formData.bu];
+      updateData.logo = formData.logo || undefined;
 
       const updated = await updateClient(editingClientId, updateData);
       if (updated) setIsDialogOpen(false);
@@ -429,11 +434,7 @@ export default function Funil() {
                             onClick={() => openEditDialog(client.id)}
                           >
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                <span className="text-sm font-semibold text-primary">
-                                  {client.name.split(" ").map(n => n[0]).join("")}
-                                </span>
-                              </div>
+                              <ClientAvatar client={client} size="md" />
                               <div>
                                 <div className="flex items-center gap-2">
                                   <p className="font-medium text-foreground">{client.name}</p>
@@ -529,9 +530,7 @@ export default function Funil() {
                       <CardContent className="p-3">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                              <span className="text-xs font-semibold text-primary">{client.name.split(" ").map(n => n[0]).join("")}</span>
-                            </div>
+                            <ClientAvatar client={client} size="sm" />
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-1">
                                 <p className="font-medium text-foreground text-sm truncate">{client.name}</p>
@@ -618,9 +617,7 @@ export default function Funil() {
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                          <span className="text-sm font-semibold text-primary">{client.name.split(" ").map(n => n[0]).join("")}</span>
-                        </div>
+                        <ClientAvatar client={client} size="md" />
                         <div>
                           <p className="font-medium text-foreground">{client.name}</p>
                           <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -717,9 +714,7 @@ export default function Funil() {
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-sm font-semibold text-primary">{client.name.split(" ").map(n => n[0]).join("")}</span>
-                      </div>
+                      <ClientAvatar client={client} size="lg" />
                       <div>
                         <p className="font-semibold text-foreground">{client.name}</p>
                         <p className="text-sm text-muted-foreground">{client.company}</p>
@@ -787,7 +782,48 @@ export default function Funil() {
           <DialogHeader>
             <DialogTitle className="text-foreground">{editingClient ? "Editar Lead" : "Novo Lead"}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-1">
+            {/* Logo upload */}
+            <div className="flex flex-col items-center gap-2">
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = () => setFormData({ ...formData, logo: reader.result as string });
+                  reader.readAsDataURL(file);
+                  e.target.value = "";
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => logoInputRef.current?.click()}
+                className="relative w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden ring-2 ring-border hover:ring-primary transition-all group"
+              >
+                {formData.logo ? (
+                  <img src={formData.logo} alt="Logo" className="w-full h-full object-contain p-1" />
+                ) : (
+                  <span className="text-2xl font-bold text-primary">
+                    {formData.company ? formData.company.charAt(0).toUpperCase() : "?"}
+                  </span>
+                )}
+                <span className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                  <Camera className="w-5 h-5 text-white" />
+                </span>
+              </button>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Logo do cliente (opcional)</span>
+                {formData.logo && (
+                  <button type="button" onClick={() => setFormData({ ...formData, logo: "" })} className="text-xs text-red-400 hover:text-red-500 flex items-center gap-1">
+                    <X className="w-3 h-3" /> Remover
+                  </button>
+                )}
+              </div>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="name">Nome *</Label>
               <Input id="name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Nome do contato" className="bg-input border-border" />

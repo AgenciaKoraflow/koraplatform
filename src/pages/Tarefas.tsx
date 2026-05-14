@@ -18,6 +18,7 @@ import { useData } from "@/contexts/DataContext";
 import { Task } from "@/types/data";
 import { BU } from "@/types/bu";
 import { BUBadge } from "@/components/shared/BUBadge";
+import { ClientAvatar } from "@/components/shared/ClientAvatar";
 import { BUSelect } from "@/components/shared/BUSelect";
 import { differenceInDays, parse, isValid } from "date-fns";
 
@@ -354,7 +355,10 @@ export default function Tarefas() {
                         <h4 className="font-medium text-foreground mb-1">{task.title}</h4>
                         <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{task.description}</p>
                         <div className="flex flex-wrap gap-1 mb-3">
-                          <span className="px-2 py-1 rounded-md bg-muted text-xs text-muted-foreground">{getClientName(task.clientId)}</span>
+                          <span className="flex items-center gap-1 px-2 py-1 rounded-md bg-muted text-xs text-muted-foreground">
+                            <ClientAvatar client={getClient(task.clientId)} size="xs" />
+                            {getClientName(task.clientId)}
+                          </span>
                           {getProjectName(task.projectId) && (
                             <span className="px-2 py-1 rounded-md bg-primary/10 text-xs text-primary">{getProjectName(task.projectId)}</span>
                           )}
@@ -398,7 +402,10 @@ export default function Tarefas() {
                       <p className="text-sm text-muted-foreground truncate max-w-xs">{task.description}</p>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-foreground">{getClientName(task.clientId)}</p>
+                      <div className="flex items-center gap-2">
+                        <ClientAvatar client={getClient(task.clientId)} size="xs" />
+                        <p className="text-foreground text-sm">{getClientName(task.clientId)}</p>
+                      </div>
                       {getProjectName(task.projectId) && (
                         <p className="text-sm text-primary">{getProjectName(task.projectId)}</p>
                       )}

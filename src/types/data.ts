@@ -31,6 +31,7 @@ export interface Client {
   briefing?: string;
   proposalSentDate?: string;
   bu?: BU[];
+  logo?: string;
 }
 
 export interface Project {
@@ -62,6 +63,7 @@ export interface Task {
   status: "todo" | "in_progress" | "review" | "done";
   priority: "low" | "medium" | "high";
   dueDate: string;
+  createdAt?: string;
   assignees: string[];
   bu?: BU[];
 }

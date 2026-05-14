@@ -18,6 +18,9 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
 import { DatePicker } from "@/components/shared/DatePicker";
 import { useData } from "@/contexts/DataContext";
+import { ClientAvatar } from "@/components/shared/ClientAvatar";
+import { ProjectGantt } from "@/components/shared/ProjectGantt";
+import { Project } from "@/types/data";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,10 +51,11 @@ const interactionTypeConfig = {
 };
 
 export default function ClientesAtivos() {
-  const { clients, getProjectsByClient, getContractsByClient, getTicketsByClient, getTasksByClient } = useData();
+  const { clients, getProjectsByClient, getContractsByClient, getTicketsByClient, getTasksByClient, getTasksByProject } = useData();
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [ganttProject, setGanttProject] = useState<Project | null>(null);
   const [showAnniversaryDialog, setShowAnniversaryDialog] = useState(false);
   const [isInteractionDialogOpen, setIsInteractionDialogOpen] = useState(false);
   const [interactions, setInteractions] = useState<ClientInteraction[]>(mockInteractions);
@@ -249,11 +253,7 @@ export default function ClientesAtivos() {
                       <CardContent className="p-5">
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                              <span className="text-sm font-semibold text-primary">
-                                {client.name.split(" ").map(n => n[0]).join("")}
-                              </span>
-                            </div>
+                            <ClientAvatar client={client} size="lg" />
                             <div>
                               <p className="font-semibold text-foreground">{client.name}</p>
                               <p className="text-sm text-muted-foreground">{client.company}</p>
@@ -309,11 +309,7 @@ export default function ClientesAtivos() {
                         onClick={() => setSelectedClientId(selectedClientId === client.id ? null : client.id)}
                       >
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                            <span className="text-sm font-semibold text-primary">
-                              {client.name.split(" ").map(n => n[0]).join("")}
-                            </span>
-                          </div>
+                          <ClientAvatar client={client} size="md" />
                           <div>
                             <p className="font-medium text-foreground">{client.name}</p>
                             <p className="text-sm text-muted-foreground">{client.company}</p>
@@ -340,11 +336,7 @@ export default function ClientesAtivos() {
                 <CardHeader className="pb-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center">
-                        <span className="text-xl font-bold text-primary">
-                          {selectedClient.name.split(" ").map(n => n[0]).join("")}
-                        </span>
-                      </div>
+                      <ClientAvatar client={selectedClient} size="xl" className="rounded-xl" />
                       <div>
                         <CardTitle className="text-xl">{selectedClient.name}</CardTitle>
                         <p className="text-muted-foreground">{selectedClient.company}</p>
@@ -530,17 +522,68 @@ export default function ClientesAtivos() {
                           <FileText className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
                           <p className="text-muted-foreground">Nenhum projeto encontrado</p>
                         </div>
+                      ) : ganttProject ? (
+                        <div>
+                          <div className="flex items-center gap-3 mb-5">
+                            <button
+                              onClick={() => setGanttProject(null)}
+                              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m15 18-6-6 6-6"/></svg>
+                              Projetos
+                            </button>
+                            <span className="text-muted-foreground">/</span>
+                            <span className="text-sm font-semibold text-foreground">{ganttProject.name}</span>
+                          </div>
+                          <ProjectGantt
+                            project={ganttProject}
+                            tasks={getTasksByProject(ganttProject.id)}
+                          />
+                        </div>
                       ) : (
-                        <div className="space-y-4">
-                          {clientProjects.map((project) => (
-                            <div key={project.id} className="flex items-center justify-between p-4 rounded-lg bg-muted/30">
-                              <div>
-                                <p className="font-medium">{project.name}</p>
-                                <p className="text-sm text-muted-foreground">{project.description}</p>
-                              </div>
-                              <Badge>{project.status}</Badge>
-                            </div>
-                          ))}
+                        <div className="space-y-3">
+                          {clientProjects.map((project) => {
+                            const tasks = getTasksByProject(project.id);
+                            const done = tasks.filter(t => t.status === "done").length;
+                            const statusColors: Record<string, string> = {
+                              planning: "bg-slate-500/10 text-slate-500",
+                              in_progress: "bg-blue-500/10 text-blue-500",
+                              review: "bg-amber-500/10 text-amber-500",
+                              completed: "bg-emerald-500/10 text-emerald-500",
+                              on_hold: "bg-slate-400/10 text-slate-400",
+                            };
+                            return (
+                              <button
+                                key={project.id}
+                                onClick={() => setGanttProject(project)}
+                                className="w-full flex items-center justify-between p-4 rounded-xl bg-muted/30 hover:bg-muted/60 border border-border/50 hover:border-border transition-all text-left group"
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <p className="font-semibold text-foreground truncate">{project.name}</p>
+                                    <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0", statusColors[project.status] ?? "bg-muted text-muted-foreground")}>
+                                      {project.status.replace("_", " ")}
+                                    </span>
+                                  </div>
+                                  {project.description && (
+                                    <p className="text-xs text-muted-foreground truncate">{project.description}</p>
+                                  )}
+                                  {tasks.length > 0 && (
+                                    <div className="flex items-center gap-2 mt-2">
+                                      <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden max-w-[120px]">
+                                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${tasks.length ? (done / tasks.length) * 100 : 0}%` }} />
+                                      </div>
+                                      <span className="text-[10px] text-muted-foreground">{done}/{tasks.length} tarefas</span>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+                                  <span className="text-[10px] text-muted-foreground">{project.dueDate}</span>
+                                  <svg className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 18 6-6-6-6"/></svg>
+                                </div>
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
                     </CardContent>

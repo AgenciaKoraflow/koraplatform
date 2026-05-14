@@ -59,45 +59,50 @@
   }
 
   html.dark {
-    /* DARK MODE - Preto/Branco com Laranja */
-    --background: 0 0% 10%;
-    --foreground: 0 0% 100%;
-    --card: 0 0% 15%;
-    --card-foreground: 0 0% 100%;
+    /* DARK MODE - fundo profundo, hierarquia clara de superfícies */
+    --background: 0 0% 8%;          /* fundo base mais escuro */
+    --foreground: 0 0% 94%;         /* texto principal — alto contraste sem ser branco puro */
+    --card: 0 0% 13%;               /* superfície elevada */
+    --card-foreground: 0 0% 94%;
     --popover: 0 0% 15%;
-    --popover-foreground: 0 0% 100%;
+    --popover-foreground: 0 0% 94%;
 
-    /* Primary - Laranja mais claro em dark */
-    --primary: 33 100% 55%;
-    --primary-foreground: 0 0% 0%;
+    /* Primary - Laranja vivo em dark (legível sobre fundos escuros) */
+    --primary: 33 100% 52%;
+    --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Cinza neutro em dark */
-    --secondary: 0 0% 25%;
-    --secondary-foreground: 0 0% 95%;
+    /* Secondary */
+    --secondary: 0 0% 18%;
+    --secondary-foreground: 0 0% 88%;
 
-    /* Muted - Cinza escuro */
-    --muted: 0 0% 30%;
-    --muted-foreground: 0 0% 85%;
+    /* Muted - superfícies sutis, texto secundário legível */
+    --muted: 0 0% 18%;              /* mais escuro = melhor hierarquia */
+    --muted-foreground: 0 0% 62%;   /* texto secundário — não tão brilhante */
 
-    /* Accent - Laranja em dark */
-    --accent: 33 100% 55%;
-    --accent-foreground: 0 0% 0%;
+    /* Accent */
+    --accent: 33 100% 52%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 65%;
+    --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 25%;
-    --input: 0 0% 20%;
-    --ring: 33 100% 55%;
+    --border: 0 0% 22%;             /* bordas mais visíveis */
+    --input: 0 0% 16%;
+    --ring: 33 100% 52%;
 
     /* Sidebar dark */
-    --sidebar-background: 0 0% 12%;
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 33 100% 55%;
-    --sidebar-primary-foreground: 0 0% 0%;
-    --sidebar-accent: 0 0% 25%;
-    --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 0 0% 25%;
-    --sidebar-ring: 33 100% 55%;
+    --sidebar-background: 0 0% 10%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 33 100% 52%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 18%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 33 100% 52%;
+
+    /* Sombras para dark — mais suaves */
+    --shadow-soft: 0 1px 3px 0 rgb(0 0 0 / 0.35);
+    --shadow-medium: 0 4px 12px -1px rgb(0 0 0 / 0.45), 0 2px 6px -2px rgb(0 0 0 / 0.3);
+    --shadow-glow: 0 0 0 1px rgb(0 0 0 / 0.25), 0 1px 2px 0 rgb(0 0 0 / 0.2);
   }
 }
 
@@ -146,6 +151,96 @@
     @apply outline-none ring-2 ring-primary ring-offset-1 ring-offset-background;
   }
 }
+
+/*
+  ─── Dark mode: adaptar cores Tailwind fixas ─────────────────────────────────
+  Classes como text-slate-500 usam valores absolutos e não se adaptam ao dark.
+  Estes overrides elevam a luminosidade automaticamente no dark para manter
+  contraste mínimo WCAG AA (4.5:1) em fundos escuros.
+  ─────────────────────────────────────────────────────────────────────────────
+*/
+
+/* Slate — a cor que mais sofre no dark (escura demais) */
+html.dark .text-slate-500  { color: rgb(148 163 184); } /* → slate-400 */
+html.dark .text-slate-600  { color: rgb(148 163 184); }
+html.dark .text-slate-700  { color: rgb(203 213 225); }
+html.dark .bg-slate-500\/10 { background-color: rgb(148 163 184 / 0.12); }
+
+/* Gray neutro */
+html.dark .text-gray-500   { color: rgb(156 163 175); } /* → gray-400 */
+html.dark .text-gray-600   { color: rgb(156 163 175); }
+html.dark .bg-gray-500\/10 { background-color: rgb(156 163 175 / 0.12); }
+
+/* Zinc */
+html.dark .text-zinc-500   { color: rgb(161 161 170); }
+html.dark .text-zinc-600   { color: rgb(161 161 170); }
+
+/* Verde — levemente mais vivo no dark */
+html.dark .text-green-600  { color: rgb(74 222 128); }  /* → green-400 */
+html.dark .text-emerald-600 { color: rgb(52 211 153); }
+
+/* Vermelho */
+html.dark .text-red-600    { color: rgb(248 113 113); } /* → red-400 */
+
+/* Amber */
+html.dark .text-amber-600  { color: rgb(251 191 36);  } /* → amber-400 */
+
+/* Blue */
+html.dark .text-blue-600   { color: rgb(96 165 250);  } /* → blue-400 */
+
+/* Indigo */
+html.dark .text-indigo-600 { color: rgb(129 140 248); }
+html.dark .text-indigo-500 { color: rgb(165 180 252); }
+html.dark .bg-indigo-500\/10 { background-color: rgb(129 140 248 / 0.15); }
+
+/* Violet */
+html.dark .text-violet-500 { color: rgb(196 181 253); }
+html.dark .bg-violet-500\/10 { background-color: rgb(196 181 253 / 0.15); }
+
+/* Backgrounds semitransparentes — aumentar opacidade no dark para visibilidade */
+html.dark .bg-green-500\/10  { background-color: rgb(34 197 94 / 0.18); }
+html.dark .bg-amber-500\/10  { background-color: rgb(245 158 11 / 0.18); }
+html.dark .bg-red-500\/10    { background-color: rgb(239 68 68 / 0.18); }
+html.dark .bg-blue-500\/10   { background-color: rgb(59 130 246 / 0.18); }
+html.dark .bg-primary\/10    { background-color: hsl(33 100% 52% / 0.18); }
+html.dark .bg-primary\/5     { background-color: hsl(33 100% 52% / 0.10); }
+
+/* Logos de clientes — fundo sempre branco para garantir legibilidade das cores da marca */
+.client-logo-bg {
+  background-color: #ffffff;
+}
+html.dark .client-logo-bg {
+  background-color: #ffffff;
+}
+
+/*
+  ─── Content font scale ────────────────────────────────────────────────────
+  Reduce all text inside <main> (page content) to match SaaS market standards
+  (~13 px base). The sidebar/menu is completely unaffected because these rules
+  are scoped to `main`. rem-based Tailwind breakpoints are also unaffected.
+  ───────────────────────────────────────────────────────────────────────────
+*/
+main {
+  font-size: 13px;
+}
+
+main .text-xs   { font-size: 11px;  line-height: 1.45; }
+main .text-sm   { font-size: 12px;  line-height: 1.5;  }
+main .text-base { font-size: 13px;  line-height: 1.5;  }
+main .text-lg   { font-size: 15px;  line-height: 1.4;  }
+main .text-xl   { font-size: 17px;  line-height: 1.35; }
+main .text-2xl  { font-size: 20px;  line-height: 1.25; }
+main .text-3xl  { font-size: 24px;  line-height: 1.2;  }
+main .text-4xl  { font-size: 28px;  line-height: 1.15; }
+main .text-5xl  { font-size: 34px;  line-height: 1.1;  }
+
+/* Arbitrary Tailwind sizes also need coverage for the most common values */
+main .text-\[10px\] { font-size: 9px;  }
+main .text-\[11px\] { font-size: 10px; }
+main .text-\[12px\] { font-size: 11px; }
+main .text-\[13px\] { font-size: 12px; }
+main .text-\[14px\] { font-size: 12px; }
+main .text-\[15px\] { font-size: 13px; }
 
 @layer utilities {
   /* iOS safe area padding for bottom nav */
