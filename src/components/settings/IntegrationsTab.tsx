@@ -50,9 +50,8 @@ export function IntegrationsTab() {
     setIsSaving(true);
     try {
       // We'll save the API key by calling the edge function to verify it works
-      // The actual secret needs to be set via Lovable's secrets management
-      toast.info("Para ativar a API, adicione o secret N8N_API_KEY no painel de configurações do Lovable Cloud");
-      toast.success("API Key gerada! Copie e configure no Lovable Cloud.");
+      toast.info("Para ativar a API, adicione o secret N8N_API_KEY nas variáveis de ambiente do servidor");
+      toast.success("API Key gerada! Configure N8N_API_KEY nas variáveis de ambiente.");
     } catch (error) {
       toast.error("Erro ao salvar API Key");
     } finally {
@@ -217,7 +216,7 @@ export function IntegrationsTab() {
           </div>
         )}
         <p className="text-xs text-muted-foreground">
-          Após gerar a API Key, adicione-a como secret <code className="bg-background px-1 rounded">N8N_API_KEY</code> nas configurações do Lovable Cloud.
+          Após gerar a API Key, configure-a como variável de ambiente <code className="bg-background px-1 rounded">N8N_API_KEY</code> no servidor.
         </p>
       </div>
 
