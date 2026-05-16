@@ -195,17 +195,7 @@ export interface KnowledgeItem {
 // Observability Types
 export type IntegrationType =
   | 'supabase'
-  | 'openai'
-  | 'sendgrid'
-  | 'aws_s3'
-  | 'google_cloud'
-  | 'slack'
-  | 'notion'
-  | 'stripe'
-  | 'twilio'
-  | 'hetzner_vps'
-  | 'coolify'
-  | 'custom_api';
+  | 'coolify';
 
 export type IntegrationStatus = 'active' | 'inactive' | 'error' | 'pending_setup';
 
@@ -280,14 +270,7 @@ export interface ClientObservabilitySummary {
 // Integration credentials for different services (for UI forms)
 export interface IntegrationCredentialsConfig {
   supabase: { project_url: string; anon_key: string; service_role_key?: string };
-  openai: { api_key: string; organization_id?: string };
-  sendgrid: { api_key: string; webhook_secret?: string };
-  aws_s3: { access_key_id: string; secret_access_key: string; region: string };
-  google_cloud: { project_id: string; service_account_key: string };
-  slack: { api_token: string; team_id?: string };
-  stripe: { api_key: string };
-  twilio: { account_sid: string; auth_token: string };
-  custom_api: { base_url: string; api_key?: string; headers?: Record<string, string> };
+  coolify: { base_url: string; api_token: string; team_id?: string };
 }
 
 export interface Process {

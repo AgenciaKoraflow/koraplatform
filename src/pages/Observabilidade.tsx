@@ -14,7 +14,6 @@ import {
   RefreshCw,
   Search,
   Settings,
-  Cpu,
   HardDrive,
   Wifi,
   Globe,
@@ -23,10 +22,6 @@ import {
   Trash2,
   ExternalLink,
   Terminal,
-  Cloud,
-  MessageSquare,
-  Mail,
-  CreditCard,
   Lock,
   Building2,
   X,
@@ -53,32 +48,12 @@ import { CoolifyMetrics } from "@/components/observability/CoolifyMetrics";
 // Integration type icons
 const integrationTypeIcons: Record<IntegrationType, React.ReactNode> = {
   supabase: <Database className="w-5 h-5" />,
-  openai: <Cpu className="w-5 h-5" />,
-  sendgrid: <Mail className="w-5 h-5" />,
-  aws_s3: <Cloud className="w-5 h-5" />,
-  google_cloud: <Cloud className="w-5 h-5" />,
-  slack: <MessageSquare className="w-5 h-5" />,
-  notion: <Database className="w-5 h-5" />,
-  stripe: <CreditCard className="w-5 h-5" />,
-  twilio: <MessageSquare className="w-5 h-5" />,
-  hetzner_vps: <Server className="w-5 h-5" />,
   coolify: <Server className="w-5 h-5" />,
-  custom_api: <Globe className="w-5 h-5" />,
 };
 
 const integrationTypeLabels: Record<IntegrationType, string> = {
   supabase: 'Supabase (Database)',
-  openai: 'OpenAI (IA)',
-  sendgrid: 'SendGrid (Email)',
-  aws_s3: 'AWS S3 (Storage)',
-  google_cloud: 'Google Cloud',
-  slack: 'Slack',
-  notion: 'Notion',
-  stripe: 'Stripe (Pagamentos)',
-  twilio: 'Twilio (SMS)',
-  hetzner_vps: 'Hetzner VPS',
   coolify: 'Coolify (VPS Deploy)',
-  custom_api: 'API Personalizada',
 };
 
 const integrationStatusColors: Record<IntegrationStatus, string> = {
@@ -102,50 +77,6 @@ const integrationConfigFields: Record<IntegrationType, { key: string; label: str
     { key: 'anon_key', label: 'Anon Key', type: 'password', placeholder: '********' },
     { key: 'service_role_key', label: 'Service Role Key', type: 'password', placeholder: '******** (opcional)' },
   ],
-  openai: [
-    { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'sk-...' },
-    { key: 'organization_id', label: 'Organization ID', type: 'text', placeholder: 'org-... (opcional)' },
-  ],
-  hetzner_vps: [
-    { key: 'server_ip', label: 'IP do Servidor', type: 'text', placeholder: '192.168.1.1' },
-    { key: 'api_token', label: 'API Token', type: 'password', placeholder: '********' },
-    { key: 'ssh_key', label: 'SSH Key (opcional)', type: 'textarea', placeholder: '-----BEGIN OPENSSH PRIVATE KEY-----' },
-  ],
-  sendgrid: [
-    { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'SG...' },
-  ],
-  aws_s3: [
-    { key: 'access_key_id', label: 'Access Key ID', type: 'text', placeholder: 'AKIA...' },
-    { key: 'secret_access_key', label: 'Secret Access Key', type: 'password', placeholder: '********' },
-    { key: 'region', label: 'Região', type: 'text', placeholder: 'us-east-1' },
-    { key: 'bucket', label: 'Bucket Name', type: 'text', placeholder: 'my-bucket' },
-  ],
-  google_cloud: [
-    { key: 'project_id', label: 'Project ID', type: 'text', placeholder: 'my-project' },
-    { key: 'service_account_key', label: 'Service Account JSON', type: 'textarea', placeholder: '{"type": "service_account", ...}' },
-  ],
-  slack: [
-    { key: 'api_token', label: 'Bot Token', type: 'password', placeholder: 'xoxb-...' },
-    { key: 'channel_id', label: 'Channel ID', type: 'text', placeholder: 'C12345' },
-  ],
-  notion: [
-    { key: 'api_key', label: 'Integration Token', type: 'password', placeholder: 'secret_...' },
-    { key: 'database_id', label: 'Database ID', type: 'text', placeholder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' },
-  ],
-  stripe: [
-    { key: 'api_key', label: 'Secret Key', type: 'password', placeholder: 'sk_live_...' },
-    { key: 'webhook_secret', label: 'Webhook Secret', type: 'password', placeholder: 'whsec_...' },
-  ],
-  twilio: [
-    { key: 'account_sid', label: 'Account SID', type: 'text', placeholder: 'AC...' },
-    { key: 'auth_token', label: 'Auth Token', type: 'password', placeholder: '********' },
-    { key: 'phone_number', label: 'Phone Number', type: 'text', placeholder: '+1555123456' },
-  ],
-  custom_api: [
-    { key: 'base_url', label: 'Base URL', type: 'text', placeholder: 'https://api.exemplo.com' },
-    { key: 'api_key', label: 'API Key', type: 'password', placeholder: '********' },
-    { key: 'headers', label: 'Headers (JSON)', type: 'textarea', placeholder: '{"X-Custom-Header": "value"}' },
-  ],
   coolify: [
     { key: 'base_url', label: 'URL do Coolify', type: 'text', placeholder: 'https://coolify.seudominio.com' },
     { key: 'api_token', label: 'API Token', type: 'password', placeholder: '********' },
@@ -162,7 +93,7 @@ export default function Observabilidade() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingIntegration, setEditingIntegration] = useState<ClientIntegration | null>(null);
-  
+
   // Form state
   const [formData, setFormData] = useState<{
     integration_type: IntegrationType | "";
@@ -267,7 +198,7 @@ export default function Observabilidade() {
         .single();
 
       if (error) throw error;
-      
+
       setIntegrations(prev => [...prev, data as ClientIntegration]);
       setIsAddDialogOpen(false);
       toast.success("Integração adicionada com sucesso!");
@@ -296,7 +227,7 @@ export default function Observabilidade() {
         .single();
 
       if (error) throw error;
-      
+
       setIntegrations(prev => prev.map(i => i.id === editingIntegration.id ? (data as ClientIntegration) : i));
       setIsEditDialogOpen(false);
       toast.success("Integração atualizada com sucesso!");
@@ -317,7 +248,7 @@ export default function Observabilidade() {
         .eq('id', id);
 
       if (error) throw error;
-      
+
       setIntegrations(prev => prev.filter(i => i.id !== id));
       toast.success("Integração removida com sucesso!");
     } catch (err) {
@@ -329,7 +260,7 @@ export default function Observabilidade() {
   // Toggle integration status
   const toggleStatus = async (integration: ClientIntegration) => {
     const newStatus = integration.status === 'active' ? 'inactive' : 'active';
-    
+
     try {
       const { error } = await supabase
         .from('client_integrations' as any)
@@ -337,8 +268,8 @@ export default function Observabilidade() {
         .eq('id', integration.id);
 
       if (error) throw error;
-      
-      setIntegrations(prev => prev.map(i => 
+
+      setIntegrations(prev => prev.map(i =>
         i.id === integration.id ? { ...i, status: newStatus as IntegrationStatus } : i
       ));
       toast.success(`Integração ${newStatus === 'active' ? 'ativada' : 'desativada'}`);
@@ -362,8 +293,8 @@ export default function Observabilidade() {
               integration.status === "active"
                 ? "bg-green-500/10"
                 : integration.status === "error"
-                ? "bg-red-500/10"
-                : "bg-amber-500/10"
+                  ? "bg-red-500/10"
+                  : "bg-amber-500/10"
             )}
           >
             {integrationTypeIcons[integration.integration_type]}
@@ -494,9 +425,9 @@ export default function Observabilidade() {
   // Render config form fields
   const renderConfigFields = () => {
     if (!formData.integration_type) return null;
-    
+
     const fields = integrationConfigFields[formData.integration_type];
-    
+
     return fields.map((field) => (
       <div key={field.key} className="space-y-2">
         <Label htmlFor={field.key}>{field.label}</Label>
@@ -649,7 +580,7 @@ export default function Observabilidade() {
           ) : (
             <div className="grid gap-4">
               {activeClients
-                .filter(c => 
+                .filter(c =>
                   c.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
                   c.name.toLowerCase().includes(searchQuery.toLowerCase())
                 )
