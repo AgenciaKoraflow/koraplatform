@@ -31,26 +31,39 @@ function normalizeInsertPayload(data: unknown): unknown {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Prefer EXTERNAL_*; se não houver, usa o próprio projeto (útil em dev e deploy sem DB externo).
-    const externalUrl =
-      Deno.env.get('EXTERNAL_SUPABASE_URL')?.trim() || Deno.env.get('SUPABASE_URL')?.trim();
-    const externalKey =
-      Deno.env.get('EXTERNAL_SUPABASE_SERVICE_KEY')?.trim() ||
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')?.trim();
-
-    if (!externalUrl || !externalKey) {
-      console.error('Missing Supabase URL or service key (EXTERNAL_* or SUPABASE_*)');
+    // JWT auth — validate caller is authenticated
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
       return new Response(
-        JSON.stringify({
-          error:
-            'Banco não configurado: defina EXTERNAL_SUPABASE_URL + EXTERNAL_SUPABASE_SERVICE_KEY no Edge Function, ou use o projeto padrão (SUPABASE_URL já disponível na função).',
-        }),
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnon = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user }, error: authError } = await supabaseAnon.auth.getUser();
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Require explicit EXTERNAL_SUPABASE_SERVICE_KEY — no fallback to project service role
+    const externalUrl = Deno.env.get('EXTERNAL_SUPABASE_URL')?.trim() || supabaseUrl;
+    const externalKey = Deno.env.get('EXTERNAL_SUPABASE_SERVICE_KEY')?.trim();
+
+    if (!externalKey) {
+      return new Response(
+        JSON.stringify({ error: 'Banco externo não configurado: defina EXTERNAL_SUPABASE_SERVICE_KEY.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -58,7 +71,6 @@ serve(async (req) => {
     const externalSupabase = createClient(externalUrl, externalKey);
 
     const { action, table, data, id, filters } = await req.json();
-    console.log(`External DB operation: ${action} on ${table}`, { id, filters });
 
     let result;
 
@@ -99,15 +111,13 @@ serve(async (req) => {
     }
 
     if (result.error) {
-      console.error('Supabase error:', result.error);
-      console.error('Data that was sent:', JSON.stringify(data, null, 2));
+      console.error('external-db Supabase error:', result.error.message);
       return new Response(
         JSON.stringify({ error: result.error.message, details: result.error.details, hint: result.error.hint }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Operation successful: ${action} on ${table}`);
     return new Response(
       JSON.stringify({ data: result.data }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -115,7 +125,7 @@ serve(async (req) => {
 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Error in external-db function:', errorMessage);
+    console.error('external-db error:', errorMessage);
     return new Response(
       JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

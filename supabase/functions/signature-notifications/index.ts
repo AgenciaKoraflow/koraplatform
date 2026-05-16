@@ -31,29 +31,34 @@ serve(async (req) => {
   }
 
   try {
-    console.log("=== INICIANDO SIGNATURE-NOTIFICATIONS ===");
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    console.log("Supabase URL:", supabaseUrl);
-    console.log("Service Key presente:", !!supabaseServiceKey);
+    // JWT auth — validate caller is authenticated
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseAnon = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user }, error: authError } = await supabaseAnon.auth.getUser();
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const body: NotificationRequest = await req.json();
     const { action, contractId, recipientEmail, recipientName, signatureLink } = body;
 
-    console.log("Requisição recebida:", {
-      action,
-      contractId,
-      recipientEmail,
-      recipientName,
-      signatureLink: signatureLink ? "presente" : "ausente"
-    });
-
-    // Get contract details
-    console.log("Buscando contrato:", contractId);
     const { data: contract, error: contractError } = await supabase
       .from("contracts")
       .select(`
@@ -71,20 +76,14 @@ serve(async (req) => {
       .eq("id", contractId)
       .single();
 
-    console.log("Resultado da busca:", { contractError, contractId });
-
     if (contractError || !contract) {
-      console.error("Erro ao buscar contrato:", contractError);
-      throw new Error(`Contrato não encontrado: ${contractError?.message || "desconhecido"}`);
+      throw new Error("Contrato não encontrado");
     }
 
-    console.log("Contrato encontrado:", { id: contract.id, title: contract.title });
-
-    const baseUrl = Deno.env.get("BASE_URL") || "https://koraflow.com.br";
+    const baseUrl = Deno.env.get("APP_URL") || "https://koraflow.com.br";
     const fromEmail = Deno.env.get("FROM_EMAIL") || "noreply@koraflow.com.br";
     const fromName = "Koraflow";
 
-    // Generate signature link if not provided
     const link = signatureLink || `${baseUrl}/sign/${contract.signature_link_token}`;
 
     let emailSubject = "";
@@ -110,34 +109,34 @@ serve(async (req) => {
         <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">Assinatura Digital de Contrato</p>
       </td>
     </tr>
-    
+
     <!-- Content -->
     <tr>
       <td style="background-color: ${COLORS.white}; padding: 40px 30px;">
         <p style="color: ${COLORS.text}; font-size: 16px; margin: 0 0 20px 0;">
           Olá, <strong>${recipientName || "Cliente"}!</strong>
         </p>
-        
+
         <p style="color: ${COLORS.text}; font-size: 16px; margin: 0 0 30px 0;">
           Você recebeu uma solicitação de assinatura para o contrato <strong>${contract.title}</strong> da agência <strong>Koraflow</strong>.
         </p>
-        
+
         <!-- Contract Details Card -->
         <table role="presentation" width="100%" style="background-color: ${COLORS.background}; border-radius: 12px; margin-bottom: 30px;">
           <tr>
             <td style="padding: 25px;">
               <p style="color: ${COLORS.textLight}; font-size: 14px; margin: 0 0 5px 0;">Valor do Contrato</p>
               <p style="color: ${COLORS.text}; font-size: 28px; font-weight: 700; margin: 0 0 15px 0;">${contract.value}</p>
-              
+
               <p style="color: ${COLORS.textLight}; font-size: 14px; margin: 0 0 5px 0;">Cliente</p>
               <p style="color: ${COLORS.text}; font-size: 16px; font-weight: 500; margin: 0 0 15px 0;">${contract.clients?.company || "N/A"}</p>
-              
+
               <p style="color: ${COLORS.textLight}; font-size: 14px; margin: 0 0 5px 0;">Válido até</p>
               <p style="color: ${COLORS.text}; font-size: 16px; font-weight: 500; margin: 0;">${new Date(contract.end_date).toLocaleDateString("pt-BR")}</p>
             </td>
           </tr>
         </table>
-        
+
         <!-- Steps -->
         <p style="color: ${COLORS.text}; font-size: 16px; font-weight: 600; margin: 0 0 15px 0;">Como assinar:</p>
         <ol style="color: ${COLORS.text}; font-size: 15px; margin: 0 0 30px 0; padding-left: 20px; line-height: 1.8;">
@@ -147,7 +146,7 @@ serve(async (req) => {
           <li>Desenhe sua assinatura digital</li>
           <li>Confirme a assinatura</li>
         </ol>
-        
+
         <!-- CTA Button -->
         <table role="presentation" width="100%" style="margin-bottom: 30px;">
           <tr>
@@ -158,7 +157,7 @@ serve(async (req) => {
             </td>
           </tr>
         </table>
-        
+
         <!-- Expiration Notice -->
         <table role="presentation" width="100%" style="background-color: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
           <tr>
@@ -171,7 +170,7 @@ serve(async (req) => {
         </table>
       </td>
     </tr>
-    
+
     <!-- Footer -->
     <tr>
       <td style="background-color: ${COLORS.background}; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
@@ -294,21 +293,13 @@ serve(async (req) => {
         throw new Error("Invalid action");
     }
 
-    // Send email via Resend (primary goal — do this before optional logs)
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     if (!resendApiKey) {
-      console.error("CRITICAL: RESEND_API_KEY is not configured in Supabase Edge Function environment variables.");
-      console.error("To fix this, run: supabase secrets set RESEND_API_KEY=your_resend_api_key --project-ref jucejqnalymzeegjieyh");
-      throw new Error(
-        "RESEND_API_KEY não configurada. Execute no terminal: " +
-        "supabase secrets set RESEND_API_KEY=sua_chave_resend --project-ref jucejqnalymzeegjieyh"
-      );
+      throw new Error("RESEND_API_KEY não configurada nas variáveis da Edge Function.");
     }
 
-    // Validate recipient email
     if (!recipientEmail || typeof recipientEmail !== "string" || !recipientEmail.includes("@")) {
-      console.error("Invalid recipient email:", recipientEmail);
-      throw new Error(`Email do destinatário inválido: ${recipientEmail}`);
+      throw new Error(`Email do destinatário inválido`);
     }
 
     const emailPayload = {
@@ -317,12 +308,6 @@ serve(async (req) => {
       subject: emailSubject,
       html: emailBody,
     };
-
-    console.log("Attempting to send email via Resend API...", {
-      to: recipientEmail,
-      subject: emailSubject,
-      apiKeyPresent: !!resendApiKey
-    });
 
     const emailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -336,34 +321,22 @@ serve(async (req) => {
     const responseText = await emailResponse.text();
 
     if (!emailResponse.ok) {
-      console.error("Resend API error response:", {
-        status: emailResponse.status,
-        statusText: emailResponse.statusText,
-        body: responseText,
-      });
-
-      // Try to parse error details from Resend
       let errorMessage = `Resend API error (${emailResponse.status})`;
       try {
         const errorData = JSON.parse(responseText);
         if (errorData.message) errorMessage = errorData.message;
       } catch {}
-
       throw new Error(`Falha ao enviar e-mail: ${errorMessage}`);
     }
 
-    console.log("Email sent successfully via Resend to:", recipientEmail, "Response:", responseText);
-
-    // Log the notification (non-fatal — don't fail if tables have RLS issues)
+    // Log the notification (non-fatal)
     try {
       await supabase.from("signature_audit_log").insert({
         contract_id: contractId,
         event_type: "email_sent",
         event_data: { recipient_email: recipientEmail, recipient_name: recipientName, subject: emailSubject, action },
       });
-    } catch (logErr) {
-      console.warn("signature_audit_log insert failed (non-fatal):", logErr);
-    }
+    } catch (_) { /* non-fatal */ }
 
     try {
       await supabase.from("signature_email_logs").insert({
@@ -373,18 +346,13 @@ serve(async (req) => {
         email_type: action === "send_signature_link" ? "signature_request" : "signature_confirmation",
         status: "sent",
       });
-    } catch (logErr) {
-      console.warn("signature_email_logs insert failed (non-fatal):", logErr);
-    }
+    } catch (_) { /* non-fatal */ }
 
     return new Response(
       JSON.stringify({
         success: true,
         message: "Notification sent successfully",
-        email: {
-          to: recipientEmail,
-          subject: emailSubject,
-        },
+        email: { to: recipientEmail, subject: emailSubject },
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -392,17 +360,9 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error("=== ERRO NA FUNCTION ===");
-    console.error("Mensagem:", error.message);
-    console.error("Stack:", error.stack);
-    console.error("Tipo:", typeof error);
-    console.error("Erro completo:", error);
-
+    console.error("signature-notifications error:", error instanceof Error ? error.message : "unknown");
     return new Response(
-      JSON.stringify({
-        error: error.message,
-        details: error.stack || "sem stack trace"
-      }),
+      JSON.stringify({ error: error instanceof Error ? error.message : "Internal error" }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,

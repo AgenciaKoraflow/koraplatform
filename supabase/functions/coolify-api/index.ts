@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 interface CoolifyConfig {
   base_url: string;
@@ -89,115 +90,156 @@ interface CoolifyProject {
 
 async function fetchFromCoolify(
   endpoint: string,
-  config: CoolifyConfig
+  config: CoolifyConfig,
 ): Promise<any> {
-  const url = `${config.base_url.replace(/\/$/, '')}/api/v1${endpoint}`;
-  
+  const url = `${config.base_url.replace(/\/$/, "")}/api/v1${endpoint}`;
+
   const response = await fetch(url, {
-    method: 'GET',
+    method: "GET",
     headers: {
-      'Authorization': `Bearer ${config.api_token}`,
-      'Content-Type': 'application/json',
+      Authorization: `Bearer ${config.api_token}`,
+      "Content-Type": "application/json",
     },
   });
 
   if (!response.ok) {
-    throw new Error(`Coolify API error: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Coolify API error: ${response.status} ${response.statusText}`,
+    );
   }
 
   return response.json();
 }
 
 async function getServers(config: CoolifyConfig): Promise<CoolifyServer[]> {
-  return fetchFromCoolify('/servers', config);
+  return fetchFromCoolify("/servers", config);
 }
 
-async function getServerResources(config: CoolifyConfig, serverId: string): Promise<any> {
+async function getServerResources(
+  config: CoolifyConfig,
+  serverId: string,
+): Promise<any> {
   return fetchFromCoolify(`/servers/${serverId}/resources`, config);
 }
 
-async function getApplications(config: CoolifyConfig): Promise<CoolifyApplication[]> {
-  return fetchFromCoolify('/applications', config);
+async function getApplications(
+  config: CoolifyConfig,
+): Promise<CoolifyApplication[]> {
+  return fetchFromCoolify("/applications", config);
 }
 
 async function getDatabases(config: CoolifyConfig): Promise<CoolifyDatabase[]> {
-  return fetchFromCoolify('/databases', config);
+  return fetchFromCoolify("/databases", config);
 }
 
 async function getProjects(config: CoolifyConfig): Promise<CoolifyProject[]> {
-  return fetchFromCoolify('/projects', config);
+  return fetchFromCoolify("/projects", config);
 }
 
-async function getProjectResources(config: CoolifyConfig, projectId: string): Promise<any> {
+async function getProjectResources(
+  config: CoolifyConfig,
+  projectId: string,
+): Promise<any> {
   return fetchFromCoolify(`/projects/${projectId}`, config);
 }
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
 Deno.serve(async (req: Request) => {
-  // Handle CORS
-  if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 204,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      },
-    });
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
 
   try {
+    // JWT auth — validate caller is authenticated
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnon = createClient(
+      supabaseUrl,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      {
+        global: { headers: { Authorization: authHeader } },
+      },
+    );
+    const {
+      data: { user },
+      error: authError,
+    } = await supabaseAnon.auth.getUser();
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const body = await req.json();
-    const { action, config } = body as { action: string; config: CoolifyConfig };
+    const { action, config } = body as {
+      action: string;
+      config: CoolifyConfig;
+    };
 
     if (!config?.base_url || !config?.api_token) {
       return new Response(
-        JSON.stringify({ error: 'Missing required config: base_url and api_token' }),
-        { 
+        JSON.stringify({
+          error: "Missing required config: base_url and api_token",
+        }),
+        {
           status: 400,
-          headers: { 
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-          }
-        }
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders,
+          },
+        },
       );
     }
 
     let result: any;
 
     switch (action) {
-      case 'servers':
+      case "servers":
         result = await getServers(config);
         break;
-      
-      case 'server_resources':
+
+      case "server_resources":
         const { serverId } = body;
         if (!serverId) {
-          throw new Error('Missing serverId for server_resources action');
+          throw new Error("Missing serverId for server_resources action");
         }
         result = await getServerResources(config, serverId);
         break;
-      
-      case 'applications':
+
+      case "applications":
         result = await getApplications(config);
         break;
-      
-      case 'databases':
+
+      case "databases":
         result = await getDatabases(config);
         break;
-      
-      case 'projects':
+
+      case "projects":
         result = await getProjects(config);
         break;
-      
-      case 'project_resources':
+
+      case "project_resources":
         const { projectId } = body;
         if (!projectId) {
-          throw new Error('Missing projectId for project_resources action');
+          throw new Error("Missing projectId for project_resources action");
         }
         result = await getProjectResources(config, projectId);
         break;
-      
-      case 'dashboard':
+
+      case "dashboard":
         // Get all dashboard data in one call
         const [servers, applications, databases, projects] = await Promise.all([
           getServers(config),
@@ -205,19 +247,32 @@ Deno.serve(async (req: Request) => {
           getDatabases(config),
           getProjects(config),
         ]);
-        
+
         // Calculate totals
-        const totalCpuUsage = servers.reduce((acc: number, s: any) => acc + (s.resources?.cpu_usage || 0), 0);
-        const totalMemoryUsage = servers.reduce((acc: number, s: any) => acc + (s.resources?.memory_usage || 0), 0);
-        const totalDiskUsage = servers.reduce((acc: number, s: any) => acc + (s.resources?.disk_usage || 0), 0);
-        
-        const runningApps = applications.filter((a: any) => a.status === 'running').length;
-        const runningDbs = databases.filter((d: any) => d.status === 'running').length;
-        
+        const totalCpuUsage = servers.reduce(
+          (acc: number, s: any) => acc + (s.resources?.cpu_usage || 0),
+          0,
+        );
+        const totalMemoryUsage = servers.reduce(
+          (acc: number, s: any) => acc + (s.resources?.memory_usage || 0),
+          0,
+        );
+        const totalDiskUsage = servers.reduce(
+          (acc: number, s: any) => acc + (s.resources?.disk_usage || 0),
+          0,
+        );
+
+        const runningApps = applications.filter(
+          (a: any) => a.status === "running",
+        ).length;
+        const runningDbs = databases.filter(
+          (d: any) => d.status === "running",
+        ).length;
+
         result = {
           servers: {
             total: servers.length,
-            running: servers.filter((s: any) => s.status === 'running').length,
+            running: servers.filter((s: any) => s.status === "running").length,
             data: servers,
           },
           applications: {
@@ -241,46 +296,45 @@ Deno.serve(async (req: Request) => {
           },
         };
         break;
-      
+
       default:
         return new Response(
-          JSON.stringify({ error: 'Invalid action. Use: servers, server_resources, applications, databases, projects, project_resources, dashboard' }),
-          { 
+          JSON.stringify({
+            error:
+              "Invalid action. Use: servers, server_resources, applications, databases, projects, project_resources, dashboard",
+          }),
+          {
             status: 400,
-            headers: { 
-              'Content-Type': 'application/json',
-              'Access-Control-Allow-Origin': '*',
-            }
-          }
+            headers: {
+              "Content-Type": "application/json",
+              ...corsHeaders,
+            },
+          },
         );
     }
 
-    return new Response(
-      JSON.stringify({ success: true, data: result }),
-      { 
-        status: 200,
-        headers: { 
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        }
-      }
-    );
-
+    return new Response(JSON.stringify({ success: true, data: result }), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+    });
   } catch (error) {
-    console.error('Coolify API error:', error);
-    
+    console.error("Coolify API error:", error);
+
     return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Unknown error',
-        success: false 
+      JSON.stringify({
+        error: error instanceof Error ? error.message : "Unknown error",
+        success: false,
       }),
-      { 
+      {
         status: 500,
-        headers: { 
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        }
-      }
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      },
     );
   }
 });
