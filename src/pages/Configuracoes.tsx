@@ -1,7 +1,6 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { cn } from "@/lib/utils";
-import { User, Building2, Bell, Shield, Palette, Database, Mail, CreditCard, Settings } from "lucide-react";
-import { IntegrationsTab } from "@/components/settings/IntegrationsTab";
+import { User, Building2, Bell, Shield, Palette, Mail, CreditCard, Settings } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useState } from "react";
 
@@ -11,7 +10,6 @@ const tabs = [
   { id: "notifications", label: "Notificações", icon: Bell },
   { id: "security", label: "Segurança", icon: Shield },
   { id: "appearance", label: "Aparência", icon: Palette },
-  { id: "integrations", label: "Integrações", icon: Database },
   { id: "email", label: "Email", icon: Mail },
   { id: "billing", label: "Faturamento", icon: CreditCard },
 ];
@@ -168,11 +166,7 @@ export default function Configuracoes() {
                 </div>
               )}
 
-              {activeTab === "integrations" && (
-                <IntegrationsTab />
-              )}
-
-              {activeTab !== "profile" && activeTab !== "company" && activeTab !== "integrations" && (
+              {activeTab !== "profile" && activeTab !== "company" && (
                 <div className="text-center py-12">
                   <p className="text-muted-foreground">Configurações de {tabs.find(t => t.id === activeTab)?.label} em breve.</p>
                 </div>

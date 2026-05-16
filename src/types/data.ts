@@ -194,7 +194,6 @@ export interface KnowledgeItem {
 
 // Observability Types
 export type IntegrationType =
-  | 'n8n'
   | 'supabase'
   | 'openai'
   | 'sendgrid'
@@ -280,7 +279,6 @@ export interface ClientObservabilitySummary {
 
 // Integration credentials for different services (for UI forms)
 export interface IntegrationCredentialsConfig {
-  n8n: { api_key: string };
   supabase: { project_url: string; anon_key: string; service_role_key?: string };
   openai: { api_key: string; organization_id?: string };
   sendgrid: { api_key: string; webhook_secret?: string };

@@ -52,7 +52,6 @@ import { CoolifyMetrics } from "@/components/observability/CoolifyMetrics";
 
 // Integration type icons
 const integrationTypeIcons: Record<IntegrationType, React.ReactNode> = {
-  n8n: <Terminal className="w-5 h-5" />,
   supabase: <Database className="w-5 h-5" />,
   openai: <Cpu className="w-5 h-5" />,
   sendgrid: <Mail className="w-5 h-5" />,
@@ -68,7 +67,6 @@ const integrationTypeIcons: Record<IntegrationType, React.ReactNode> = {
 };
 
 const integrationTypeLabels: Record<IntegrationType, string> = {
-  n8n: 'N8N (Workflows)',
   supabase: 'Supabase (Database)',
   openai: 'OpenAI (IA)',
   sendgrid: 'SendGrid (Email)',
@@ -99,10 +97,6 @@ const integrationStatusLabels: Record<IntegrationStatus, string> = {
 
 // Config fields for each integration type
 const integrationConfigFields: Record<IntegrationType, { key: string; label: string; type: string; placeholder: string }[]> = {
-  n8n: [
-    { key: 'base_url', label: 'URL do N8N', type: 'text', placeholder: 'https://n8n.seudominio.com' },
-    { key: 'api_key', label: 'API Key', type: 'password', placeholder: '********' },
-  ],
   supabase: [
     { key: 'project_url', label: 'Project URL', type: 'text', placeholder: 'https://xxxx.supabase.co' },
     { key: 'anon_key', label: 'Anon Key', type: 'password', placeholder: '********' },
