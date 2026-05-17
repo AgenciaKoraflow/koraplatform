@@ -26,6 +26,9 @@ dist-ssr
 # Env
 .env
 
+# Internal documentation (never commit — use docs-internal/ for sensitive docs)
+docs-internal/
+
 # Claude
 .claude/
 .agents/

@@ -1,0 +1,19 @@
+# Internal documentation — never deploy
+docs-internal/
+
+# Development tooling
+.agents/
+.claude/
+memory/
+
+# Supabase (deployed separately via Supabase CLI, not Vercel)
+supabase/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Dev files
+*.log
+.vscode/
