@@ -63,6 +63,7 @@ interface DataContextType {
   updateKnowledgeItem: (id: string, item: Partial<KnowledgeItem>) => Promise<void>;
   deleteKnowledgeItem: (id: string) => Promise<void>;
   getKnowledgeByClient: (clientId: string) => KnowledgeItem[];
+  getKnowledgePassword: (id: string) => Promise<string | null>;
   
   // Support ticket methods
   addTicket: (ticket: Omit<SupportTicket, "id">) => Promise<SupportTicket | null>;
@@ -240,7 +241,9 @@ function mapDbKnowledge(db: any): KnowledgeItem {
     category: db.category || 'documento',
     content: db.content || '',
     username: db.username,
-    password: db.password,
+    // password intentionally omitted — edge function strips it from list responses.
+    // has_password comes from the edge function to indicate existence without exposing the value.
+    hasPassword: Boolean(db.has_password),
     url: db.url,
     tags: db.tags || [],
     createdAt: db.created_at ? formatDate(db.created_at) : '',
@@ -417,8 +420,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (client.bu !== undefined) dbData.bu = client.bu;
       if (client.logo !== undefined) dbData.logo = client.logo || null;
       dbData.updated_at = new Date().toISOString();
-
-      console.log("updateClient - sending data:", dbData);
 
       await callExternalDb("update", "clients", dbData, id);
       setClients((prev) => prev.map((c) => (c.id === id ? { ...c, ...client } : c)));
@@ -768,17 +769,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // Knowledge methods
   const addKnowledgeItem = async (item: Omit<KnowledgeItem, "id">): Promise<KnowledgeItem | null> => {
     try {
-      const dbData = {
-        client_id: item.clientId || null,
-        project_id: item.projectIds && item.projectIds.length > 0 ? item.projectIds[0] : null,
+      const dbData: Record<string, unknown> = {
+        client_id: item.clientId ?? null,
+        project_id: item.projectIds?.[0] ?? null,
         title: item.title,
         category: item.category,
         content: item.content,
-        username: item.username,
-        password: item.password,
-        url: item.url,
-        tags: item.tags
+        username: item.username ?? null,
+        url: item.url ?? null,
+        tags: item.tags,
       };
+      // Only include password when the caller explicitly provides one.
+      // The edge function encrypts it before writing to the DB.
+      if (item.password) {
+        dbData.password = item.password;
+      }
       const result = await callExternalDb('insert', 'knowledge_items', dbData);
       if (result && result[0]) {
         const newItem = mapDbKnowledge(result[0]);
@@ -792,23 +797,33 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return null;
     }
   };
-  
+
   const updateKnowledgeItem = async (id: string, item: Partial<KnowledgeItem>) => {
     try {
-      const dbData: any = {};
-      if (item.clientId !== undefined) dbData.client_id = item.clientId || null;
-      if (item.projectIds !== undefined) dbData.project_id = item.projectIds && item.projectIds.length > 0 ? item.projectIds[0] : null;
+      const dbData: Record<string, unknown> = {};
+      if (item.clientId !== undefined) dbData.client_id = item.clientId ?? null;
+      if (item.projectIds !== undefined) dbData.project_id = item.projectIds?.[0] ?? null;
       if (item.title) dbData.title = item.title;
       if (item.category) dbData.category = item.category;
       if (item.content !== undefined) dbData.content = item.content;
       if (item.username !== undefined) dbData.username = item.username;
-      if (item.password !== undefined) dbData.password = item.password;
+      // Only forward password when the user explicitly entered a new one (non-empty).
+      // Omitting it tells the edge function to leave the existing encrypted value untouched.
+      if (item.password) dbData.password = item.password;
       if (item.url !== undefined) dbData.url = item.url;
       if (item.tags) dbData.tags = item.tags;
       dbData.updated_at = new Date().toISOString();
-      
+
       await callExternalDb('update', 'knowledge_items', dbData, id);
-      setKnowledgeItems(prev => prev.map(k => k.id === id ? { ...k, ...item } : k));
+      // Update local state without touching hasPassword (the encrypted value didn't change
+      // unless item.password was provided, in which case hasPassword stays true).
+      const { password: _pw, ...safeItem } = item;
+      const passwordChanged = Boolean(item.password);
+      setKnowledgeItems(prev => prev.map(k =>
+        k.id === id
+          ? { ...k, ...safeItem, hasPassword: passwordChanged ? true : k.hasPassword }
+          : k
+      ));
       toast.success('Item atualizado com sucesso');
     } catch (error) {
       toast.error(`Erro ao atualizar item: ${mutationErrorMessage(error)}`);
@@ -824,7 +839,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
       toast.error(`Erro ao excluir item: ${mutationErrorMessage(error)}`);
     }
   };
-  
+
+  const getKnowledgePassword = async (id: string): Promise<string | null> => {
+    try {
+      const result = await callExternalDb('get_password', 'knowledge_items', undefined, id);
+      const pw = (result as { password?: string } | null)?.password;
+      return typeof pw === 'string' ? pw : null;
+    } catch (error) {
+      toast.error(`Erro ao obter senha: ${mutationErrorMessage(error)}`);
+      return null;
+    }
+  };
+
   const getKnowledgeByClient = (clientId: string) => knowledgeItems.filter(k => k.clientId === clientId);
 
   // Support ticket methods
@@ -890,7 +916,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     addProject, updateProject, deleteProject, getProjectsByClient,
     addTask, updateTask, deleteTask, getTasksByClient, getTasksByProject,
     addContract, updateContract, deleteContract, getContractsByClient,
-    addKnowledgeItem, updateKnowledgeItem, deleteKnowledgeItem, getKnowledgeByClient,
+    addKnowledgeItem, updateKnowledgeItem, deleteKnowledgeItem, getKnowledgeByClient, getKnowledgePassword,
     addTicket, updateTicket, deleteTicket, getTicketsByClient,
     refreshData: loadData,
   }), [clients, projects, tasks, contracts, knowledgeItems, tickets, loading]);

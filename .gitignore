@@ -31,4 +31,4 @@ dist-ssr
 .agents/
 
 # Supabase
-supabase/.temp/
+.supabase/*

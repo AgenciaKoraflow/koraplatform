@@ -185,7 +185,14 @@ export interface KnowledgeItem {
   category: "credencial" | "documento" | "link";
   content: string;
   username?: string;
+  /**
+   * Never populated from list responses — the edge function strips it.
+   * Only present when the caller explicitly fetches it via get_password,
+   * or when providing a new value on create/update.
+   */
   password?: string;
+  /** True when the DB record has an encrypted password, without exposing the value. */
+  hasPassword?: boolean;
   url?: string;
   tags: string[];
   createdAt: string;

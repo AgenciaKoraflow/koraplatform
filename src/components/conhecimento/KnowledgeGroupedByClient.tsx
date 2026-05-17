@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { ChevronDown, ChevronRight, Key, FileText, Link2, Eye, Copy, ExternalLink, Edit, Trash2, EyeOff, Building2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Key, FileText, Link2, Copy, ExternalLink, Edit, Trash2, Eye, Building2 } from "lucide-react";
 import { ActionMenu } from "@/components/shared/ActionMenu";
 import { KnowledgeItem, Client } from "@/types/data";
 import { toast } from "sonner";
@@ -18,6 +18,7 @@ interface KnowledgeGroupedByClientProps {
   onView: (item: KnowledgeItem) => void;
   onEdit: (item: KnowledgeItem) => void;
   onDelete: (id: string) => void;
+  getPassword: (id: string) => Promise<string | null>;
 }
 
 export function KnowledgeGroupedByClient({
@@ -27,19 +28,18 @@ export function KnowledgeGroupedByClient({
   onView,
   onEdit,
   onDelete,
+  getPassword,
 }: KnowledgeGroupedByClientProps) {
   const [expandedClients, setExpandedClients] = useState<Record<string, boolean>>({});
-  const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
+  const [cachedPasswords, setCachedPasswords] = useState<Record<string, string>>({});
 
   // Group items by client
-  const groupedItems = items.reduce((acc, item) => {
-    const key = item.clientId || "internal";
-    if (!acc[key]) {
-      acc[key] = [];
-    }
+  const groupedItems = items.reduce<Record<string, KnowledgeItem[]>>((acc, item) => {
+    const key = item.clientId ?? "internal";
+    if (!acc[key]) acc[key] = [];
     acc[key].push(item);
     return acc;
-  }, {} as Record<string, KnowledgeItem[]>);
+  }, {});
 
   // Sort clients: internal first, then by client name
   const sortedClientIds = Object.keys(groupedItems).sort((a, b) => {
@@ -47,26 +47,40 @@ export function KnowledgeGroupedByClient({
     if (b === "internal") return 1;
     const clientA = getClient(a);
     const clientB = getClient(b);
-    return (clientA?.company || "").localeCompare(clientB?.company || "");
+    return (clientA?.company ?? "").localeCompare(clientB?.company ?? "");
   });
 
   const toggleClient = (clientId: string) => {
     setExpandedClients(prev => ({ ...prev, [clientId]: !prev[clientId] }));
   };
 
-  const togglePassword = (id: string) => {
-    setShowPasswords(prev => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const copyToClipboard = (content: string) => {
-    navigator.clipboard.writeText(content);
-    toast.success("Copiado para a área de transferência!");
+  /**
+   * Copies the password (fetching it from the edge function if not yet cached),
+   * or falls back to username → url.
+   */
+  const copyCredential = async (item: KnowledgeItem) => {
+    if (item.hasPassword) {
+      const pw = cachedPasswords[item.id] ?? await getPassword(item.id);
+      if (pw) {
+        if (!cachedPasswords[item.id]) {
+          setCachedPasswords(prev => ({ ...prev, [item.id]: pw }));
+        }
+        navigator.clipboard.writeText(pw);
+        toast.success("Copiado para a área de transferência!");
+        return;
+      }
+    }
+    const fallback = item.username ?? item.url;
+    if (fallback) {
+      navigator.clipboard.writeText(fallback);
+      toast.success("Copiado para a área de transferência!");
+    }
   };
 
   const getClientName = (clientId: string) => {
     if (clientId === "internal") return "Interno (Agência)";
     const client = getClient(clientId);
-    return client?.company || "Cliente não encontrado";
+    return client?.company ?? "Cliente não encontrado";
   };
 
   return (
@@ -74,7 +88,6 @@ export function KnowledgeGroupedByClient({
       {sortedClientIds.map((clientId) => {
         const clientItems = groupedItems[clientId];
         const isExpanded = expandedClients[clientId] !== false; // Default to expanded
-        const client = clientId !== "internal" ? getClient(clientId) : null;
 
         return (
           <div
@@ -88,8 +101,8 @@ export function KnowledgeGroupedByClient({
             >
               <div className={cn(
                 "w-10 h-10 rounded-xl flex items-center justify-center",
-                clientId === "internal" 
-                  ? "bg-primary/10 text-primary" 
+                clientId === "internal"
+                  ? "bg-primary/10 text-primary"
                   : "bg-accent/10 text-accent"
               )}>
                 <Building2 className="w-5 h-5" />
@@ -140,24 +153,11 @@ export function KnowledgeGroupedByClient({
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
-                        {item.category === "credencial" && item.password && (
+                        {(item.hasPassword || item.username || item.url) && (
                           <button
-                            onClick={() => togglePassword(item.id)}
+                            onClick={() => copyCredential(item)}
                             className="p-2 rounded-xl hover:bg-muted transition-colors"
-                            title={showPasswords[item.id] ? "Ocultar" : "Mostrar"}
-                          >
-                            {showPasswords[item.id] ? (
-                              <EyeOff className="w-4 h-4 text-muted-foreground" />
-                            ) : (
-                              <Eye className="w-4 h-4 text-muted-foreground" />
-                            )}
-                          </button>
-                        )}
-                        {(item.password || item.username || item.url) && (
-                          <button
-                            onClick={() => copyToClipboard(item.password || item.username || item.url || "")}
-                            className="p-2 rounded-xl hover:bg-muted transition-colors"
-                            title="Copiar"
+                            title="Copiar credencial"
                           >
                             <Copy className="w-4 h-4 text-muted-foreground" />
                           </button>

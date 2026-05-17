@@ -27,10 +27,11 @@ const categoryConfig = {
 const tagCategories = ["Cloud", "Técnico", "Desenvolvimento", "Database", "Treinamento", "IA", "Ambiente", "Comercial"];
 
 export default function Conhecimento() {
-  const { knowledgeItems, clients, projects, addKnowledgeItem, updateKnowledgeItem, deleteKnowledgeItem, getClient, getProjectsByClient } = useData();
+  const { knowledgeItems, clients, projects, addKnowledgeItem, updateKnowledgeItem, deleteKnowledgeItem, getClient, getProjectsByClient, getKnowledgePassword } = useData();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
+  const [revealedPasswords, setRevealedPasswords] = useState<Record<string, string>>({});
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [groupByClient, setGroupByClient] = useState(false);
   const [activeTab, setActiveTab] = useState("base");
@@ -63,13 +64,39 @@ export default function Conhecimento() {
 
   const availableProjects = formData.clientId ? getProjectsByClient(formData.clientId) : [];
 
-  const togglePassword = (id: string) => {
-    setShowPasswords(prev => ({ ...prev, [id]: !prev[id] }));
+  const togglePassword = async (id: string) => {
+    if (showPasswords[id]) {
+      setShowPasswords(prev => ({ ...prev, [id]: false }));
+      return;
+    }
+    // Fetch on first reveal; cache in state for the session lifetime
+    if (!revealedPasswords[id]) {
+      const pw = await getKnowledgePassword(id);
+      if (!pw) return;
+      setRevealedPasswords(prev => ({ ...prev, [id]: pw }));
+    }
+    setShowPasswords(prev => ({ ...prev, [id]: true }));
   };
 
   const copyToClipboard = (content: string) => {
     navigator.clipboard.writeText(content);
     toast.success("Copiado para a área de transferência!");
+  };
+
+  /** Copies the password (fetching it if not yet revealed), or falls back to username/url. */
+  const copyCredential = async (item: KnowledgeItem) => {
+    if (item.hasPassword) {
+      const pw = revealedPasswords[item.id] ?? await getKnowledgePassword(item.id);
+      if (pw) {
+        if (!revealedPasswords[item.id]) {
+          setRevealedPasswords(prev => ({ ...prev, [item.id]: pw }));
+        }
+        copyToClipboard(pw);
+        return;
+      }
+    }
+    if (item.username) { copyToClipboard(item.username); return; }
+    if (item.url) copyToClipboard(item.url);
   };
 
   const openNewDialog = () => {
@@ -87,7 +114,9 @@ export default function Conhecimento() {
       projectId: item.projectIds?.[0] || "",
       content: item.content,
       username: item.username || "",
-      password: item.password || "",
+      // Never pre-populate with the password — the edge function strips it from list responses.
+      // User must re-enter a new value if they want to change it; leaving blank keeps existing.
+      password: "",
       url: item.url || "",
       tags: item.tags.join(", "),
     });
@@ -244,6 +273,7 @@ export default function Conhecimento() {
                   setDeletingItemId(id);
                   setIsDeleteDialogOpen(true);
                 }}
+                getPassword={getKnowledgePassword}
               />
             ) : (
               <>
@@ -276,13 +306,8 @@ export default function Conhecimento() {
                           <div className="flex items-center justify-between pt-3 border-t border-border">
                             <span className="text-xs text-muted-foreground">{item.updatedAt}</span>
                             <div className="flex items-center gap-1">
-                              {item.category === "credencial" && item.password && (
-                                <button onClick={() => togglePassword(item.id)} className="p-2 rounded-lg hover:bg-muted transition-colors" title={showPasswords[item.id] ? "Ocultar" : "Mostrar"}>
-                                  {showPasswords[item.id] ? <EyeOff className="w-4 h-4 text-muted-foreground" /> : <Eye className="w-4 h-4 text-muted-foreground" />}
-                                </button>
-                              )}
-                              {(item.password || item.username || item.url) && (
-                                <button onClick={() => copyToClipboard(item.password || item.username || item.url || "")} className="p-2 rounded-lg hover:bg-muted transition-colors" title="Copiar">
+                              {(item.hasPassword || item.username || item.url) && (
+                                <button onClick={(e) => { e.stopPropagation(); copyCredential(item); }} className="p-2 rounded-lg hover:bg-muted transition-colors" title="Copiar credencial">
                                   <Copy className="w-4 h-4 text-muted-foreground" />
                                 </button>
                               )}
@@ -345,8 +370,8 @@ export default function Conhecimento() {
                               <td className="px-6 py-4 text-muted-foreground">{item.updatedAt}</td>
                               <td className="px-6 py-4 text-right">
                                 <div className="flex items-center justify-end gap-1">
-                                  {(item.password || item.username || item.url) && (
-                                    <button onClick={() => copyToClipboard(item.password || item.username || item.url || "")} className="p-2 rounded-lg hover:bg-muted transition-colors" title="Copiar">
+                                  {(item.hasPassword || item.username || item.url) && (
+                                    <button onClick={(e) => { e.stopPropagation(); copyCredential(item); }} className="p-2 rounded-lg hover:bg-muted transition-colors" title="Copiar credencial">
                                       <Copy className="w-4 h-4 text-muted-foreground" />
                                     </button>
                                   )}
@@ -438,7 +463,14 @@ export default function Conhecimento() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">Senha</Label>
-                  <Input id="password" type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="Senha" className="bg-input border-border" />
+                  <Input
+                    id="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder={editingItem?.hasPassword ? "Deixe em branco para manter a senha atual" : "Senha"}
+                    className="bg-input border-border"
+                  />
                 </div>
               </>
             )}
@@ -501,15 +533,19 @@ export default function Conhecimento() {
                         </div>
                       </div>
                     )}
-                    {viewingItem.password && (
+                    {viewingItem.hasPassword && (
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">Senha:</span>
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-sm">{showPasswords[viewingItem.id] ? viewingItem.password : "••••••••"}</span>
+                          <span className="font-mono text-sm">
+                            {showPasswords[viewingItem.id]
+                              ? (revealedPasswords[viewingItem.id] ?? "••••••••")
+                              : "••••••••"}
+                          </span>
                           <button onClick={() => togglePassword(viewingItem.id)} className="p-1 rounded hover:bg-muted">
                             {showPasswords[viewingItem.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                           </button>
-                          <button onClick={() => copyToClipboard(viewingItem.password!)} className="p-1 rounded hover:bg-muted">
+                          <button onClick={() => copyCredential(viewingItem)} className="p-1 rounded hover:bg-muted">
                             <Copy className="w-3 h-3" />
                           </button>
                         </div>
