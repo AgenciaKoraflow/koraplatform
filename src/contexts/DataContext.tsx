@@ -77,8 +77,16 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-// Helper to call the external-db edge function
-async function callExternalDb(action: string, table: string, data?: any, id?: string, filters?: Record<string, any>) {
+type ExternalDbAction = "select" | "insert" | "update" | "delete" | "get_password";
+type ExternalDbTable = "clients" | "projects" | "tasks" | "contracts" | "knowledge_items" | "support_tickets";
+
+async function callExternalDb(
+  action: ExternalDbAction,
+  table: ExternalDbTable,
+  data?: Record<string, unknown>,
+  id?: string,
+  filters?: Record<string, unknown>,
+) {
   const { data: result, error } = await supabase.functions.invoke('external-db', {
     body: { action, table, data, id, filters },
   });
@@ -406,7 +414,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   
   const updateClient = async (id: string, client: Partial<Client>): Promise<boolean> => {
     try {
-      const dbData: any = {};
+      const dbData: Record<string, unknown> = {};
       if (client.name) dbData.name = client.name;
       if (client.company) dbData.company = client.company;
       if (client.email) dbData.email = client.email;
@@ -453,7 +461,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // Project methods
   const addProject = async (project: Omit<Project, "id">): Promise<Project | null> => {
     try {
-      const dbData: any = {
+      const dbData: Record<string, unknown> = {
         client_id: project.clientId,
         name: project.name,
         description: project.description || null,
@@ -501,7 +509,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      const dbData: any = {};
+      const dbData: Record<string, unknown> = {};
       if (project.clientId) dbData.client_id = project.clientId;
       if (project.name) dbData.name = project.name;
       if (project.description !== undefined) dbData.description = project.description;
@@ -576,7 +584,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // Task methods
   const addTask = async (task: Omit<Task, "id">): Promise<Task | null> => {
     try {
-      const dbData: any = {
+      const dbData: Record<string, unknown> = {
         client_id: task.clientId,
         project_id: task.projectId || null,
         title: task.title,
@@ -605,7 +613,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   
   const updateTask = async (id: string, task: Partial<Task>) => {
     try {
-      const dbData: any = {};
+      const dbData: Record<string, unknown> = {};
       if (task.clientId) dbData.client_id = task.clientId;
       if (task.projectId !== undefined) dbData.project_id = task.projectId || null;
       if (task.title) dbData.title = task.title;
@@ -648,7 +656,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 // Contract methods
   const addContract = async (contract: Omit<Contract, "id">): Promise<Contract | null> => {
     try {
-      const dbData: any = {
+      const dbData: Record<string, unknown> = {
         client_id: contract.clientId,
         title: contract.title,
         value: parseValue(contract.value),
@@ -697,7 +705,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   
   const updateContract = async (id: string, contract: Partial<Contract>) => {
     try {
-      const dbData: any = {};
+      const dbData: Record<string, unknown> = {};
       if (contract.clientId) dbData.client_id = contract.clientId;
       if (contract.projectIds !== undefined) {
         // Use project_ids array for multiple projects
@@ -880,7 +888,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   
   const updateTicket = async (id: string, ticket: Partial<SupportTicket>) => {
     try {
-      const dbData: any = {};
+      const dbData: Record<string, unknown> = {};
       if (ticket.clientId) dbData.client_id = ticket.clientId;
       if (ticket.projectIds !== undefined) dbData.project_id = ticket.projectIds && ticket.projectIds.length > 0 ? ticket.projectIds[0] : null;
       if (ticket.title) dbData.title = ticket.title;

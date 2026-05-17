@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useRef } from "react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
   Settings,
@@ -67,7 +68,19 @@ export function AppSidebar({ onNavigate, collapsed = false }: AppSidebarProps) {
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) await uploadAvatar(file);
+    if (!file) return;
+    // Client-side guard before the hook does the same check — fail fast
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Arquivo muito grande. Máximo 5 MB.");
+      e.target.value = "";
+      return;
+    }
+    try {
+      await uploadAvatar(file);
+      toast.success("Foto de perfil atualizada!");
+    } catch {
+      toast.error("Não foi possível atualizar a foto. Tente novamente.");
+    }
     // Reset so the same file can be re-selected
     e.target.value = "";
   };
