@@ -7,6 +7,7 @@ import { DataProvider } from "@/contexts/DataContext";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { lazy, Suspense, useEffect } from "react";
+import { RouteErrorBoundary } from "@/components/error-boundary";
 
 // Separate importers so we can preload them without re-creating the lazy component
 const importFunil = () => import("./pages/Funil");
@@ -111,28 +112,30 @@ function AppRoutes() {
   usePreloadAllPages();
 
   return (
-    <Suspense fallback={<PageLoader />}>
-      <Routes>
-        <Route path="/" element={<ProtectedRoute><Funil /></ProtectedRoute>} />
-        <Route path="/funil" element={<ProtectedRoute><Funil /></ProtectedRoute>} />
-        <Route path="/clientes" element={<ProtectedRoute><ClientesAtivos /></ProtectedRoute>} />
-        <Route path="/projetos" element={<ProtectedRoute><Projetos /></ProtectedRoute>} />
-        <Route path="/tarefas" element={<ProtectedRoute><Tarefas /></ProtectedRoute>} />
-        <Route path="/contratos" element={<ProtectedRoute><Contratos /></ProtectedRoute>} />
-        <Route path="/conhecimento" element={<ProtectedRoute><Conhecimento /></ProtectedRoute>} />
-        <Route path="/sustentacao" element={<ProtectedRoute><Sustentacao /></ProtectedRoute>} />
-        <Route path="/observabilidade" element={<ProtectedRoute><Observabilidade /></ProtectedRoute>} />
-        <Route path="/financeiro" element={<ProtectedRoute><Financeiro /></ProtectedRoute>} />
-        <Route path="/indicadores" element={<ProtectedRoute><Indicadores /></ProtectedRoute>} />
-        <Route path="/processos" element={<ProtectedRoute><Processos /></ProtectedRoute>} />
-        <Route path="/okr" element={<ProtectedRoute><OKR /></ProtectedRoute>} />
-        <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
-        <Route path="/buscar" element={<ProtectedRoute><Buscar /></ProtectedRoute>} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/sign/:token" element={<SignContract />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </Suspense>
+    <RouteErrorBoundary>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/" element={<ProtectedRoute><Funil /></ProtectedRoute>} />
+          <Route path="/funil" element={<ProtectedRoute><Funil /></ProtectedRoute>} />
+          <Route path="/clientes" element={<ProtectedRoute><ClientesAtivos /></ProtectedRoute>} />
+          <Route path="/projetos" element={<ProtectedRoute><Projetos /></ProtectedRoute>} />
+          <Route path="/tarefas" element={<ProtectedRoute><Tarefas /></ProtectedRoute>} />
+          <Route path="/contratos" element={<ProtectedRoute><Contratos /></ProtectedRoute>} />
+          <Route path="/conhecimento" element={<ProtectedRoute><Conhecimento /></ProtectedRoute>} />
+          <Route path="/sustentacao" element={<ProtectedRoute><Sustentacao /></ProtectedRoute>} />
+          <Route path="/observabilidade" element={<ProtectedRoute><Observabilidade /></ProtectedRoute>} />
+          <Route path="/financeiro" element={<ProtectedRoute><Financeiro /></ProtectedRoute>} />
+          <Route path="/indicadores" element={<ProtectedRoute><Indicadores /></ProtectedRoute>} />
+          <Route path="/processos" element={<ProtectedRoute><Processos /></ProtectedRoute>} />
+          <Route path="/okr" element={<ProtectedRoute><OKR /></ProtectedRoute>} />
+          <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
+          <Route path="/buscar" element={<ProtectedRoute><Buscar /></ProtectedRoute>} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/sign/:token" element={<SignContract />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
+    </RouteErrorBoundary>
   );
 }
 
