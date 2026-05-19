@@ -14,7 +14,7 @@ import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
 import { DatePicker } from "@/components/shared/DatePicker";
 import { MultiSelect, TEAM_OPTIONS } from "@/components/shared/MultiSelect";
 import { toast } from "sonner";
-import { useData } from "@/contexts/DataContext";
+import { useTaskMutations } from "@/hooks/mutations/useTaskMutations";
 import { Task } from "@/types/data";
 import { BU } from "@/types/bu";
 import { useTasks } from "@/hooks/useTasks";
@@ -146,7 +146,7 @@ const priorityConfig = {
 };
 
 export default function Tarefas() {
-  const { addTask, updateTask, deleteTask } = useData();
+  const { addTask, updateTask, deleteTask, isAdding, isUpdating } = useTaskMutations();
   const [searchInput, setSearchInput] = useState("");
   const searchQuery = useDebounce(searchInput, 300);
 
@@ -227,7 +227,6 @@ export default function Tarefas() {
         dueDate: formData.dueDate,
         bu: formData.bu ? [formData.bu] : undefined,
       });
-      toast.success("Tarefa atualizada com sucesso!");
     } else {
       addTask({
         clientId: formData.clientId,
@@ -240,7 +239,6 @@ export default function Tarefas() {
         dueDate: formData.dueDate || "A definir",
         bu: formData.bu ? [formData.bu] : undefined,
       });
-      toast.success("Tarefa criada com sucesso!");
     }
     setIsDialogOpen(false);
   };
@@ -248,7 +246,6 @@ export default function Tarefas() {
   const handleDelete = () => {
     if (deletingTaskId) {
       deleteTask(deletingTaskId);
-      toast.success("Tarefa removida com sucesso!");
       setIsDeleteDialogOpen(false);
       setDeletingTaskId(null);
     }
@@ -561,7 +558,7 @@ export default function Tarefas() {
           </div>
           <DialogFooter>
             <button onClick={() => setIsDialogOpen(false)} className="px-4 py-2 rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-colors">Cancelar</button>
-            <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Salvar</button>
+            <button onClick={handleSave} disabled={isAdding || isUpdating} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Salvar</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

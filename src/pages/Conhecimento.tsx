@@ -15,7 +15,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { KnowledgeGroupedByClient } from "@/components/conhecimento/KnowledgeGroupedByClient";
 import { InsightsManager } from "@/components/insights/InsightsManager";
 import { toast } from "sonner";
-import { useData } from "@/contexts/DataContext";
+import { useKnowledgeMutations } from "@/hooks/mutations/useKnowledgeMutations";
 import { KnowledgeItem } from "@/types/data";
 import { useKnowledgeItems } from "@/hooks/useKnowledgeItems";
 import { useAllClients } from "@/hooks/useClients";
@@ -31,7 +31,7 @@ const categoryConfig = {
 const tagCategories = ["Cloud", "Técnico", "Desenvolvimento", "Database", "Treinamento", "IA", "Ambiente", "Comercial"];
 
 export default function Conhecimento() {
-  const { addKnowledgeItem, updateKnowledgeItem, deleteKnowledgeItem, getKnowledgePassword } = useData();
+  const { addKnowledgeItem, updateKnowledgeItem, deleteKnowledgeItem, getKnowledgePassword, isAdding, isUpdating } = useKnowledgeMutations();
   const [searchInput, setSearchInput] = useState("");
   const searchQuery = useDebounce(searchInput, 300);
   const { data: knowledgeData } = useKnowledgeItems({ search: searchQuery || undefined, pageSize: 500 });
@@ -154,7 +154,6 @@ export default function Conhecimento() {
         tags: formData.tags.split(",").map(t => t.trim()).filter(Boolean),
         updatedAt: now,
       });
-      toast.success("Item atualizado com sucesso!");
     } else {
       addKnowledgeItem({
         clientId: formData.clientId || undefined,
@@ -169,7 +168,6 @@ export default function Conhecimento() {
         createdAt: now,
         updatedAt: now,
       });
-      toast.success("Item adicionado com sucesso!");
     }
     setIsDialogOpen(false);
   };
@@ -177,7 +175,6 @@ export default function Conhecimento() {
   const handleDelete = () => {
     if (deletingItemId) {
       deleteKnowledgeItem(deletingItemId);
-      toast.success("Item removido com sucesso!");
       setIsDeleteDialogOpen(false);
       setDeletingItemId(null);
     }
@@ -498,7 +495,7 @@ export default function Conhecimento() {
           </div>
           <DialogFooter>
             <button onClick={() => setIsDialogOpen(false)} className="px-4 py-2 rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-colors">Cancelar</button>
-            <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Salvar</button>
+            <button onClick={handleSave} disabled={isAdding || isUpdating} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Salvar</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

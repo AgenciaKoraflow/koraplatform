@@ -17,7 +17,7 @@ import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
 import { DatePicker } from "@/components/shared/DatePicker";
 import { TableRowSkeleton, CardSkeleton, KanbanCardSkeleton } from "@/components/shared/ListSkeleton";
 import { PaginationControls } from "@/components/shared/PaginationControls";
-import { useData } from "@/contexts/DataContext";
+import { useClientMutations } from "@/hooks/mutations/useClientMutations";
 import { useClients } from "@/hooks/useClients";
 import { useClientProjects } from "@/hooks/useProjects";
 import { useClientContracts } from "@/hooks/useContracts";
@@ -55,7 +55,7 @@ const taskStatusConfig = {
 const stageOrder: (keyof typeof stageConfig)[] = ["prospeccao", "qualificacao", "proposta", "negociacao", "cliente"];
 
 export default function Clientes() {
-  const { addClient, updateClient, deleteClient } = useData();
+  const { addClient, updateClient, deleteClient, isAdding, isUpdating } = useClientMutations();
 
   // ── Pagination + filter state ────────────────────────────────────────────
   const [page, setPage] = useState(0);
@@ -180,7 +180,6 @@ export default function Clientes() {
   const handleDelete = () => {
     if (deletingClientId) {
       deleteClient(deletingClientId);
-      toast.success("Cliente removido com sucesso!");
       setIsDeleteDialogOpen(false);
       setDeletingClientId(null);
     }
@@ -512,7 +511,7 @@ export default function Clientes() {
           </div>
           <DialogFooter>
             <button onClick={() => setIsDialogOpen(false)} className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Cancelar</button>
-            <button onClick={handleSave} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">Salvar</button>
+            <button onClick={handleSave} disabled={isAdding || isUpdating} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Salvar</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

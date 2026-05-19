@@ -22,7 +22,7 @@ import { ActionMenu } from "@/components/shared/ActionMenu";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
 import { DatePicker } from "@/components/shared/DatePicker";
-import { useData } from "@/contexts/DataContext";
+import { useContractMutations } from "@/hooks/mutations/useContractMutations";
 import { useContractDocument } from "@/hooks/useContractDocument";
 import { useContracts } from "@/hooks/useContracts";
 import { useAllClients } from "@/hooks/useClients";
@@ -184,7 +184,7 @@ function getContractTypeLabel(contract: Contract, allProjects: Project[]): strin
 }
 
 export default function Contratos() {
-  const { addContract, updateContract, deleteContract } = useData();
+  const { addContract, updateContract, deleteContract, isAdding, isUpdating } = useContractMutations();
   const { upload: uploadDocument, getSignedUrl, remove: removeStorageFile } = useContractDocument();
   const [searchInput, setSearchInput] = useState("");
   const searchQuery = useDebounce(searchInput, 300);
@@ -441,7 +441,6 @@ export default function Contratos() {
           documentVersion: version || undefined,
           bu: formData.bu ? [formData.bu] : undefined,
         } as any);
-        toast.success("Contrato atualizado com sucesso!");
       } else {
         const hasDocument = !!(pendingDocumentFile || formData.documentStoragePath);
         const newContract = await addContract({
@@ -472,10 +471,8 @@ export default function Contratos() {
             documentVersion: 1,
           } as any);
         }
-        toast.success("Contrato criado com sucesso!");
       }
-    } catch (error) {
-      toast.error(`Erro ao salvar contrato: ${error instanceof Error ? error.message : String(error)}`);
+    } catch {
       return;
     } finally {
       setIsSaving(false);
@@ -488,7 +485,6 @@ export default function Contratos() {
   const handleDelete = () => {
     if (deletingContractId) {
       deleteContract(deletingContractId);
-      toast.success("Contrato removido com sucesso!");
       setIsDeleteDialogOpen(false);
       setDeletingContractId(null);
     }

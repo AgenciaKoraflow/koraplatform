@@ -14,7 +14,7 @@ import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
 import { DatePicker } from "@/components/shared/DatePicker";
 import { CurrencyInput } from "@/components/shared/CurrencyInput";
 import { toast } from "sonner";
-import { useData } from "@/contexts/DataContext";
+import { useProjectMutations } from "@/hooks/mutations/useProjectMutations";
 import { Project } from "@/types/data";
 import { BU } from "@/types/bu";
 import { BUBadge } from "@/components/shared/BUBadge";
@@ -48,7 +48,7 @@ const statusOrder: (keyof typeof statusConfig)[] = ["planning", "in_progress", "
 const PAGE_SIZE = 50;
 
 export default function Projetos() {
-  const { addProject, updateProject, deleteProject } = useData();
+  const { addProject, updateProject, deleteProject, isAdding, isUpdating } = useProjectMutations();
   const { getAvatarForName } = useUserAvatar();
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [searchInput, setSearchInput] = useState("");
@@ -161,7 +161,6 @@ export default function Projetos() {
         recurrenceStartDate: formData.recurrenceStartDate || undefined,
         bu: formData.bu,
       });
-      toast.success("Projeto atualizado com sucesso!");
     } else {
       addProject({
         clientId: formData.clientId,
@@ -181,7 +180,6 @@ export default function Projetos() {
         recurrenceStartDate: formData.recurrenceStartDate || undefined,
         bu: formData.bu,
       });
-      toast.success("Projeto criado com sucesso!");
     }
     setIsDialogOpen(false);
   };
@@ -189,7 +187,6 @@ export default function Projetos() {
   const handleDelete = () => {
     if (deletingProjectId) {
       deleteProject(deletingProjectId);
-      toast.success("Projeto removido com sucesso!");
       setIsDeleteDialogOpen(false);
       setDeletingProjectId(null);
     }
@@ -798,7 +795,7 @@ export default function Projetos() {
           </div>
           <DialogFooter>
             <button onClick={() => setIsDialogOpen(false)} className="px-4 py-2 rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-colors">Cancelar</button>
-            <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Salvar</button>
+            <button onClick={handleSave} disabled={isAdding || isUpdating} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Salvar</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

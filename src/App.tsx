@@ -3,7 +3,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { DataProvider } from "@/contexts/DataContext";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { lazy, Suspense, useEffect } from "react";
@@ -162,15 +161,13 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <CacheManager />
       <AuthProvider>
-        <DataProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter future={{ v7_startTransition: true }}>
-              <AppRoutes />
-            </BrowserRouter>
-          </TooltipProvider>
-        </DataProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter future={{ v7_startTransition: true }}>
+            <AppRoutes />
+          </BrowserRouter>
+        </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>
   </ThemeProvider>

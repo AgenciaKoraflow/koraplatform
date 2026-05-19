@@ -12,7 +12,7 @@ import { ActionMenu } from "@/components/shared/ActionMenu";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
 import { toast } from "sonner";
-import { useData } from "@/contexts/DataContext";
+import { useTicketMutations } from "@/hooks/mutations/useTicketMutations";
 import { useTickets } from "@/hooks/useTickets";
 import { useAllClients } from "@/hooks/useClients";
 import { useAllProjects } from "@/hooks/useProjects";
@@ -35,7 +35,7 @@ const priorityConfig = {
 };
 
 export default function Sustentacao() {
-  const { addTicket, updateTicket, deleteTicket } = useData();
+  const { addTicket, updateTicket, deleteTicket, isAdding, isUpdating } = useTicketMutations();
   const [searchInput, setSearchInput] = useState("");
   const searchQuery = useDebounce(searchInput, 300);
   const { data: ticketData } = useTickets({ search: searchQuery || undefined, pageSize: 500 });
@@ -125,7 +125,6 @@ export default function Sustentacao() {
         assignee: formData.assignee || undefined,
         updatedAt: now,
       });
-      toast.success("Ticket atualizado com sucesso!");
     } else {
       addTicket({
         clientId: formData.clientId,
@@ -138,7 +137,6 @@ export default function Sustentacao() {
         createdAt: now,
         updatedAt: now,
       });
-      toast.success("Ticket criado com sucesso!");
     }
     setIsDialogOpen(false);
   };
@@ -146,7 +144,6 @@ export default function Sustentacao() {
   const handleDelete = () => {
     if (deletingTicketId) {
       deleteTicket(deletingTicketId);
-      toast.success("Ticket removido com sucesso!");
       setIsDeleteDialogOpen(false);
       setDeletingTicketId(null);
     }
@@ -492,7 +489,7 @@ export default function Sustentacao() {
           </div>
           <DialogFooter>
             <button onClick={() => setIsDialogOpen(false)} className="px-4 py-2 rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-colors">Cancelar</button>
-            <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Salvar</button>
+            <button onClick={handleSave} disabled={isAdding || isUpdating} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Salvar</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

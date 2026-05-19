@@ -13,7 +13,7 @@ import { ActionMenu } from "@/components/shared/ActionMenu";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
 import { DatePicker } from "@/components/shared/DatePicker";
-import { useData } from "@/contexts/DataContext";
+import { useClientMutations } from "@/hooks/mutations/useClientMutations";
 import { useAllClients } from "@/hooks/useClients";
 import { useAllProjects } from "@/hooks/useProjects";
 import { useAllContracts } from "@/hooks/useContracts";
@@ -40,7 +40,7 @@ const stageConfig = {
 const stageOrder: (keyof typeof stageConfig)[] = ["prospeccao", "qualificacao", "proposta", "negociacao", "cliente", "cancelado"];
 
 export default function Funil() {
-  const { addClient, updateClient, deleteClient } = useData();
+  const { addClient, updateClient, deleteClient, isAdding, isUpdating } = useClientMutations();
   const { data: clients = [] } = useAllClients();
   const { data: projects = [] } = useAllProjects();
   const { data: contracts = [] } = useAllContracts();
@@ -223,7 +223,6 @@ export default function Funil() {
   const handleDelete = () => {
     if (deletingClientId) {
       deleteClient(deletingClientId);
-      toast.success("Lead removido com sucesso!");
       setIsDeleteDialogOpen(false);
       setDeletingClientId(null);
     }
@@ -912,7 +911,7 @@ export default function Funil() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSave}>{editingClient ? "Salvar" : "Criar"}</Button>
+            <Button onClick={handleSave} disabled={isAdding || isUpdating}>{editingClient ? "Salvar" : "Criar"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
