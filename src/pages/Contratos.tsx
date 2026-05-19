@@ -23,6 +23,10 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
 import { DatePicker } from "@/components/shared/DatePicker";
 import { useData } from "@/contexts/DataContext";
+import { useContracts } from "@/hooks/useContracts";
+import { useAllClients } from "@/hooks/useClients";
+import { useAllProjects } from "@/hooks/useProjects";
+import { useDebounce } from "@/hooks/useDebounce";
 import { toast } from "sonner";
 import { CurrencyInput } from "@/components/shared/CurrencyInput";
 import { MultiSelect } from "@/components/shared/MultiSelect";
@@ -179,8 +183,14 @@ function getContractTypeLabel(contract: Contract, allProjects: Project[]): strin
 }
 
 export default function Contratos() {
-  const { contracts, clients, projects, addContract, updateContract, deleteContract, getClient } = useData();
-  const [searchQuery, setSearchQuery] = useState("");
+  const { addContract, updateContract, deleteContract } = useData();
+  const [searchInput, setSearchInput] = useState("");
+  const searchQuery = useDebounce(searchInput, 300);
+  const { data: contractData } = useContracts({ search: searchQuery || undefined, pageSize: 500 });
+  const contracts = contractData?.contracts ?? [];
+  const { data: clients = [] } = useAllClients();
+  const { data: projects = [] } = useAllProjects();
+  const getClient = (id: string) => clients.find((c) => c.id === id);
   const [vigenciaFilter, setVigenciaFilter] = useState<"all" | VigenciaStatus>("all");
   const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -233,11 +243,8 @@ export default function Contratos() {
   const sendingContract = sendingContractId ? contracts.find(c => c.id === sendingContractId) : null;
 
   const filteredContracts = contracts.filter((contract) => {
-    const client = getClient(contract.clientId);
-    const matchesSearch = contract.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (client?.company || "").toLowerCase().includes(searchQuery.toLowerCase());
     const matchesVigencia = vigenciaFilter === "all" || getVigenciaStatus(contract) === vigenciaFilter;
-    return matchesSearch && matchesVigencia;
+    return matchesVigencia;
   });
 
   // Alerts: contracts needing attention
@@ -719,7 +726,7 @@ export default function Contratos() {
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input type="text" placeholder="Buscar contratos..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-9 pl-10 pr-4 rounded-lg bg-input border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50" />
+            <input type="text" placeholder="Buscar contratos..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="w-full h-9 pl-10 pr-4 rounded-lg bg-input border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50" />
           </div>
           <div className="flex items-center gap-1 p-1 rounded-lg bg-muted/50 border border-border">
             {([

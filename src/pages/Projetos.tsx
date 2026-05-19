@@ -23,6 +23,11 @@ import { ClientAvatar } from "@/components/shared/ClientAvatar";
 import { UserAvatar } from "@/components/shared/UserAvatar";
 import { useUserAvatar } from "@/hooks/useUserAvatar";
 import { differenceInDays, parse, isValid } from "date-fns";
+import { useProjects } from "@/hooks/useProjects";
+import { useAllClients } from "@/hooks/useClients";
+import { useDebounce } from "@/hooks/useDebounce";
+import { TableRowSkeleton, CardSkeleton } from "@/components/shared/ListSkeleton";
+import { PaginationControls } from "@/components/shared/PaginationControls";
 
 const typeConfig = {
   projeto: { label: "Projeto", color: "bg-primary/10 text-primary" },
@@ -40,14 +45,41 @@ const statusConfig = {
 
 const statusOrder: (keyof typeof statusConfig)[] = ["planning", "in_progress", "review", "completed", "on_hold"];
 
+const PAGE_SIZE = 50;
+
 export default function Projetos() {
-  const { projects, clients, addProject, updateProject, deleteProject, getClient, getTasksByProject } = useData();
+  const { addProject, updateProject, deleteProject } = useData();
   const { getAvatarForName } = useUserAvatar();
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [selectedBU, setSelectedBU] = useState<BU | null>(null);
+  const [page, setPage] = useState(0);
+
+  const searchQuery = useDebounce(searchInput, 300);
+
+  const { data: projectData, isLoading, isFetching } = useProjects({
+    page,
+    pageSize: PAGE_SIZE,
+    search: searchQuery || undefined,
+    status: selectedStatus || undefined,
+    clientId: selectedClientId || undefined,
+  });
+  const { data: allClients = [] } = useAllClients();
+
+  const rawProjects = projectData?.projects ?? [];
+  const total = projectData?.total ?? 0;
+
+  // BU filter applied client-side (not in server-side filter list yet)
+  const projects = selectedBU
+    ? rawProjects.filter((p) =>
+        Array.isArray(p.bu) ? p.bu.includes(selectedBU) : p.bu === selectedBU,
+      )
+    : rawProjects;
+
+  const getClient = (id: string) => allClients.find((c) => c.id === id);
+  const clients = allClients;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -70,15 +102,9 @@ export default function Projetos() {
     bu: [] as BU[],
   });
 
-  const filteredProjects = projects.filter((project) => {
-    const client = getClient(project.clientId);
-    const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client?.company.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = !selectedStatus || project.status === selectedStatus;
-    const matchesClient = !selectedClientId || project.clientId === selectedClientId;
-    const matchesBU = !selectedBU || (Array.isArray(project.bu) ? project.bu.includes(selectedBU) : project.bu === selectedBU);
-    return matchesSearch && matchesStatus && matchesClient && matchesBU;
-  });
+  const filteredProjects = projects;
+
+  const handleSearchChange = (v: string) => { setSearchInput(v); setPage(0); };
 
   const openNewDialog = () => {
     setEditingProject(null);
@@ -255,8 +281,8 @@ export default function Projetos() {
             <input
               type="text"
               placeholder="Buscar projetos..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={searchInput}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full h-9 pl-10 pr-4 rounded-lg bg-input border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
           </div>

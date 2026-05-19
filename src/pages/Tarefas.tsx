@@ -17,6 +17,10 @@ import { toast } from "sonner";
 import { useData } from "@/contexts/DataContext";
 import { Task } from "@/types/data";
 import { BU } from "@/types/bu";
+import { useTasks } from "@/hooks/useTasks";
+import { useAllClients } from "@/hooks/useClients";
+import { useAllProjects } from "@/hooks/useProjects";
+import { useDebounce } from "@/hooks/useDebounce";
 import { BUBadge } from "@/components/shared/BUBadge";
 import { ClientAvatar } from "@/components/shared/ClientAvatar";
 import { BUSelect } from "@/components/shared/BUSelect";
@@ -142,8 +146,16 @@ const priorityConfig = {
 };
 
 export default function Tarefas() {
-  const { tasks, clients, projects, addTask, updateTask, deleteTask, getClient, getProjectsByClient } = useData();
-  const [searchQuery, setSearchQuery] = useState("");
+  const { addTask, updateTask, deleteTask } = useData();
+  const [searchInput, setSearchInput] = useState("");
+  const searchQuery = useDebounce(searchInput, 300);
+
+  const { data: taskData } = useTasks({ search: searchQuery || undefined, pageSize: 500 });
+  const tasks = taskData?.tasks ?? [];
+  const { data: clients = [] } = useAllClients();
+  const { data: allProjects = [] } = useAllProjects();
+  const projects = allProjects;
+  const getClient = (id: string) => clients.find((c) => c.id === id);
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -164,25 +176,10 @@ export default function Tarefas() {
     bu: "kora-dev" as BU,
   });
 
-  const getTasksByStatus = (status: string) => 
-    tasks.filter(task => {
-      const client = getClient(task.clientId);
-      const project = projects.find(p => p.id === task.projectId);
-      const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        client?.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        project?.name.toLowerCase().includes(searchQuery.toLowerCase());
-      return task.status === status && matchesSearch;
-    });
+  const getTasksByStatus = (status: string) => tasks.filter((t) => t.status === status);
+  const filteredTasks = tasks;
 
-  const filteredTasks = tasks.filter(task => {
-    const client = getClient(task.clientId);
-    const project = projects.find(p => p.id === task.projectId);
-    return task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client?.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project?.name.toLowerCase().includes(searchQuery.toLowerCase());
-  });
-
-  const availableProjects = formData.clientId ? getProjectsByClient(formData.clientId) : [];
+  const availableProjects = formData.clientId ? projects.filter((p) => p.clientId === formData.clientId) : [];
 
   const openNewDialog = (status: Task["status"] = "todo") => {
     setEditingTask(null);
@@ -319,7 +316,7 @@ export default function Tarefas() {
         <div className="flex flex-wrap items-center gap-4">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input type="text" placeholder="Buscar tarefas..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-9 pl-10 pr-4 rounded-lg bg-input border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50" />
+            <input type="text" placeholder="Buscar tarefas..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="w-full h-9 pl-10 pr-4 rounded-lg bg-input border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50" />
           </div>
           <ViewModeToggle modes={["kanban", "list", "grid"]} currentMode={viewMode} onChange={setViewMode} />
         </div>

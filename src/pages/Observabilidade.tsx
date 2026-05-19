@@ -39,7 +39,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { useData } from "@/contexts/DataContext";
+import { useAllClients } from "@/hooks/useClients";
 import { supabase } from "@/integrations/supabase/client";
 import type { IntegrationType, IntegrationStatus, ClientIntegration } from "@/types/data";
 import { toast } from "sonner";
@@ -85,7 +85,7 @@ const integrationConfigFields: Record<IntegrationType, { key: string; label: str
 };
 
 export default function Observabilidade() {
-  const { clients } = useData();
+  const { data: clients = [] } = useAllClients();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [integrations, setIntegrations] = useState<ClientIntegration[]>([]);

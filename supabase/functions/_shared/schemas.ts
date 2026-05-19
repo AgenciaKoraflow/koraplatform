@@ -73,6 +73,28 @@ export const TABLE_FILTER_FIELDS: Record<Table, Set<string>> = {
   support_tickets: new Set(["id", "client_id", "status", "priority"]),
 };
 
+// ─── Searchable fields (used for ilike text search) ───────────────────────────
+
+export const TABLE_SEARCH_FIELDS: Record<Table, string[]> = {
+  clients: ["name", "company", "email"],
+  projects: ["name", "description"],
+  tasks: ["title", "description"],
+  contracts: ["title"],
+  knowledge_items: ["title", "content"],
+  support_tickets: ["title", "description"],
+};
+
+// ─── Orderable fields (anti-injection whitelist) ──────────────────────────────
+
+export const TABLE_ORDERABLE_FIELDS: Record<Table, Set<string>> = {
+  clients: new Set(["name", "company", "created_at", "updated_at", "pipeline_stage"]),
+  projects: new Set(["name", "status", "created_at", "end_date"]),
+  tasks: new Set(["title", "status", "priority", "created_at", "due_date"]),
+  contracts: new Set(["title", "value", "status", "created_at"]),
+  knowledge_items: new Set(["title", "category", "created_at", "updated_at"]),
+  support_tickets: new Set(["title", "status", "priority", "created_at", "updated_at"]),
+};
+
 // ─── Action/table permission matrix (anti-privilege-escalation) ───────────────
 
 export const TABLE_ALLOWED_ACTIONS: Record<Table, Set<Action>> = {
@@ -92,6 +114,12 @@ export const RequestSchema = z.object({
   data: z.record(z.unknown()).optional(),
   id: z.string().uuid("id must be a valid UUID").optional(),
   filters: z.record(z.unknown()).optional(),
+  // Pagination
+  limit: z.number().int().min(1).max(1000).optional(),
+  offset: z.number().int().min(0).optional(),
+  order_by: z.string().max(50).optional(),
+  order_dir: z.enum(["asc", "desc"]).optional(),
+  search: z.string().max(100).optional(),
 });
 
 export type ValidatedRequest = z.infer<typeof RequestSchema>;

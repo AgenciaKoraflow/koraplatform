@@ -17,7 +17,11 @@ import { ActionMenu } from "@/components/shared/ActionMenu";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
 import { DatePicker } from "@/components/shared/DatePicker";
-import { useData } from "@/contexts/DataContext";
+import { useAllClients } from "@/hooks/useClients";
+import { useAllProjects } from "@/hooks/useProjects";
+import { useAllContracts } from "@/hooks/useContracts";
+import { useAllTickets } from "@/hooks/useTickets";
+import { useAllTasks } from "@/hooks/useTasks";
 import { ClientAvatar } from "@/components/shared/ClientAvatar";
 import { ProjectGantt } from "@/components/shared/ProjectGantt";
 import { Project } from "@/types/data";
@@ -51,7 +55,16 @@ const interactionTypeConfig = {
 };
 
 export default function ClientesAtivos() {
-  const { clients, getProjectsByClient, getContractsByClient, getTicketsByClient, getTasksByClient, getTasksByProject } = useData();
+  const { data: clients = [] } = useAllClients();
+  const { data: projects = [] } = useAllProjects();
+  const { data: contracts = [] } = useAllContracts();
+  const { data: tickets = [] } = useAllTickets();
+  const { data: tasks = [] } = useAllTasks();
+  const getProjectsByClient = (clientId: string) => projects.filter(p => p.clientId === clientId);
+  const getContractsByClient = (clientId: string) => contracts.filter(c => c.clientId === clientId);
+  const getTicketsByClient = (clientId: string) => tickets.filter(t => t.clientId === clientId);
+  const getTasksByClient = (clientId: string) => tasks.filter(t => t.clientId === clientId);
+  const getTasksByProject = (projectId: string) => tasks.filter(t => t.projectId === projectId);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);

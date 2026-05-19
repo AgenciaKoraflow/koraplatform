@@ -8,10 +8,14 @@ import { PipelineCard } from "@/components/dashboard/PipelineCard";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { UpcomingTasks } from "@/components/dashboard/UpcomingTasks";
 import { Users, FolderKanban, FileText, DollarSign } from "lucide-react";
-import { useData } from "@/contexts/DataContext";
+import { useAllClients } from "@/hooks/useClients";
+import { useAllProjects } from "@/hooks/useProjects";
+import { useAllContracts } from "@/hooks/useContracts";
 
 const Index = () => {
-  const { clients, projects, contracts } = useData();
+  const { data: clients = [] } = useAllClients();
+  const { data: projects = [] } = useAllProjects();
+  const { data: contracts = [] } = useAllContracts();
   const proposals: any[] = [];
   
   // Date filter state

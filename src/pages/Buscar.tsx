@@ -1,7 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useData } from "@/contexts/DataContext";
+import { useAllClients } from "@/hooks/useClients";
+import { useAllProjects } from "@/hooks/useProjects";
+import { useAllTasks } from "@/hooks/useTasks";
+import { useAllContracts } from "@/hooks/useContracts";
 import { useOKRData } from "@/hooks/useOKRData";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Search, FileText, Users, Briefcase, CheckSquare, Target } from "lucide-react";
@@ -15,7 +18,10 @@ export default function Buscar() {
   useEffect(() => {
     setSearchTerm(initialSearch);
   }, [initialSearch]);
-  const { clients = [], projects = [], tasks = [], contracts = [] } = useData();
+  const { data: clients = [] } = useAllClients();
+  const { data: projects = [] } = useAllProjects();
+  const { data: tasks = [] } = useAllTasks();
+  const { data: contracts = [] } = useAllContracts();
   const { objectives = [] } = useOKRData();
 
   const results = useMemo(() => {

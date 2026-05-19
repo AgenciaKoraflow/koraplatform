@@ -18,7 +18,9 @@ import { ActionMenu } from "@/components/shared/ActionMenu";
 import { ClientFinancialSummary } from "@/components/financeiro/ClientFinancialSummary";
 import { parseCurrencyToNumber } from "@/lib/currency";
 import { useFinancial } from "@/hooks/useFinancial";
-import { useData } from "@/contexts/DataContext";
+import { useAllClients } from "@/hooks/useClients";
+import { useAllProjects } from "@/hooks/useProjects";
+import { useAllContracts } from "@/hooks/useContracts";
 import { typographyClasses } from "@/lib/typography";
 import { cn } from "@/lib/utils";
 import { FinancialTransaction, EXPENSE_CATEGORIES, REVENUE_CATEGORIES } from "@/types/financial";
@@ -44,7 +46,9 @@ import { ptBR } from "date-fns/locale";
 
 export default function Financeiro() {
   const { transactions, loading, addTransaction, updateTransaction, deleteTransaction } = useFinancial();
-  const { clients, projects, contracts } = useData();
+  const { data: clients = [] } = useAllClients();
+  const { data: projects = [] } = useAllProjects();
+  const { data: contracts = [] } = useAllContracts();
   
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<"all" | "receita" | "despesa">("all");

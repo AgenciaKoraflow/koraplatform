@@ -17,6 +17,10 @@ import { InsightsManager } from "@/components/insights/InsightsManager";
 import { toast } from "sonner";
 import { useData } from "@/contexts/DataContext";
 import { KnowledgeItem } from "@/types/data";
+import { useKnowledgeItems } from "@/hooks/useKnowledgeItems";
+import { useAllClients } from "@/hooks/useClients";
+import { useAllProjects } from "@/hooks/useProjects";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const categoryConfig = {
   credencial: { label: "Credencial", color: "bg-amber-500/10 text-amber-500", icon: Key },
@@ -27,8 +31,14 @@ const categoryConfig = {
 const tagCategories = ["Cloud", "Técnico", "Desenvolvimento", "Database", "Treinamento", "IA", "Ambiente", "Comercial"];
 
 export default function Conhecimento() {
-  const { knowledgeItems, clients, projects, addKnowledgeItem, updateKnowledgeItem, deleteKnowledgeItem, getClient, getProjectsByClient, getKnowledgePassword } = useData();
-  const [searchQuery, setSearchQuery] = useState("");
+  const { addKnowledgeItem, updateKnowledgeItem, deleteKnowledgeItem, getKnowledgePassword } = useData();
+  const [searchInput, setSearchInput] = useState("");
+  const searchQuery = useDebounce(searchInput, 300);
+  const { data: knowledgeData } = useKnowledgeItems({ search: searchQuery || undefined, pageSize: 500 });
+  const knowledgeItems = knowledgeData?.items ?? [];
+  const { data: clients = [] } = useAllClients();
+  const { data: projects = [] } = useAllProjects();
+  const getClient = (id: string) => clients.find((c) => c.id === id);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
   const [revealedPasswords, setRevealedPasswords] = useState<Record<string, string>>({});
@@ -54,15 +64,10 @@ export default function Conhecimento() {
   });
 
   const filteredItems = knowledgeItems.filter((item) => {
-    const client = item.clientId ? getClient(item.clientId) : null;
-    const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client?.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesTag = !selectedTag || item.tags.includes(selectedTag);
-    return matchesSearch && matchesTag;
+    return !selectedTag || item.tags.includes(selectedTag);
   });
 
-  const availableProjects = formData.clientId ? getProjectsByClient(formData.clientId) : [];
+  const availableProjects = formData.clientId ? projects.filter(p => p.clientId === formData.clientId) : [];
 
   const togglePassword = async (id: string) => {
     if (showPasswords[id]) {
@@ -228,7 +233,7 @@ export default function Conhecimento() {
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1 max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input type="text" placeholder="Buscar..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-9 pl-10 pr-4 rounded-lg bg-input border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                <input type="text" placeholder="Buscar..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="w-full h-9 pl-10 pr-4 rounded-lg bg-input border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50" />
               </div>
 
               <div className="flex items-center gap-2">

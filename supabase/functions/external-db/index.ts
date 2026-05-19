@@ -4,6 +4,8 @@ import { encrypt, decrypt, isEncrypted } from "./crypto.ts";
 import {
   RequestSchema,
   TABLE_ALLOWED_ACTIONS,
+  TABLE_SEARCH_FIELDS,
+  TABLE_ORDERABLE_FIELDS,
   sanitizePayload,
   sanitizeFilters,
   type Table,
@@ -39,6 +41,14 @@ interface KnowledgeRow {
   id: string;
   password: string | null;
   [key: string]: unknown;
+}
+
+interface PaginationParams {
+  limit?: number;
+  offset?: number;
+  order_by?: string;
+  order_dir?: "asc" | "desc";
+  search?: string;
 }
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
@@ -93,8 +103,10 @@ async function handleSelect(
   client: SupabaseClient,
   table: Table,
   filters: Record<string, unknown> | undefined,
+  pagination: PaginationParams | undefined,
 ): Promise<Response> {
-  let query = client.from(table).select("*");
+  const paginated = pagination?.limit !== undefined;
+  let query = client.from(table).select("*", paginated ? { count: "exact" } : undefined);
 
   if (filters) {
     const safe = sanitizeFilters(table, filters);
@@ -103,16 +115,42 @@ async function handleSelect(
     }
   }
 
-  const { data: rows, error } = await query;
+  if (pagination?.search) {
+    const searchFields = TABLE_SEARCH_FIELDS[table];
+    if (searchFields.length > 0) {
+      // Strip PostgREST filter-string special chars to prevent injection
+      const safe = pagination.search.replace(/[,()'"`;\\]/g, "").trim().substring(0, 50);
+      if (safe) {
+        const filterStr = searchFields.map((f) => `${f}.ilike.%${safe}%`).join(",");
+        query = query.or(filterStr);
+      }
+    }
+  }
+
+  if (
+    pagination?.order_by &&
+    TABLE_ORDERABLE_FIELDS[table].has(pagination.order_by)
+  ) {
+    query = query.order(pagination.order_by, {
+      ascending: pagination.order_dir !== "desc",
+    });
+  }
+
+  if (paginated) {
+    const offset = pagination!.offset ?? 0;
+    query = query.range(offset, offset + pagination!.limit! - 1);
+  }
+
+  const { data: rows, error, count } = await query;
   if (error) {
     // Never forward raw DB error messages — they may contain schema info.
     return err("Query failed", 400);
   }
 
   if (table === "knowledge_items" && rows) {
-    return json({ data: (rows as KnowledgeRow[]).map(stripPassword) });
+    return json({ data: (rows as KnowledgeRow[]).map(stripPassword), total: count ?? rows.length });
   }
-  return json({ data: rows });
+  return json({ data: rows, total: count ?? (rows?.length ?? 0) });
 }
 
 async function handleInsert(
@@ -247,13 +285,22 @@ Deno.serve(async (req: Request) => {
     return err(formatZodError(parsed.error), 422);
   }
 
-  const { action, table, data, id, filters } = parsed.data as {
+  const { action, table, data, id, filters, limit, offset, order_by, order_dir, search } = parsed.data as {
     action: Action;
     table: Table;
     data?: Record<string, unknown>;
     id?: string;
     filters?: Record<string, unknown>;
+    limit?: number;
+    offset?: number;
+    order_by?: string;
+    order_dir?: "asc" | "desc";
+    search?: string;
   };
+  const pagination: PaginationParams | undefined =
+    limit !== undefined || offset !== undefined || order_by || order_dir || search
+      ? { limit, offset, order_by, order_dir, search }
+      : undefined;
 
   if (action === "migrate_encrypt_passwords") {
     audit({ action, table, userId: null, ip, userAgent, outcome: "success" });
@@ -306,7 +353,7 @@ Deno.serve(async (req: Request) => {
       if (!id) return err("id required for get_password", 400);
       response = await handleGetPassword(client, id);
     } else if (action === "select") {
-      response = await handleSelect(client, table, filters);
+      response = await handleSelect(client, table, filters, pagination);
     } else if (action === "insert") {
       if (!data) return err("data required for insert", 400);
       response = await handleInsert(client, table, data);

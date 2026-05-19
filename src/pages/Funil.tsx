@@ -14,6 +14,9 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
 import { DatePicker } from "@/components/shared/DatePicker";
 import { useData } from "@/contexts/DataContext";
+import { useAllClients } from "@/hooks/useClients";
+import { useAllProjects } from "@/hooks/useProjects";
+import { useAllContracts } from "@/hooks/useContracts";
 import type { Client } from "@/types/data";
 import { BU } from "@/types/bu";
 import { BUBadge } from "@/components/shared/BUBadge";
@@ -37,7 +40,11 @@ const stageConfig = {
 const stageOrder: (keyof typeof stageConfig)[] = ["prospeccao", "qualificacao", "proposta", "negociacao", "cliente", "cancelado"];
 
 export default function Funil() {
-  const { clients, projects, addClient, updateClient, deleteClient, getContractsByClient } = useData();
+  const { addClient, updateClient, deleteClient } = useData();
+  const { data: clients = [] } = useAllClients();
+  const { data: projects = [] } = useAllProjects();
+  const { data: contracts = [] } = useAllContracts();
+  const getContractsByClient = (clientId: string) => contracts.filter(c => c.clientId === clientId);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");

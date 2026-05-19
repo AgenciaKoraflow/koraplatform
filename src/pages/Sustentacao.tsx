@@ -13,6 +13,10 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
 import { toast } from "sonner";
 import { useData } from "@/contexts/DataContext";
+import { useTickets } from "@/hooks/useTickets";
+import { useAllClients } from "@/hooks/useClients";
+import { useAllProjects } from "@/hooks/useProjects";
+import { useDebounce } from "@/hooks/useDebounce";
 import { SupportTicket } from "@/types/data";
 
 const statusConfig = {
@@ -31,8 +35,14 @@ const priorityConfig = {
 };
 
 export default function Sustentacao() {
-  const { tickets, clients, projects, addTicket, updateTicket, deleteTicket, getClient, getProjectsByClient } = useData();
-  const [searchQuery, setSearchQuery] = useState("");
+  const { addTicket, updateTicket, deleteTicket } = useData();
+  const [searchInput, setSearchInput] = useState("");
+  const searchQuery = useDebounce(searchInput, 300);
+  const { data: ticketData } = useTickets({ search: searchQuery || undefined, pageSize: 500 });
+  const tickets = ticketData?.tickets ?? [];
+  const { data: clients = [] } = useAllClients();
+  const { data: projects = [] } = useAllProjects();
+  const getClient = (id: string) => clients.find((c) => c.id === id);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -52,16 +62,12 @@ export default function Sustentacao() {
   });
 
   const filteredTickets = tickets.filter((ticket) => {
-    const client = getClient(ticket.clientId);
-    const project = projects.find(p => p.id === ticket.projectIds?.[0]);
-    const matchesSearch = ticket.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client?.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      ticket.id.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = !selectedStatus || ticket.status === selectedStatus;
-    return matchesSearch && matchesStatus;
+    return !selectedStatus || ticket.status === selectedStatus;
   });
 
-  const availableProjects = formData.clientId ? getProjectsByClient(formData.clientId) : [];
+  const availableProjects = formData.clientId
+    ? projects.filter((p) => p.clientId === formData.clientId)
+    : [];
 
   const stats = {
     open: tickets.filter(t => t.status === "open").length,
@@ -225,7 +231,7 @@ export default function Sustentacao() {
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input type="text" placeholder="Buscar tickets..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-9 pl-10 pr-4 rounded-lg bg-input border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50" />
+            <input type="text" placeholder="Buscar tickets..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="w-full h-9 pl-10 pr-4 rounded-lg bg-input border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50" />
           </div>
 
           <ViewModeToggle modes={["table", "kanban", "grid"]} currentMode={viewMode} onChange={setViewMode} />

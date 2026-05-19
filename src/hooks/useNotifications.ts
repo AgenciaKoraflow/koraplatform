@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Notification, NotificationType } from "@/types/notifications";
-import { useData } from "@/contexts/DataContext";
+import { useAllTasks } from "@/hooks/useTasks";
+import { useAllContracts } from "@/hooks/useContracts";
+import { useAllTickets } from "@/hooks/useTickets";
+import { useAllClients } from "@/hooks/useClients";
 import { formatDistanceToNow, parseISO, isPast, differenceInDays, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -20,7 +23,10 @@ const parseDate = (dateString: string): Date | null => {
 };
 
 export function useNotifications() {
-  const { tasks, contracts, tickets, clients } = useData();
+  const { data: tasks = [] } = useAllTasks();
+  const { data: contracts = [] } = useAllContracts();
+  const { data: tickets = [] } = useAllTickets();
+  const { data: clients = [] } = useAllClients();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 

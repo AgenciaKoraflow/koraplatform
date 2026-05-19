@@ -33,7 +33,8 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Area, AreaChart, Tooltip as RechartsTooltip } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
-import { useData } from "@/contexts/DataContext";
+import { useAllClients } from "@/hooks/useClients";
+import { useAllProjects } from "@/hooks/useProjects";
 import { useOKRData } from "@/hooks/useOKRData";
 import { cn } from "@/lib/utils";
 
@@ -693,7 +694,8 @@ export default function Indicadores() {
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<any[]>([]);
   
-  const { clients, projects } = useData();
+  const { data: clients = [] } = useAllClients();
+  const { data: projects = [] } = useAllProjects();
 
   useEffect(() => {
     const fetchTransactions = async () => {
