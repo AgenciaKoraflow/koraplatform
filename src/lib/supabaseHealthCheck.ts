@@ -1,9 +1,6 @@
-/**
- * Supabase Health Check & Validation
- * Verifica a integridade da conexão, tabelas, persistência e funções
- */
-
 import { supabase } from '@/integrations/supabase/client';
+
+// ─── Types ─────────────────────────────────────────────────────────────────────
 
 export interface HealthCheckResult {
   timestamp: string;
@@ -13,6 +10,7 @@ export interface HealthCheckResult {
   persistence: PersistenceStatus;
   functions: FunctionsStatus;
   summary: string;
+  durationMs: number;
 }
 
 export interface ConnectionStatus {
@@ -30,6 +28,7 @@ export interface DatabaseStatus {
 export interface TableStatus {
   name: string;
   accessible: boolean;
+  latency: number;
   count?: number;
   lastChecked: string;
   error?: string;
@@ -46,291 +45,321 @@ export interface PersistenceStatus {
 export interface FunctionsStatus {
   accessible: boolean;
   available: string[];
+  latency: number;
   error?: string;
 }
 
-/**
- * Verifica conexão com Supabase
- */
+// ─── Helpers ───────────────────────────────────────────────────────────────────
+
+const CHECK_TIMEOUT_MS = 8_000;
+const RETRY_ATTEMPTS = 2;
+const RETRY_DELAY_MS = 400;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms),
+    ),
+  ]);
+}
+
+async function withRetry<T>(fn: () => Promise<T>, attempts: number, delayMs: number): Promise<T> {
+  let lastErr: Error = new Error('No attempts made');
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (e) {
+      lastErr = e instanceof Error ? e : new Error(String(e));
+      if (i < attempts - 1) {
+        await new Promise(r => setTimeout(r, delayMs * (i + 1)));
+      }
+    }
+  }
+  throw lastErr;
+}
+
+function structuredLog(
+  level: 'INFO' | 'WARN' | 'ERROR',
+  component: string,
+  data: Record<string, unknown>,
+): void {
+  const entry = JSON.stringify({
+    level,
+    ts: new Date().toISOString(),
+    component: `health-check.${component}`,
+    ...data,
+  });
+  if (level === 'ERROR') console.error(entry);
+  else if (level === 'WARN') console.warn(entry);
+  else console.log(entry);
+}
+
+// ─── Connection check ──────────────────────────────────────────────────────────
+
 async function checkConnection(): Promise<ConnectionStatus> {
   const start = Date.now();
   try {
-    const { data, error } = await supabase
-      .from('clients')
-      .select('id', { count: 'exact', head: true })
-      .limit(1);
-
+    const { error } = await withTimeout(
+      supabase.from('clients').select('id', { count: 'exact', head: true }).limit(1),
+      CHECK_TIMEOUT_MS,
+      'connection',
+    );
     const latency = Date.now() - start;
-
-    if (error) {
-      return {
-        connected: false,
-        latency,
-        error: error.message
-      };
-    }
-
-    return {
-      connected: true,
-      latency
-    };
-  } catch (error) {
+    if (error) return { connected: false, latency, error: error.message };
+    return { connected: true, latency };
+  } catch (e) {
     return {
       connected: false,
       latency: Date.now() - start,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: e instanceof Error ? e.message : String(e),
     };
   }
 }
 
-/**
- * Verifica tabelas principais
- */
+// ─── Database tables check (parallel) ─────────────────────────────────────────
+
+const MONITORED_TABLES = [
+  'clients',
+  'projects',
+  'contracts',
+  'tasks',
+  'financial_transactions',
+  'processes',
+  'observations',
+  'okr_objectives',
+  'okr_updates',
+] as const;
+
 async function checkDatabase(): Promise<DatabaseStatus> {
-  const tables = [
-    'clients',
-    'projects',
-    'contracts',
-    'tasks',
-    'financial_transactions',
-    'processes',
-    'observations',
-    'okr_objectives',
-    'okr_updates'
-  ];
-
-  const results: TableStatus[] = [];
-
-  for (const table of tables) {
-    try {
-      const { count, error } = await supabase
-        .from(table)
-        .select('*', { count: 'exact', head: true })
-        .limit(1);
-
-      if (error) {
-        results.push({
+  const settled = await Promise.allSettled(
+    MONITORED_TABLES.map(async (table): Promise<TableStatus> => {
+      const start = Date.now();
+      try {
+        const { count, error } = await withTimeout(
+          supabase.from(table).select('*', { count: 'exact', head: true }).limit(1),
+          CHECK_TIMEOUT_MS,
+          `table:${table}`,
+        );
+        const latency = Date.now() - start;
+        if (error) {
+          return { name: table, accessible: false, latency, lastChecked: new Date().toISOString(), error: error.message };
+        }
+        return { name: table, accessible: true, latency, count: count ?? 0, lastChecked: new Date().toISOString() };
+      } catch (e) {
+        return {
           name: table,
           accessible: false,
+          latency: Date.now() - start,
           lastChecked: new Date().toISOString(),
-          error: error.message
-        });
-      } else {
-        results.push({
-          name: table,
-          accessible: true,
-          count: count || 0,
-          lastChecked: new Date().toISOString()
-        });
+          error: e instanceof Error ? e.message : String(e),
+        };
       }
-    } catch (error) {
-      results.push({
-        name: table,
-        accessible: false,
-        lastChecked: new Date().toISOString(),
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  }
+    }),
+  );
 
-  const allAccessible = results.every(r => r.accessible);
+  const tables: TableStatus[] = settled.map((r, i) =>
+    r.status === 'fulfilled'
+      ? r.value
+      : {
+          name: MONITORED_TABLES[i],
+          accessible: false,
+          latency: 0,
+          lastChecked: new Date().toISOString(),
+          error: String((r as PromiseRejectedResult).reason),
+        },
+  );
 
+  const allAccessible = tables.every(t => t.accessible);
   return {
     reachable: allAccessible,
-    tables: results,
-    error: allAccessible ? undefined : 'Some tables are not accessible'
+    tables,
+    error: allAccessible ? undefined : 'Some tables are not accessible',
   };
 }
 
-/**
- * Verifica persistência de dados
- */
+// ─── Persistence check (isolated table) ────────────────────────────────────────
+// Uses system_health_checks instead of clients to avoid polluting production data.
+
 async function checkPersistence(): Promise<PersistenceStatus> {
-  const testId = `health_check_${Date.now()}`;
-  const testValue = `test_${Math.random().toString(36).substring(7)}`;
+  // Use UUID + timestamp to guarantee uniqueness across concurrent/retried probes.
+  const testId = `hc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const testValue = typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `val_${Date.now()}`;
 
   try {
-    // Write test
     const writeStart = Date.now();
-    const { error: writeError } = await supabase
-      .from('clients')
-      .insert({
-        id: testId,
-        name: testValue,
-        email: `test-${testId}@healthcheck.local`,
-        bu: 'kora-agents'
-      })
-      .select()
-      .single();
+    const { error: writeError } = await withTimeout(
+      (supabase.from as (t: string) => ReturnType<typeof supabase.from>)('system_health_checks')
+        .insert({ id: testId, value: testValue }),
+      CHECK_TIMEOUT_MS,
+      'persistence:write',
+    );
     const writeTime = Date.now() - writeStart;
 
     if (writeError) {
-      return {
-        working: false,
-        writeTime,
-        readTime: 0,
-        error: `Write failed: ${writeError.message}`
-      };
+      return { working: false, writeTime, readTime: 0, error: `Write failed: ${writeError.message}` };
     }
 
-    // Read test
     const readStart = Date.now();
-    const { data, error: readError } = await supabase
-      .from('clients')
-      .select('*')
-      .eq('id', testId)
-      .single();
+    const { data, error: readError } = await withTimeout(
+      (supabase.from as (t: string) => ReturnType<typeof supabase.from>)('system_health_checks')
+        .select('value')
+        .eq('id', testId)
+        .single(),
+      CHECK_TIMEOUT_MS,
+      'persistence:read',
+    );
     const readTime = Date.now() - readStart;
 
-    // Cleanup
-    await supabase
-      .from('clients')
+    // Always clean up — even if read failed.
+    await (supabase.from as (t: string) => ReturnType<typeof supabase.from>)('system_health_checks')
       .delete()
-      .eq('id', testId);
+      .eq('id', testId)
+      .catch(() => null);
 
     if (readError) {
-      return {
-        working: false,
-        writeTime,
-        readTime,
-        error: `Read failed: ${readError.message}`
-      };
+      return { working: false, writeTime, readTime, error: `Read failed: ${readError.message}` };
     }
 
-    return {
-      working: data?.name === testValue,
-      writeTime,
-      readTime,
-      readValue: data?.name
-    };
-  } catch (error) {
-    return {
-      working: false,
-      writeTime: 0,
-      readTime: 0,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    };
+    const row = data as { value: string } | null;
+    return { working: row?.value === testValue, writeTime, readTime, readValue: row?.value };
+  } catch (e) {
+    // Best-effort cleanup on unexpected errors.
+    await (supabase.from as (t: string) => ReturnType<typeof supabase.from>)('system_health_checks')
+      .delete()
+      .eq('id', testId)
+      .catch(() => null);
+    return { working: false, writeTime: 0, readTime: 0, error: e instanceof Error ? e.message : String(e) };
   }
 }
 
-/**
- * Verifica funções disponíveis
- */
+// ─── Edge functions check (real probe) ────────────────────────────────────────
+// Sends a request that triggers schema validation (422), proving the runtime
+// is alive. FunctionsFetchError means the function is unreachable.
+
 async function checkFunctions(): Promise<FunctionsStatus> {
+  const start = Date.now();
   try {
-    // Tenta listar funções (isso depende de permissões)
-    // Por enquanto, apenas retorna um status básico
-    return {
-      accessible: true,
-      available: [
-        'Edge Functions available',
-        'Database triggers configured',
-        'RLS policies active'
-      ]
-    };
-  } catch (error) {
+    const { error } = await withTimeout(
+      supabase.functions.invoke('external-db', {
+        body: { action: '__health_probe__', table: '__probe__' },
+      }),
+      CHECK_TIMEOUT_MS,
+      'functions:external-db',
+    );
+
+    const latency = Date.now() - start;
+
+    // FunctionsFetchError = DNS / network failure — runtime unreachable.
+    // FunctionsHttpError (4xx/5xx) = runtime IS alive, probe was rejected as expected.
+    if (error && (error as { name?: string }).name === 'FunctionsFetchError') {
+      return { accessible: false, available: [], latency, error: 'Edge function unreachable' };
+    }
+
+    return { accessible: true, available: ['external-db'], latency };
+  } catch (e) {
     return {
       accessible: false,
       available: [],
-      error: error instanceof Error ? error.message : 'Unknown error'
+      latency: Date.now() - start,
+      error: e instanceof Error ? e.message : String(e),
     };
   }
 }
 
-/**
- * Executa health check completo
- */
+// ─── Orchestration ─────────────────────────────────────────────────────────────
+
 export async function performHealthCheck(): Promise<HealthCheckResult> {
+  const startMs = Date.now();
   const timestamp = new Date().toISOString();
 
-  // Executa todos os checks em paralelo
+  structuredLog('INFO', 'start', { timestamp });
+
   const [connection, database, persistence, functions] = await Promise.all([
-    checkConnection(),
-    checkDatabase(),
-    checkPersistence(),
-    checkFunctions()
+    withRetry(checkConnection, RETRY_ATTEMPTS, RETRY_DELAY_MS),
+    withRetry(checkDatabase, RETRY_ATTEMPTS, RETRY_DELAY_MS),
+    withRetry(checkPersistence, RETRY_ATTEMPTS, RETRY_DELAY_MS),
+    withRetry(checkFunctions, RETRY_ATTEMPTS, RETRY_DELAY_MS),
   ]);
 
-  // Determina status geral
   let status: 'healthy' | 'warning' | 'error' = 'healthy';
   const issues: string[] = [];
 
   if (!connection.connected) {
     status = 'error';
-    issues.push('Database connection failed');
+    issues.push('database connection failed');
   }
 
   if (!database.reachable) {
-    status = 'error';
-    issues.push('Some database tables are inaccessible');
+    if (status !== 'error') status = 'error';
+    issues.push('tables not fully accessible');
   }
 
   if (!persistence.working) {
-    status = 'error';
-    issues.push('Data persistence test failed');
+    if (status !== 'error') status = 'error';
+    issues.push('persistence test failed');
   }
 
-  const inaccessibleTables = database.tables.filter(t => !t.accessible);
-  if (inaccessibleTables.length > 0 && status !== 'error') {
-    status = 'warning';
-    issues.push(`${inaccessibleTables.length} tables have issues`);
-  }
-
-  if (connection.latency > 1000) {
+  if (!functions.accessible) {
     if (status === 'healthy') status = 'warning';
-    issues.push(`High latency: ${connection.latency}ms`);
+    issues.push('edge functions unreachable');
   }
 
-  const summary = status === 'healthy'
-    ? `✅ All systems operational (${connection.latency}ms latency)`
-    : status === 'warning'
-    ? `⚠️ Warning: ${issues.join('; ')}`
-    : `❌ Error: ${issues.join('; ')}`;
+  const inaccessibleCount = database.tables.filter(t => !t.accessible).length;
+  if (inaccessibleCount > 0 && status === 'healthy') {
+    status = 'warning';
+    issues.push(`${inaccessibleCount} table(s) inaccessible`);
+  }
 
-  return {
-    timestamp,
+  if (connection.latency > 1000 && status === 'healthy') {
+    status = 'warning';
+    issues.push(`high latency: ${connection.latency}ms`);
+  }
+
+  const durationMs = Date.now() - startMs;
+  const summary =
+    status === 'healthy'
+      ? `All systems operational — ${connection.latency}ms latency, ${durationMs}ms total`
+      : `${status === 'warning' ? 'Warning' : 'Error'}: ${issues.join('; ')}`;
+
+  structuredLog(status === 'error' ? 'ERROR' : status === 'warning' ? 'WARN' : 'INFO', 'result', {
     status,
-    connection,
-    database,
-    persistence,
-    functions,
-    summary
-  };
+    durationMs,
+    latency: connection.latency,
+    issues,
+  });
+
+  return { timestamp, status, connection, database, persistence, functions, summary, durationMs };
 }
 
-/**
- * Log do health check
- */
 export async function logHealthCheck(): Promise<void> {
   const result = await performHealthCheck();
 
-  console.log('=== SUPABASE HEALTH CHECK ===');
-  console.log(`Timestamp: ${result.timestamp}`);
-  console.log(`Status: ${result.status.toUpperCase()}`);
-  console.log(result.summary);
-
-  console.log('\n📊 Connection:');
-  console.log(`  Connected: ${result.connection.connected}`);
-  console.log(`  Latency: ${result.connection.latency}ms`);
-
-  console.log('\n📦 Database:');
-  console.log(`  Accessible: ${result.database.reachable}`);
-  console.log(`  Tables: ${result.database.tables.length}`);
-  result.database.tables.forEach(t => {
-    const status = t.accessible ? '✓' : '✗';
-    console.log(`    ${status} ${t.name} (${t.count || 0} records)`);
-  });
-
-  console.log('\n💾 Persistence:');
-  console.log(`  Working: ${result.persistence.working}`);
-  console.log(`  Write: ${result.persistence.writeTime}ms`);
-  console.log(`  Read: ${result.persistence.readTime}ms`);
-
-  console.log('\n⚙️ Functions:');
-  console.log(`  Accessible: ${result.functions.accessible}`);
-  result.functions.available.forEach(f => {
-    console.log(`    ✓ ${f}`);
-  });
-
-  console.log('============================\n');
+  structuredLog(
+    result.status === 'error' ? 'ERROR' : result.status === 'warning' ? 'WARN' : 'INFO',
+    'log',
+    {
+      status: result.status,
+      durationMs: result.durationMs,
+      summary: result.summary,
+      connection: { connected: result.connection.connected, latencyMs: result.connection.latency },
+      database: {
+        reachable: result.database.reachable,
+        tableCount: result.database.tables.length,
+        inaccessible: result.database.tables.filter(t => !t.accessible).map(t => t.name),
+      },
+      persistence: {
+        working: result.persistence.working,
+        writeMs: result.persistence.writeTime,
+        readMs: result.persistence.readTime,
+      },
+      functions: {
+        accessible: result.functions.accessible,
+        available: result.functions.available,
+        latencyMs: result.functions.latency,
+      },
+    },
+  );
 }
