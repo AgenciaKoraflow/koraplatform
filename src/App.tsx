@@ -1,13 +1,15 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { DataProvider } from "@/contexts/DataContext";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { lazy, Suspense, useEffect } from "react";
 import { RouteErrorBoundary } from "@/components/error-boundary";
+import { supabase } from "@/integrations/supabase/client";
+import { clearAllToasts } from "@/hooks/use-toast";
 
 // Separate importers so we can preload them without re-creating the lazy component
 const importFunil = () => import("./pages/Funil");
@@ -53,6 +55,22 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// Clears all React Query cache and toasts on sign-out so one user's data
+// cannot leak into the next session within the same browser tab.
+function CacheManager() {
+  const qc = useQueryClient();
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        qc.clear();
+        clearAllToasts();
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [qc]);
+  return null;
+}
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -142,6 +160,7 @@ function AppRoutes() {
 const App = () => (
   <ThemeProvider>
     <QueryClientProvider client={queryClient}>
+      <CacheManager />
       <AuthProvider>
         <DataProvider>
           <TooltipProvider>

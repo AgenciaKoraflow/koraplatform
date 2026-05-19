@@ -72,8 +72,12 @@ export function useUser() {
     getUserName();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") {
+        _userNameCache = "Usuário";
+        _userNameFetched = false;
+        setUserName("Usuário");
+      } else if (session?.user) {
         const name = session.user.user_metadata?.full_name ||
                      session.user.user_metadata?.name ||
                      session.user.email?.split('@')[0] ||

@@ -183,4 +183,10 @@ function useToast() {
   };
 }
 
-export { useToast, toast };
+function clearAllToasts() {
+  toastTimeouts.forEach((timeout) => clearTimeout(timeout));
+  toastTimeouts.clear();
+  dispatch({ type: "REMOVE_TOAST" });
+}
+
+export { useToast, toast, clearAllToasts };
