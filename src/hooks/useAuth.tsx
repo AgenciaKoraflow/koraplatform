@@ -23,29 +23,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        const u = {
+        setUser({
           id: session.user.id,
           email: session.user.email || '',
           created_at: session.user.created_at || '',
-        };
-        setUser(u);
-        setSentryUser({ id: u.id, email: u.email });
+        });
       }
       setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        const u = {
+        setUser({
           id: session.user.id,
           email: session.user.email || '',
           created_at: session.user.created_at || '',
-        };
-        setUser(u);
-        setSentryUser({ id: u.id, email: u.email });
+        });
       } else {
         setUser(null);
-        setSentryUser(null);
       }
     });
 

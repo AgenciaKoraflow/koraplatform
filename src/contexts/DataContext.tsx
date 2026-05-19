@@ -5,6 +5,7 @@ import { calculateRecurrenceTotal, calculateMonthsBetween } from "@/lib/recurren
 import { supabase } from "@/integrations/supabase/client";
 import { formatSupabaseInvokeError } from "@/lib/supabaseFunctions";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 const VALID_BUS = new Set(["kora-agents", "kora-dev", "kora-studio", "kora-corp"]);
 
@@ -326,12 +327,14 @@ function formatDisplayDate(dbDate: string | null | undefined): string {
 }
 
 export function DataProvider({ children }: { children: ReactNode }) {
+  const { user, loading: authLoading } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [knowledgeItems, setKnowledgeItems] = useState<KnowledgeItem[]>([]);
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  // Starts true so consumers see a loading state while auth + data hydrate.
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
@@ -345,14 +348,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
         callExternalDb('select', 'knowledge_items').catch(() => []),
         callExternalDb('select', 'support_tickets').catch(() => [])
       ]);
-      
+
       setClients((clientsData || []).map(mapDbClient));
       setProjects((projectsData || []).map((project: any) => {
-        // Calculate progress from tasks
         const projectTasks = (tasksData || []).filter((t: any) => t.project_id === project.id);
         const completedTasks = projectTasks.filter((t: any) => t.status === 'done').length;
         const totalTasks = projectTasks.length;
-        // If there are tasks, calculate progress; otherwise use the stored value
         const calculatedProgress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : (project.progress || 0);
         return mapDbProject({ ...project, progress: calculatedProgress });
       }));
@@ -360,20 +361,34 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setContracts((contractsData || []).map(mapDbContract));
       setKnowledgeItems((knowledgeData || []).map(mapDbKnowledge));
       setTickets((ticketsData || []).map(mapDbTicket));
-      
+
       console.log('Data loaded from external Supabase');
     } catch (error) {
       console.error('Error loading data:', error);
-      // Don't show toast on initial load error to avoid UI flickering
-      // toast.error('Erro ao carregar dados do banco de dados');
     } finally {
       setLoading(false);
     }
   };
 
+  // Gate data fetching on auth hydration: wait for getSession() to resolve
+  // before invoking the edge function so the JWT is attached to the request.
   useEffect(() => {
+    if (authLoading) return; // auth not hydrated yet
+
+    if (!user) {
+      // Auth resolved with no session — clear any stale data and stop loading.
+      setClients([]);
+      setProjects([]);
+      setTasks([]);
+      setContracts([]);
+      setKnowledgeItems([]);
+      setTickets([]);
+      setLoading(false);
+      return;
+    }
+
     loadData();
-  }, []);
+  }, [user?.id, authLoading]);
 
   // Client methods
   const addClient = async (client: Omit<Client, "id">): Promise<Client | null> => {
