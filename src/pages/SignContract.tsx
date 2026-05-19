@@ -40,6 +40,9 @@ interface ContractData {
   document_name?: string;
   document_data?: string;
   document_type?: string;
+  document_storage_path?: string;
+  signed_document_storage_path?: string;
+  signature_link_token?: string;
   koraflow_signed_at?: string;
   koraflow_signer_name?: string;
   koraflow_signature_data?: string;
@@ -110,6 +113,7 @@ export default function SignContract() {
   const [signatureData, setSignatureData] = useState<string | null>(null);
   const [showDocument, setShowDocument] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
+  const [documentUrl, setDocumentUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (token) loadContract();
@@ -169,6 +173,22 @@ export default function SignContract() {
       if (data.clients) {
         setSignerName(data.clients.name || "");
         setSignerEmail(data.clients.email || "");
+      }
+
+      // Resolve document URL: use storage signed URL if available, fall back to base64
+      const storagePath = data.signed_document_storage_path || data.document_storage_path;
+      if (storagePath && token) {
+        try {
+          const { data: urlResult } = await supabase.functions.invoke("external-db", {
+            body: { action: "get_document_url", table: "contracts", token },
+          });
+          if (urlResult?.signedUrl) setDocumentUrl(urlResult.signedUrl);
+        } catch {
+          // Fallback to base64 below
+        }
+      }
+      if (!documentUrl && data.document_data) {
+        setDocumentUrl(data.document_data);
       }
     } catch (err) {
       console.error("Error loading contract:", err);
@@ -279,10 +299,11 @@ export default function SignContract() {
   };
 
   const downloadContract = () => {
-    if (!contract?.document_data) return;
+    const url = documentUrl;
+    if (!url) return;
     const link = document.createElement("a");
-    link.href = contract.document_data;
-    link.download = contract.document_name || "contrato";
+    link.href = url;
+    link.download = contract?.document_name || "contrato";
     link.click();
   };
 
@@ -506,7 +527,7 @@ export default function SignContract() {
                 </div>
               )}
 
-              {contract.document_data && (
+              {(contract.document_data || contract.document_storage_path || documentUrl) && (
                 <div className="p-4 rounded-xl border-2 border-dashed border-border mb-6 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-lg bg-red-500/10 flex items-center justify-center">
@@ -697,10 +718,12 @@ export default function SignContract() {
             <DialogTitle>{contract?.document_name}</DialogTitle>
           </DialogHeader>
           <div className="overflow-auto max-h-[75vh]">
-            {contract?.document_type?.includes("pdf") ? (
-              <iframe src={contract.document_data} className="w-full h-[75vh]" title="Documento" />
-            ) : contract?.document_type?.includes("image") ? (
-              <img src={contract.document_data} alt="Documento" className="max-w-full" />
+            {documentUrl ? (
+              contract?.document_type?.includes("image") ? (
+                <img src={documentUrl} alt="Documento" className="max-w-full" />
+              ) : (
+                <iframe src={documentUrl} className="w-full h-[75vh]" title="Documento" />
+              )
             ) : (
               <p className="text-center text-muted-foreground py-8">Visualização não disponível</p>
             )}

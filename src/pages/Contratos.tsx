@@ -23,6 +23,7 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
 import { DatePicker } from "@/components/shared/DatePicker";
 import { useData } from "@/contexts/DataContext";
+import { useContractDocument } from "@/hooks/useContractDocument";
 import { useContracts } from "@/hooks/useContracts";
 import { useAllClients } from "@/hooks/useClients";
 import { useAllProjects } from "@/hooks/useProjects";
@@ -147,7 +148,7 @@ function getSignatureStatus(contract: Contract): {
   
   if (!koraflowSigned && !clientSigned) {
     // Check if has document to determine if awaiting signature
-    if (contract.documentData) {
+    if (contract.documentData || contract.documentStoragePath) {
       return { status: "awaiting_koraflow", label: "Aguardando Koraflow", color: "text-amber-500", icon: Clock };
     }
     return { status: "draft", label: "Rascunho", color: "text-slate-500", icon: FileSignature };
@@ -184,6 +185,7 @@ function getContractTypeLabel(contract: Contract, allProjects: Project[]): strin
 
 export default function Contratos() {
   const { addContract, updateContract, deleteContract } = useData();
+  const { upload: uploadDocument, getSignedUrl, remove: removeStorageFile } = useContractDocument();
   const [searchInput, setSearchInput] = useState("");
   const searchQuery = useDebounce(searchInput, 300);
   const { data: contractData } = useContracts({ search: searchQuery || undefined, pageSize: 500 });
@@ -205,6 +207,8 @@ export default function Contratos() {
   const [signingContractId, setSigningContractId] = useState<string | null>(null);
   const [sendingContractId, setSendingContractId] = useState<string | null>(null);
   const [documentPreview, setDocumentPreview] = useState<{ name: string; data: string; type: string } | null>(null);
+  const [pendingDocumentFile, setPendingDocumentFile] = useState<File | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Koraflow signature form state
@@ -234,6 +238,8 @@ export default function Contratos() {
     documentName: "",
     documentData: "",
     documentType: "",
+    documentStoragePath: "",
+    documentVersion: 0,
     bu: "kora-agents" as BU,
   });
 
@@ -258,8 +264,9 @@ export default function Contratos() {
 
   const openNewDialog = () => {
     setEditingContractId(null);
-    setFormData({ title: "", clientId: "", projectIds: [], value: "", implementationValue: "", status: "draft", type: "prestacao_servico", billingType: "projeto", recurrenceValue: "", recurrenceStartDate: "", recurrenceType: "", recurrenceEndDate: "", expiresAt: "", documentName: "", documentData: "", documentType: "", bu: "kora-agents" });
+    setFormData({ title: "", clientId: "", projectIds: [], value: "", implementationValue: "", status: "draft", type: "prestacao_servico", billingType: "projeto", recurrenceValue: "", recurrenceStartDate: "", recurrenceType: "", recurrenceEndDate: "", expiresAt: "", documentName: "", documentData: "", documentType: "", documentStoragePath: "", documentVersion: 0, bu: "kora-agents" });
     setDocumentPreview(null);
+    setPendingDocumentFile(null);
     setIsDialogOpen(true);
   };
 
@@ -284,9 +291,12 @@ export default function Contratos() {
         documentName: contract.documentName || "",
         documentData: contract.documentData || "",
         documentType: contract.documentType || "",
+        documentStoragePath: contract.documentStoragePath || "",
+        documentVersion: contract.documentVersion ?? 0,
         bu: (Array.isArray(contract.bu) ? contract.bu[0] : contract.bu) || "kora-agents" as BU,
       });
-      setDocumentPreview(contract.documentName ? { name: contract.documentName, data: contract.documentData || "", type: contract.documentType || "" } : null);
+      setPendingDocumentFile(null);
+      setDocumentPreview(contract.documentName ? { name: contract.documentName, data: "", type: contract.documentType || "" } : null);
       setIsDialogOpen(true);
     }
   };
@@ -299,106 +309,179 @@ export default function Contratos() {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error("Arquivo muito grande. Máximo 10MB.");
+      if (file.size > 20 * 1024 * 1024) {
+        toast.error("Arquivo muito grande. Máximo 20MB.");
         return;
       }
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        setFormData(prev => ({
-          ...prev,
-          documentName: file.name,
-          documentData: result,
-          documentType: file.type,
-        }));
-        setDocumentPreview({ name: file.name, data: result, type: file.type });
-        toast.success("Documento anexado com sucesso!");
-      };
-      reader.readAsDataURL(file);
+      // Revoke previous object URL to avoid memory leaks
+      if (pendingDocumentFile && documentPreview?.data?.startsWith("blob:")) {
+        URL.revokeObjectURL(documentPreview.data);
+      }
+      const objectUrl = URL.createObjectURL(file);
+      setPendingDocumentFile(file);
+      setFormData(prev => ({
+        ...prev,
+        documentName: file.name,
+        documentData: "",
+        documentType: file.type,
+        documentStoragePath: "",
+        documentVersion: 0,
+      }));
+      setDocumentPreview({ name: file.name, data: objectUrl, type: file.type });
+      toast.success("Documento anexado com sucesso!");
     }
   };
 
   const removeDocument = () => {
-    setFormData(prev => ({ ...prev, documentName: "", documentData: "", documentType: "" }));
+    if (pendingDocumentFile && documentPreview?.data?.startsWith("blob:")) {
+      URL.revokeObjectURL(documentPreview.data);
+    }
+    setPendingDocumentFile(null);
+    setFormData(prev => ({ ...prev, documentName: "", documentData: "", documentType: "", documentStoragePath: "", documentVersion: 0 }));
     setDocumentPreview(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const openDocumentViewer = (contract: typeof contracts[0]) => {
-    if (contract.documentData || contract.signedDocumentData) {
-      setDocumentPreview({ 
-        name: contract.documentName || "Documento", 
-        data: contract.signedDocumentData || contract.documentData || "", 
-        type: contract.documentType || "" 
+  const openDocumentViewer = async (contract: typeof contracts[0]) => {
+    const storagePath = contract.signedDocumentStoragePath || contract.documentStoragePath;
+    if (storagePath) {
+      try {
+        const url = await getSignedUrl(storagePath);
+        setDocumentPreview({
+          name: contract.signedDocumentStoragePath
+            ? `${contract.documentName?.replace(/\.[^/.]+$/, "") || "contrato"}_assinado.pdf`
+            : contract.documentName || "Documento",
+          data: url,
+          type: contract.documentType || "application/pdf",
+        });
+        setIsDocumentViewerOpen(true);
+      } catch {
+        toast.error("Erro ao carregar documento");
+      }
+      return;
+    }
+    const legacyData = contract.signedDocumentData || contract.documentData;
+    if (legacyData) {
+      setDocumentPreview({
+        name: contract.documentName || "Documento",
+        data: legacyData,
+        type: contract.documentType || ""
       });
       setIsDocumentViewerOpen(true);
     }
   };
 
-  const downloadDocument = (contract: typeof contracts[0]) => {
+  const downloadDocument = async (contract: typeof contracts[0]) => {
+    const storagePath = contract.signedDocumentStoragePath || contract.documentStoragePath;
+    if (storagePath) {
+      try {
+        const url = await getSignedUrl(storagePath, 300);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = contract.signedDocumentStoragePath
+          ? `${contract.documentName?.replace(/\.[^/.]+$/, "") || "contrato"}_assinado.pdf`
+          : contract.documentName || "contrato";
+        link.click();
+        toast.success("Download iniciado!");
+      } catch {
+        toast.error("Erro ao preparar download");
+      }
+      return;
+    }
+    // Legacy: base64
     const data = contract.signedDocumentData || contract.documentData;
     if (data) {
       const link = document.createElement("a");
       link.href = data;
-      link.download = contract.signedDocumentData ? `${contract.documentName?.replace(/\.[^/.]+$/, '')}_assinado.pdf` : contract.documentName || "contrato";
+      link.download = contract.signedDocumentData
+        ? `${contract.documentName?.replace(/\.[^/.]+$/, "") || "contrato"}_assinado.pdf`
+        : contract.documentName || "contrato";
       link.click();
       toast.success("Download iniciado!");
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.title || !formData.clientId || !formData.implementationValue) {
       toast.error("Preencha os campos obrigatórios");
       return;
     }
 
+    setIsSaving(true);
     const today = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }).replace(".", "");
 
-    if (editingContractId) {
-      updateContract(editingContractId, {
-        title: formData.title,
-        clientId: formData.clientId,
-        projectIds: formData.projectIds,
-        value: formData.value,
-        status: formData.status,
-        type: formData.type,
-        billingType: formData.billingType,
-        recurrenceValue: formData.recurrenceValue || undefined,
-        recurrenceStartDate: formData.recurrenceStartDate || undefined,
-        implementationValue: formData.implementationValue || undefined,
-        recurrenceType: formData.recurrenceType || undefined,
-        recurrenceEndDate: formData.recurrenceEndDate || undefined,
-        expiresAt: formData.expiresAt,
-        documentName: formData.documentName || undefined,
-        documentData: formData.documentData || undefined,
-        documentType: formData.documentType || undefined,
-        bu: formData.bu ? [formData.bu] : undefined,
-      } as any);
-      toast.success("Contrato atualizado com sucesso!");
-    } else {
-      addContract({
-        title: formData.title,
-        clientId: formData.clientId,
-        projectIds: formData.projectIds,
-        value: formData.value,
-        status: formData.documentData ? "awaiting_koraflow_signature" : "draft",
-        type: formData.type,
-        billingType: formData.billingType,
-        recurrenceValue: formData.recurrenceValue || undefined,
-        recurrenceStartDate: formData.recurrenceStartDate || undefined,
-        implementationValue: formData.implementationValue || undefined,
-        recurrenceType: formData.recurrenceType || undefined,
-        recurrenceEndDate: formData.recurrenceEndDate || undefined,
-        createdAt: today,
-        expiresAt: formData.expiresAt,
-        documentName: formData.documentName || undefined,
-        documentData: formData.documentData || undefined,
-        documentType: formData.documentType || undefined,
-        bu: formData.bu ? [formData.bu] : undefined,
-      } as any);
-      toast.success("Contrato criado com sucesso!");
+    try {
+      if (editingContractId) {
+        let storagePath = formData.documentStoragePath || undefined;
+        let version = formData.documentVersion || 0;
+
+        if (pendingDocumentFile) {
+          version = version + 1;
+          storagePath = await uploadDocument(editingContractId, pendingDocumentFile, version);
+        }
+
+        await updateContract(editingContractId, {
+          title: formData.title,
+          clientId: formData.clientId,
+          projectIds: formData.projectIds,
+          value: formData.value,
+          status: formData.status,
+          type: formData.type,
+          billingType: formData.billingType,
+          recurrenceValue: formData.recurrenceValue || undefined,
+          recurrenceStartDate: formData.recurrenceStartDate || undefined,
+          implementationValue: formData.implementationValue || undefined,
+          recurrenceType: formData.recurrenceType || undefined,
+          recurrenceEndDate: formData.recurrenceEndDate || undefined,
+          expiresAt: formData.expiresAt,
+          documentName: formData.documentName || undefined,
+          documentData: pendingDocumentFile ? null : (formData.documentData || undefined),
+          documentType: formData.documentType || undefined,
+          documentStoragePath: storagePath,
+          documentVersion: version || undefined,
+          bu: formData.bu ? [formData.bu] : undefined,
+        } as any);
+        toast.success("Contrato atualizado com sucesso!");
+      } else {
+        const hasDocument = !!(pendingDocumentFile || formData.documentStoragePath);
+        const newContract = await addContract({
+          title: formData.title,
+          clientId: formData.clientId,
+          projectIds: formData.projectIds,
+          value: formData.value,
+          status: hasDocument ? "awaiting_koraflow_signature" : "draft",
+          type: formData.type,
+          billingType: formData.billingType,
+          recurrenceValue: formData.recurrenceValue || undefined,
+          recurrenceStartDate: formData.recurrenceStartDate || undefined,
+          implementationValue: formData.implementationValue || undefined,
+          recurrenceType: formData.recurrenceType || undefined,
+          recurrenceEndDate: formData.recurrenceEndDate || undefined,
+          createdAt: today,
+          expiresAt: formData.expiresAt,
+          documentName: formData.documentName || undefined,
+          documentData: undefined,
+          documentType: formData.documentType || undefined,
+          bu: formData.bu ? [formData.bu] : undefined,
+        } as any);
+
+        if (newContract && pendingDocumentFile) {
+          const path = await uploadDocument(newContract.id, pendingDocumentFile, 1);
+          await updateContract(newContract.id, {
+            documentStoragePath: path,
+            documentVersion: 1,
+          } as any);
+        }
+        toast.success("Contrato criado com sucesso!");
+      }
+    } catch (error) {
+      toast.error(`Erro ao salvar contrato: ${error instanceof Error ? error.message : String(error)}`);
+      return;
+    } finally {
+      setIsSaving(false);
     }
+
+    setPendingDocumentFile(null);
     setIsDialogOpen(false);
   };
 
@@ -926,7 +1009,7 @@ export default function Contratos() {
                           <button onClick={() => openViewDialog(contract.id)} className="p-2 rounded-lg hover:bg-muted transition-colors" title="Visualizar">
                             <Eye className="w-4 h-4 text-muted-foreground" />
                           </button>
-                          {(contract.documentData || contract.signedDocumentData) && (
+                          {(contract.documentData || contract.signedDocumentData || contract.documentStoragePath || contract.signedDocumentStoragePath) && (
                             <button onClick={() => downloadDocument(contract)} className="p-2 rounded-lg hover:bg-muted transition-colors" title="Download">
                               <Download className="w-4 h-4 text-muted-foreground" />
                             </button>
@@ -1251,8 +1334,8 @@ export default function Contratos() {
             <button onClick={() => setIsDialogOpen(false)} className="px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors">
               Cancelar
             </button>
-            <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
-              {editingContract ? "Salvar" : "Criar Contrato"}
+            <button onClick={handleSave} disabled={isSaving} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+              {isSaving ? (pendingDocumentFile ? "Enviando arquivo..." : "Salvando...") : (editingContract ? "Salvar" : "Criar Contrato")}
             </button>
           </DialogFooter>
         </DialogContent>
@@ -1435,15 +1518,15 @@ export default function Contratos() {
               </div>
 
               {/* Document */}
-              {(viewingContract.documentData || viewingContract.signedDocumentData) && (
+              {(viewingContract.documentData || viewingContract.signedDocumentData || viewingContract.documentStoragePath || viewingContract.signedDocumentStoragePath) && (
                 <div className="pt-4 border-t border-border">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <FileText className="w-5 h-5 text-primary" />
                       <span className="font-medium">
-                        {viewingContract.signedDocumentData ? `${viewingContract.documentName?.replace(/\.[^/.]+$/, '')}_assinado.pdf` : viewingContract.documentName}
+                        {(viewingContract.signedDocumentData || viewingContract.signedDocumentStoragePath) ? `${viewingContract.documentName?.replace(/\.[^/.]+$/, '')}_assinado.pdf` : viewingContract.documentName}
                       </span>
-                      {viewingContract.signedDocumentData && (
+                      {(viewingContract.signedDocumentData || viewingContract.signedDocumentStoragePath) && (
                         <span className="text-xs bg-green-500/10 text-green-500 px-2 py-0.5 rounded">Assinado</span>
                       )}
                     </div>

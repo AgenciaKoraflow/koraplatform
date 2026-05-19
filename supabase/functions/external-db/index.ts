@@ -226,6 +226,51 @@ async function handleGetPassword(
   return json({ data: { password: plaintext } });
 }
 
+async function handleGetDocumentUrl(
+  extClient: SupabaseClient,
+  token: string | undefined,
+): Promise<Response> {
+  if (!token) return err("token required for get_document_url", 400);
+
+  const { data: rows, error } = await extClient
+    .from("contracts")
+    .select("document_storage_path, signed_document_storage_path, signature_link_expires_at")
+    .eq("signature_link_token", token);
+
+  if (error || !rows || rows.length === 0) return err("Contract not found", 404);
+
+  const contract = rows[0] as {
+    document_storage_path: string | null;
+    signed_document_storage_path: string | null;
+    signature_link_expires_at: string | null;
+  };
+
+  if (
+    contract.signature_link_expires_at &&
+    new Date(contract.signature_link_expires_at) < new Date()
+  ) {
+    return err("Signature link expired", 403);
+  }
+
+  const path = contract.signed_document_storage_path || contract.document_storage_path;
+  if (!path) return err("No stored document for this contract", 404);
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !serviceKey) {
+    return err("Storage not configured", 500);
+  }
+
+  const storageClient = createClient(supabaseUrl, serviceKey);
+  const { data: signed, error: signErr } = await storageClient.storage
+    .from("contracts-documents")
+    .createSignedUrl(path, 3600);
+
+  if (signErr || !signed) return err("Failed to generate document URL", 500);
+
+  return json({ signedUrl: signed.signedUrl });
+}
+
 async function handleMigrateEncryptPasswords(
   client: SupabaseClient,
   migrationSecret: string | null,
@@ -285,12 +330,13 @@ Deno.serve(async (req: Request) => {
     return err(formatZodError(parsed.error), 422);
   }
 
-  const { action, table, data, id, filters, limit, offset, order_by, order_dir, search } = parsed.data as {
+  const { action, table, data, id, filters, limit, offset, order_by, order_dir, search, token } = parsed.data as {
     action: Action;
     table: Table;
     data?: Record<string, unknown>;
     id?: string;
     filters?: Record<string, unknown>;
+    token?: string;
     limit?: number;
     offset?: number;
     order_by?: string;
@@ -306,6 +352,12 @@ Deno.serve(async (req: Request) => {
     audit({ action, table, userId: null, ip, userAgent, outcome: "success" });
     const client = createClient(extUrl, extKey);
     return handleMigrateEncryptPasswords(client, req.headers.get("X-Migration-Secret"));
+  }
+
+  if (action === "get_document_url") {
+    audit({ action, table, userId: null, ip, userAgent, outcome: "success" });
+    const client = createClient(extUrl, extKey);
+    return handleGetDocumentUrl(client, token);
   }
 
   // ── 3. Auth — all other actions require a valid session ───────────────────

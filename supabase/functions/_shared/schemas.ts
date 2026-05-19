@@ -18,6 +18,7 @@ export const ALLOWED_ACTIONS = [
   "delete",
   "get_password",
   "migrate_encrypt_passwords",
+  "get_document_url",
 ] as const;
 
 export type Table = (typeof ALLOWED_TABLES)[number];
@@ -43,6 +44,7 @@ export const TABLE_WRITABLE_FIELDS: Record<Table, Set<string>> = {
     "client_id", "project_ids", "title", "value", "status", "type",
     "billing_type", "recurrence_value", "recurrence_start_date", "expires_at",
     "document_name", "document_data", "document_type",
+    "document_storage_path", "document_version", "signed_document_storage_path",
     "signature_link_token", "signature_link_expires_at", "signature_sent_at",
     "koraflow_signed_at", "koraflow_signature_data", "koraflow_signer_name",
     "koraflow_signer_email", "koraflow_signer_user_id",
@@ -101,7 +103,7 @@ export const TABLE_ALLOWED_ACTIONS: Record<Table, Set<Action>> = {
   clients: new Set(["select", "insert", "update", "delete"]),
   projects: new Set(["select", "insert", "update", "delete"]),
   tasks: new Set(["select", "insert", "update", "delete"]),
-  contracts: new Set(["select", "insert", "update", "delete"]),
+  contracts: new Set(["select", "insert", "update", "delete", "get_document_url"]),
   knowledge_items: new Set(["select", "insert", "update", "delete", "get_password"]),
   support_tickets: new Set(["select", "insert", "update", "delete"]),
 };
@@ -114,6 +116,8 @@ export const RequestSchema = z.object({
   data: z.record(z.unknown()).optional(),
   id: z.string().uuid("id must be a valid UUID").optional(),
   filters: z.record(z.unknown()).optional(),
+  // Used by get_document_url (signature link token, not user JWT)
+  token: z.string().max(200).optional(),
   // Pagination
   limit: z.number().int().min(1).max(1000).optional(),
   offset: z.number().int().min(0).optional(),

@@ -348,8 +348,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
             : null,
           created_at: toISODate(contract.createdAt),
           document_name: contract.documentName,
-          document_data: contract.documentData,
+          document_data: contract.documentData ?? null,
           document_type: contract.documentType,
+          document_storage_path: contract.documentStoragePath ?? null,
+          document_version: contract.documentVersion ?? 0,
           signed_at: toISODate(contract.signedAt),
         };
         if (contract.projectIds && contract.projectIds.length > 0) {
@@ -407,6 +409,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
           dbData.document_data = contract.documentData || null;
         if (contract.documentType !== undefined)
           dbData.document_type = contract.documentType || null;
+        if (contract.documentStoragePath !== undefined)
+          dbData.document_storage_path = contract.documentStoragePath || null;
+        if (contract.documentVersion !== undefined)
+          dbData.document_version = contract.documentVersion;
+        if (contract.signedDocumentStoragePath !== undefined)
+          dbData.signed_document_storage_path = contract.signedDocumentStoragePath || null;
         if (contract.signedAt) dbData.signed_at = toISODate(contract.signedAt);
         if (contract.bu !== undefined) dbData.bu = contract.bu;
         if (contract.signatureLinkToken)

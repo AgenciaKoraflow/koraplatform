@@ -85,6 +85,10 @@ export interface Contract {
   documentName?: string;
   documentData?: string;
   documentType?: string;
+  // Storage-based document (replaces base64 documentData after migration)
+  documentStoragePath?: string;
+  documentVersion?: number;
+  signedDocumentStoragePath?: string;
   // Signature link fields
   signatureLinkToken?: string;
   signatureLinkExpiresAt?: string;
