@@ -1,5 +1,5 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { parseCurrencyToNumber } from "@/lib/currency";
 import { Plus, Search, Building2, Mail, Phone, Calendar, Eye, Edit, Trash2, TrendingUp, Users, DollarSign, Target, ChevronRight, FileText, Clock, AlertTriangle, CheckCircle, GitBranch, Camera, X } from "lucide-react";
@@ -44,7 +44,23 @@ export default function Funil() {
   const { data: clients = [] } = useAllClients();
   const { data: projects = [] } = useAllProjects();
   const { data: contracts = [] } = useAllContracts();
-  const getContractsByClient = (clientId: string) => contracts.filter(c => c.clientId === clientId);
+
+  const contractsByClient = useMemo(() => {
+    const map: Record<string, typeof contracts> = {};
+    for (const c of contracts) (map[c.clientId] ??= []).push(c);
+    return map;
+  }, [contracts]);
+
+  const projectsById = useMemo(() => {
+    const map: Record<string, (typeof projects)[0]> = {};
+    for (const p of projects) map[p.id] = p;
+    return map;
+  }, [projects]);
+
+  const getContractsByClient = useCallback(
+    (clientId: string) => contractsByClient[clientId] ?? [],
+    [contractsByClient],
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
@@ -57,35 +73,29 @@ export default function Funil() {
   const [draggedClientId, setDraggedClientId] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
 
-  // Handle drag start
-  const handleDragStart = (e: React.DragEvent, clientId: string) => {
+  const handleDragStart = useCallback((e: React.DragEvent, clientId: string) => {
     setDraggedClientId(clientId);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', clientId);
-  };
+  }, []);
 
-  // Handle drag over
-  const handleDragOver = (e: React.DragEvent, stage: string) => {
+  const handleDragOver = useCallback((e: React.DragEvent, stage: string) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     setDragOverStage(stage);
-  };
+  }, []);
 
-  // Handle drag leave
-  const handleDragLeave = () => {
+  const handleDragLeave = useCallback(() => {
     setDragOverStage(null);
-  };
+  }, []);
 
-  // Handle drop
-  const handleDrop = async (e: React.DragEvent, targetStage: string) => {
+  const handleDrop = useCallback(async (e: React.DragEvent, targetStage: string) => {
     e.preventDefault();
     setDragOverStage(null);
-    
     if (draggedClientId) {
       const client = clients.find(c => c.id === draggedClientId);
       if (client && client.stage !== targetStage) {
-        // Update client stage
-        await updateClient(draggedClientId, { 
+        await updateClient(draggedClientId, {
           stage: targetStage as keyof typeof stageConfig,
           lastContact: "Agora"
         });
@@ -93,10 +103,9 @@ export default function Funil() {
       }
     }
     setDraggedClientId(null);
-  };
+  }, [draggedClientId, clients, updateClient]);
 
-  // Handle drag end
-  const handleDragEnd = () => {
+  const handleDragEnd = useCallback(() => {
     setDraggedClientId(null);
     setDragOverStage(null);
   };
@@ -151,20 +160,24 @@ export default function Funil() {
 
   const editingClient = editingClientId ? clients.find(c => c.id === editingClientId) : null;
 
-  const filteredClients = clients.filter((client) => {
-    const matchesSearch = client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.company.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStage = !selectedStage || client.stage === selectedStage;
-    return matchesSearch && matchesStage;
-  });
+  const filteredClients = useMemo(() =>
+    clients.filter((client) => {
+      const q = searchQuery.toLowerCase();
+      const matchesSearch = client.name.toLowerCase().includes(q) ||
+        client.company.toLowerCase().includes(q);
+      const matchesStage = !selectedStage || client.stage === selectedStage;
+      return matchesSearch && matchesStage;
+    }),
+    [clients, searchQuery, selectedStage],
+  );
 
-  const openNewDialog = () => {
+  const openNewDialog = useCallback(() => {
     setEditingClientId(null);
     setFormData({ name: "", company: "", email: "", phone: "", stage: "prospeccao", value: "", anniversary: "", head: "", briefing: "", proposalSentDate: "", bu: "kora-agents", logo: "" });
     setIsDialogOpen(true);
-  };
+  }, []);
 
-  const openEditDialog = (clientId: string) => {
+  const openEditDialog = useCallback((clientId: string) => {
     const client = clients.find(c => c.id === clientId);
     if (client) {
       setEditingClientId(clientId);
@@ -184,16 +197,14 @@ export default function Funil() {
       });
       setIsDialogOpen(true);
     }
-  };
+  }, [clients]);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!formData.name || !formData.company) {
       toast.error("Preencha os campos obrigatórios (Nome e Empresa)");
       return;
     }
-
     if (editingClientId) {
-      // Only pass fields that have values to avoid overwriting with empty strings
       const updateData: Partial<Client> = {
         name: formData.name,
         company: formData.company,
@@ -202,8 +213,6 @@ export default function Funil() {
         stage: formData.stage,
         lastContact: "Agora",
       };
-
-      // Only include optional fields if they have values
       if (formData.value) updateData.value = formData.value;
       if (formData.anniversary) updateData.anniversary = formData.anniversary;
       if (formData.head) updateData.head = formData.head;
@@ -211,75 +220,81 @@ export default function Funil() {
       if (formData.proposalSentDate) updateData.proposalSentDate = formData.proposalSentDate;
       if (formData.bu) updateData.bu = [formData.bu];
       updateData.logo = formData.logo || undefined;
-
       const updated = await updateClient(editingClientId, updateData);
       if (updated) setIsDialogOpen(false);
     } else {
       const created = await addClient({ ...formData, bu: formData.bu ? [formData.bu] : [], lastContact: "Agora" });
       if (created) setIsDialogOpen(false);
     }
-  };
+  }, [formData, editingClientId, updateClient, addClient]);
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     if (deletingClientId) {
       deleteClient(deletingClientId);
       setIsDeleteDialogOpen(false);
       setDeletingClientId(null);
     }
-  };
+  }, [deletingClientId, deleteClient]);
 
-  const getClientsByStage = (stage: string) => 
-    filteredClients.filter(c => c.stage === stage);
+  const clientsByStage = useMemo(() => {
+    const map: Record<string, typeof filteredClients> = {};
+    for (const c of filteredClients) (map[c.stage] ??= []).push(c);
+    return map;
+  }, [filteredClients]);
 
-  const calculateClientPotentialValue = (clientId: string): string => {
-    const clientContracts = getContractsByClient(clientId);
-    if (clientContracts.length === 0) return "R$ 0,00";
+  const getClientsByStage = useCallback(
+    (stage: string) => clientsByStage[stage] ?? [],
+    [clientsByStage],
+  );
 
-    // Calculate total from contract projects (no recurrence)
+  const calculateClientPotentialValue = useCallback((clientId: string): string => {
+    const cc = contractsByClient[clientId] ?? [];
+    if (cc.length === 0) return "R$ 0,00";
     let total = 0;
-    clientContracts.forEach(contract => {
+    for (const contract of cc) {
       if (contract.projectIds && contract.projectIds.length > 0) {
-        // Sum project values
-        contract.projectIds.forEach(pid => {
-          const proj = projects.find(p => p.id === pid);
-          if (proj?.value) {
-            total += parseCurrencyToNumber(proj.value);
-          }
-        });
+        for (const pid of contract.projectIds) {
+          const proj = projectsById[pid];
+          if (proj?.value) total += parseCurrencyToNumber(proj.value);
+        }
       } else {
-        // Use contract value if no projects
         total += parseCurrencyToNumber(contract.value);
       }
-    });
-
+    }
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total);
-  };
+  }, [contractsByClient, projectsById]);
 
-  const calculateStageValue = (stage: string): number => {
-    return getClientsByStage(stage).reduce((acc, client) => {
-      const contracts = getContractsByClient(client.id);
-      return acc + contracts.reduce((sum, contract) => {
-        // Calculate from contract projects (no recurrence)
-        if (contract.projectIds && contract.projectIds.length > 0) {
-          return sum + contract.projectIds.reduce((pSum, pid) => {
-            const proj = projects.find(p => p.id === pid);
-            return pSum + (proj?.value ? parseCurrencyToNumber(proj.value) : 0);
-          }, 0);
-        }
-        return sum + parseCurrencyToNumber(contract.value);
+  const stageValues = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const stage of stageOrder) {
+      const stageClients = clientsByStage[stage] ?? [];
+      map[stage] = stageClients.reduce((acc, client) => {
+        const cc = contractsByClient[client.id] ?? [];
+        return acc + cc.reduce((sum, contract) => {
+          if (contract.projectIds && contract.projectIds.length > 0) {
+            return sum + contract.projectIds.reduce((pSum, pid) => {
+              const proj = projectsById[pid];
+              return pSum + (proj?.value ? parseCurrencyToNumber(proj.value) : 0);
+            }, 0);
+          }
+          return sum + parseCurrencyToNumber(contract.value);
+        }, 0);
       }, 0);
-    }, 0);
-  };
+    }
+    return map;
+  }, [clientsByStage, contractsByClient, projectsById]);
 
-  const totalPipelineValue = stageOrder.reduce((acc, stage) => {
-    // Exclude cancelled stage from pipeline value
-    if (stage === 'cancelado') return acc;
-    return acc + calculateStageValue(stage);
-  }, 0);
+  const calculateStageValue = useCallback((stage: string) => stageValues[stage] ?? 0, [stageValues]);
+
+  const totalPipelineValue = useMemo(
+    () => stageOrder.filter(s => s !== 'cancelado').reduce((acc, s) => acc + (stageValues[s] ?? 0), 0),
+    [stageValues],
+  );
   const totalLeads = filteredClients.length;
-  const conversionRate = totalLeads > 0 
-    ? Math.round((getClientsByStage('cliente').length / totalLeads) * 100) 
-    : 0;
+  const conversionRate = useMemo(
+    () => totalLeads > 0 ? Math.round(((clientsByStage['cliente']?.length ?? 0) / totalLeads) * 100) : 0,
+    [clientsByStage, totalLeads],
+  );
 
   return (
     <AppLayout>

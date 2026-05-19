@@ -1,5 +1,5 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { parseCurrencyToNumber } from "@/lib/currency";
 import { parseISO, isToday, isTomorrow, differenceInDays, format } from "date-fns";
@@ -78,9 +78,8 @@ export default function Clientes() {
   const clients = pageData?.clients ?? [];
   const total = pageData?.total ?? 0;
 
-  // Reset to page 0 whenever filters change
-  const handleSearch = (v: string) => { setSearchInput(v); setPage(0); };
-  const handleStageFilter = (s: string | null) => { setSelectedStage(s); setPage(0); };
+  const handleSearch = useCallback((v: string) => { setSearchInput(v); setPage(0); }, []);
+  const handleStageFilter = useCallback((s: string | null) => { setSelectedStage(s); setPage(0); }, []);
 
   // ── Dialog state ─────────────────────────────────────────────────────────
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -133,14 +132,13 @@ export default function Clientes() {
     return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(total);
   };
 
-  // ── Form helpers ──────────────────────────────────────────────────────────
-  const openNewDialog = () => {
+  const openNewDialog = useCallback(() => {
     setEditingClientId(null);
     setFormData({ name: "", company: "", email: "", phone: "", stage: "prospeccao", value: "", anniversary: "", head: "" });
     setIsDialogOpen(true);
-  };
+  }, []);
 
-  const openEditDialog = (clientId: string) => {
+  const openEditDialog = useCallback((clientId: string) => {
     const client = clients.find((c) => c.id === clientId);
     if (client) {
       setEditingClientId(clientId);
@@ -156,14 +154,14 @@ export default function Clientes() {
       });
       setIsDialogOpen(true);
     }
-  };
+  }, [clients]);
 
-  const openViewDialog = (clientId: string) => {
+  const openViewDialog = useCallback((clientId: string) => {
     setViewingClientId(clientId);
     setIsViewDialogOpen(true);
-  };
+  }, []);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!formData.name || !formData.company || !formData.email) {
       toast.error("Preencha os campos obrigatórios");
       return;
@@ -175,15 +173,15 @@ export default function Clientes() {
       const created = await addClient({ ...formData, lastContact: "Agora" });
       if (created) setIsDialogOpen(false);
     }
-  };
+  }, [formData, editingClientId, updateClient, addClient]);
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     if (deletingClientId) {
       deleteClient(deletingClientId);
       setIsDeleteDialogOpen(false);
       setDeletingClientId(null);
     }
-  };
+  }, [deletingClientId, deleteClient]);
 
   return (
     <AppLayout>

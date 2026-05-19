@@ -1,5 +1,5 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Search, FileText, Key, Link2, Eye, EyeOff, Copy, ExternalLink, Edit, Trash2, Users, Lightbulb, BookOpen } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -63,54 +63,57 @@ export default function Conhecimento() {
     tags: "",
   });
 
-  const filteredItems = knowledgeItems.filter((item) => {
-    return !selectedTag || item.tags.includes(selectedTag);
-  });
+  const filteredItems = useMemo(
+    () => knowledgeItems.filter((item) => !selectedTag || item.tags.includes(selectedTag)),
+    [knowledgeItems, selectedTag],
+  );
 
-  const availableProjects = formData.clientId ? projects.filter(p => p.clientId === formData.clientId) : [];
+  const availableProjects = useMemo(
+    () => formData.clientId ? projects.filter(p => p.clientId === formData.clientId) : [],
+    [formData.clientId, projects],
+  );
 
-  const togglePassword = async (id: string) => {
+  const togglePassword = useCallback(async (id: string) => {
     if (showPasswords[id]) {
       setShowPasswords(prev => ({ ...prev, [id]: false }));
       return;
     }
-    // Fetch on first reveal; cache in state for the session lifetime
     if (!revealedPasswords[id]) {
       const pw = await getKnowledgePassword(id);
       if (!pw) return;
       setRevealedPasswords(prev => ({ ...prev, [id]: pw }));
     }
     setShowPasswords(prev => ({ ...prev, [id]: true }));
-  };
+  }, [showPasswords, revealedPasswords, getKnowledgePassword]);
 
-  const copyToClipboard = (content: string) => {
+  const copyToClipboard = useCallback((content: string) => {
     navigator.clipboard.writeText(content);
     toast.success("Copiado para a área de transferência!");
-  };
+  }, []);
 
-  /** Copies the password (fetching it if not yet revealed), or falls back to username/url. */
-  const copyCredential = async (item: KnowledgeItem) => {
+  const copyCredential = useCallback(async (item: KnowledgeItem) => {
     if (item.hasPassword) {
       const pw = revealedPasswords[item.id] ?? await getKnowledgePassword(item.id);
       if (pw) {
         if (!revealedPasswords[item.id]) {
           setRevealedPasswords(prev => ({ ...prev, [item.id]: pw }));
         }
-        copyToClipboard(pw);
+        navigator.clipboard.writeText(pw);
+        toast.success("Copiado para a área de transferência!");
         return;
       }
     }
-    if (item.username) { copyToClipboard(item.username); return; }
-    if (item.url) copyToClipboard(item.url);
-  };
+    if (item.username) { navigator.clipboard.writeText(item.username); toast.success("Copiado para a área de transferência!"); return; }
+    if (item.url) { navigator.clipboard.writeText(item.url); toast.success("Copiado para a área de transferência!"); }
+  }, [revealedPasswords, getKnowledgePassword]);
 
-  const openNewDialog = () => {
+  const openNewDialog = useCallback(() => {
     setEditingItem(null);
     setFormData({ title: "", category: "credencial", clientId: "", projectId: "", content: "", username: "", password: "", url: "", tags: "" });
     setIsDialogOpen(true);
-  };
+  }, []);
 
-  const openEditDialog = (item: KnowledgeItem) => {
+  const openEditDialog = useCallback((item: KnowledgeItem) => {
     setEditingItem(item);
     setFormData({
       title: item.title,
@@ -119,28 +122,25 @@ export default function Conhecimento() {
       projectId: item.projectIds?.[0] || "",
       content: item.content,
       username: item.username || "",
-      // Never pre-populate with the password — the edge function strips it from list responses.
-      // User must re-enter a new value if they want to change it; leaving blank keeps existing.
+      // Never pre-populate the password — edge function strips it from list responses.
       password: "",
       url: item.url || "",
       tags: item.tags.join(", "),
     });
     setIsDialogOpen(true);
-  };
+  }, []);
 
-  const openViewDialog = (item: KnowledgeItem) => {
+  const openViewDialog = useCallback((item: KnowledgeItem) => {
     setViewingItem(item);
     setIsViewDialogOpen(true);
-  };
+  }, []);
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     if (!formData.title) {
       toast.error("Preencha os campos obrigatórios");
       return;
     }
-
     const now = new Date().toISOString().split("T")[0];
-
     if (editingItem) {
       updateKnowledgeItem(editingItem.id, {
         title: formData.title,
@@ -170,29 +170,32 @@ export default function Conhecimento() {
       });
     }
     setIsDialogOpen(false);
-  };
+  }, [formData, editingItem, updateKnowledgeItem, addKnowledgeItem]);
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     if (deletingItemId) {
       deleteKnowledgeItem(deletingItemId);
       setIsDeleteDialogOpen(false);
       setDeletingItemId(null);
     }
-  };
+  }, [deletingItemId, deleteKnowledgeItem]);
 
-  const getClientName = (clientId?: string) => {
+  const getClientName = useCallback((clientId?: string) => {
     if (!clientId) return "Interno";
-    const client = getClient(clientId);
+    const client = clients.find((c) => c.id === clientId);
     return client?.company || "Cliente não encontrado";
-  };
+  }, [clients]);
 
-  const getProjectName = (projectId?: string) => {
+  const getProjectName = useCallback((projectId?: string) => {
     if (!projectId) return null;
     const project = projects.find(p => p.id === projectId);
     return project?.name;
-  };
+  }, [projects]);
 
-  const allTags = Array.from(new Set(knowledgeItems.flatMap(item => item.tags)));
+  const allTags = useMemo(
+    () => Array.from(new Set(knowledgeItems.flatMap(item => item.tags))),
+    [knowledgeItems],
+  );
 
   return (
     <AppLayout>

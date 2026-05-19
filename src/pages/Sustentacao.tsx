@@ -2,7 +2,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { cn } from "@/lib/utils";
 import { Plus, Search, MessageSquare, AlertCircle, CheckCircle, Clock, Eye, Edit, Trash2, LifeBuoy } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -61,33 +61,35 @@ export default function Sustentacao() {
     assignee: "",
   });
 
-  const filteredTickets = tickets.filter((ticket) => {
-    return !selectedStatus || ticket.status === selectedStatus;
-  });
+  const filteredTickets = useMemo(
+    () => tickets.filter((ticket) => !selectedStatus || ticket.status === selectedStatus),
+    [tickets, selectedStatus],
+  );
 
-  const availableProjects = formData.clientId
-    ? projects.filter((p) => p.clientId === formData.clientId)
-    : [];
+  const availableProjects = useMemo(
+    () => formData.clientId ? projects.filter((p) => p.clientId === formData.clientId) : [],
+    [formData.clientId, projects],
+  );
 
-  const stats = {
+  const stats = useMemo(() => ({
     open: tickets.filter(t => t.status === "open").length,
     inProgress: tickets.filter(t => t.status === "in_progress").length,
     waiting: tickets.filter(t => t.status === "waiting").length,
     resolved: tickets.filter(t => t.status === "resolved").length,
-  };
+  }), [tickets]);
 
-  const generateTicketId = () => {
+  const generateTicketId = useCallback(() => {
     const num = tickets.length + 1;
     return `TK-${num.toString().padStart(3, "0")}`;
-  };
+  }, [tickets.length]);
 
-  const openNewDialog = () => {
+  const openNewDialog = useCallback(() => {
     setEditingTicket(null);
     setFormData({ title: "", description: "", clientId: "", projectId: "", status: "open", priority: "medium", assignee: "" });
     setIsDialogOpen(true);
-  };
+  }, []);
 
-  const openEditDialog = (ticket: SupportTicket) => {
+  const openEditDialog = useCallback((ticket: SupportTicket) => {
     setEditingTicket(ticket);
     setFormData({
       title: ticket.title,
@@ -99,21 +101,19 @@ export default function Sustentacao() {
       assignee: ticket.assignee || "",
     });
     setIsDialogOpen(true);
-  };
+  }, []);
 
-  const openViewDialog = (ticket: SupportTicket) => {
+  const openViewDialog = useCallback((ticket: SupportTicket) => {
     setViewingTicket(ticket);
     setIsViewDialogOpen(true);
-  };
+  }, []);
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     if (!formData.title || !formData.clientId) {
       toast.error("Preencha os campos obrigatórios");
       return;
     }
-
     const now = new Date().toISOString().split("T")[0];
-
     if (editingTicket) {
       updateTicket(editingTicket.id, {
         title: formData.title,
@@ -139,26 +139,26 @@ export default function Sustentacao() {
       });
     }
     setIsDialogOpen(false);
-  };
+  }, [formData, editingTicket, updateTicket, addTicket]);
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     if (deletingTicketId) {
       deleteTicket(deletingTicketId);
       setIsDeleteDialogOpen(false);
       setDeletingTicketId(null);
     }
-  };
+  }, [deletingTicketId, deleteTicket]);
 
-  const getClientName = (clientId: string) => {
-    const client = getClient(clientId);
+  const getClientName = useCallback((clientId: string) => {
+    const client = clients.find((c) => c.id === clientId);
     return client?.company || "Cliente não encontrado";
-  };
+  }, [clients]);
 
-  const getProjectName = (projectId?: string) => {
+  const getProjectName = useCallback((projectId?: string) => {
     if (!projectId) return null;
     const project = projects.find(p => p.id === projectId);
     return project?.name;
-  };
+  }, [projects]);
 
   return (
     <AppLayout>

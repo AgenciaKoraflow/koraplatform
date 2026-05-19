@@ -1,5 +1,5 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Calendar, Clock, Search, Eye, Edit, Trash2, AlertTriangle, CheckCircle, Timer, FolderKanban } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -104,15 +104,15 @@ export default function Projetos() {
 
   const filteredProjects = projects;
 
-  const handleSearchChange = (v: string) => { setSearchInput(v); setPage(0); };
+  const handleSearchChange = useCallback((v: string) => { setSearchInput(v); setPage(0); }, []);
 
-  const openNewDialog = () => {
+  const openNewDialog = useCallback(() => {
     setEditingProject(null);
     setFormData({ name: "", clientId: "", description: "", status: "planning", dueDate: "", team: "", head: "", value: "", billingType: "projeto", type: "projeto", recurrenceValue: "", recurrenceStartDate: "", bu: [] });
     setIsDialogOpen(true);
-  };
+  }, []);
 
-  const openEditDialog = (project: Project) => {
+  const openEditDialog = useCallback((project: Project) => {
     setEditingProject(project);
     setFormData({
       name: project.name,
@@ -130,21 +130,19 @@ export default function Projetos() {
       bu: (Array.isArray(project.bu) ? project.bu : (project.bu ? [project.bu] : [])) as BU[],
     });
     setIsDialogOpen(true);
-  };
+  }, []);
 
-  const openViewDialog = (project: Project) => {
+  const openViewDialog = useCallback((project: Project) => {
     setViewingProject(project);
     setIsViewDialogOpen(true);
-  };
+  }, []);
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     if (!formData.name || !formData.clientId) {
       toast.error("Preencha os campos obrigatórios");
       return;
     }
-
     const teamArray = formData.team.split(",").map(t => t.trim()).filter(Boolean);
-
     if (editingProject) {
       updateProject(editingProject.id, {
         name: formData.name,
@@ -182,23 +180,31 @@ export default function Projetos() {
       });
     }
     setIsDialogOpen(false);
-  };
+  }, [formData, editingProject, updateProject, addProject]);
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     if (deletingProjectId) {
       deleteProject(deletingProjectId);
       setIsDeleteDialogOpen(false);
       setDeletingProjectId(null);
     }
-  };
+  }, [deletingProjectId, deleteProject]);
 
-  const getProjectsByStatus = (status: string) => 
-    filteredProjects.filter(p => p.status === status);
+  const projectsByStatus = useMemo(() => {
+    const map: Record<string, typeof filteredProjects> = {};
+    for (const p of filteredProjects) (map[p.status] ??= []).push(p);
+    return map;
+  }, [filteredProjects]);
 
-  const getClientName = (clientId: string) => {
-    const client = getClient(clientId);
+  const getProjectsByStatus = useCallback(
+    (status: string) => projectsByStatus[status] ?? [],
+    [projectsByStatus],
+  );
+
+  const getClientName = useCallback((clientId: string) => {
+    const client = allClients.find((c) => c.id === clientId);
     return client?.company || "Cliente não encontrado";
-  };
+  }, [allClients]);
 
   // Calculate deadline status for visual indicator
   const getDeadlineStatus = (dueDate: string, progress: number, projectStatus?: Project["status"]): {

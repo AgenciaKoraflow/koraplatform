@@ -1,3 +1,4 @@
+import { memo } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,7 +20,7 @@ interface ActionMenuProps {
   items: ActionMenuItem[];
 }
 
-export function ActionMenu({ items }: ActionMenuProps) {
+export const ActionMenu = memo(function ActionMenu({ items }: ActionMenuProps) {
   const visibleItems = items.filter((item) => item.show !== false);
 
   return (
@@ -49,6 +50,6 @@ export function ActionMenu({ items }: ActionMenuProps) {
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
+});
 
 export { Eye, Edit, Trash2, Copy, Send, Download };

@@ -1,5 +1,5 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Search, Calendar, CheckCircle2, Circle, Clock, Eye, Edit, Trash2, AlertTriangle, User, ListChecks } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -176,19 +176,32 @@ export default function Tarefas() {
     bu: "kora-dev" as BU,
   });
 
-  const getTasksByStatus = (status: string) => tasks.filter((t) => t.status === status);
+  const tasksByStatus = useMemo(() => {
+    const map: Record<string, typeof tasks> = {};
+    for (const t of tasks) (map[t.status] ??= []).push(t);
+    return map;
+  }, [tasks]);
+
+  const getTasksByStatus = useCallback(
+    (status: string) => tasksByStatus[status] ?? [],
+    [tasksByStatus],
+  );
+
   const filteredTasks = tasks;
 
-  const availableProjects = formData.clientId ? projects.filter((p) => p.clientId === formData.clientId) : [];
+  const availableProjects = useMemo(
+    () => formData.clientId ? projects.filter((p) => p.clientId === formData.clientId) : [],
+    [formData.clientId, projects],
+  );
 
-  const openNewDialog = (status: Task["status"] = "todo") => {
+  const openNewDialog = useCallback((status: Task["status"] = "todo") => {
     setEditingTask(null);
     setDefaultStatus(status);
     setFormData({ title: "", description: "", clientId: "", projectId: "", assignees: [], status, priority: "medium", dueDate: "", bu: "kora-dev" });
     setIsDialogOpen(true);
-  };
+  }, []);
 
-  const openEditDialog = (task: Task) => {
+  const openEditDialog = useCallback((task: Task) => {
     setEditingTask(task);
     setFormData({
       title: task.title,
@@ -202,19 +215,18 @@ export default function Tarefas() {
       bu: (Array.isArray(task.bu) ? task.bu[0] : task.bu) || "kora-dev" as BU,
     });
     setIsDialogOpen(true);
-  };
+  }, []);
 
-  const openViewDialog = (task: Task) => {
+  const openViewDialog = useCallback((task: Task) => {
     setViewingTask(task);
     setIsViewDialogOpen(true);
-  };
+  }, []);
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     if (!formData.title || !formData.clientId) {
       toast.error("Preencha os campos obrigatórios");
       return;
     }
-
     if (editingTask) {
       updateTask(editingTask.id, {
         title: formData.title,
@@ -241,26 +253,26 @@ export default function Tarefas() {
       });
     }
     setIsDialogOpen(false);
-  };
+  }, [formData, editingTask, updateTask, addTask]);
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     if (deletingTaskId) {
       deleteTask(deletingTaskId);
       setIsDeleteDialogOpen(false);
       setDeletingTaskId(null);
     }
-  };
+  }, [deletingTaskId, deleteTask]);
 
-  const getClientName = (clientId: string) => {
-    const client = getClient(clientId);
+  const getClientName = useCallback((clientId: string) => {
+    const client = clients.find((c) => c.id === clientId);
     return client?.company || "Cliente não encontrado";
-  };
+  }, [clients]);
 
-  const getProjectName = (projectId?: string) => {
+  const getProjectName = useCallback((projectId?: string) => {
     if (!projectId) return null;
     const project = projects.find(p => p.id === projectId);
     return project?.name;
-  };
+  }, [projects]);
 
   const renderAssignees = (assignees: string[]) => {
     if (!assignees || assignees.length === 0) return null;
