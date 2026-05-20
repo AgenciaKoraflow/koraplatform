@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { useState, useEffect, useMemo } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -14,17 +15,12 @@ import {
   Workflow,
   Building2,
   FileText,
-  Target,
   Calendar,
-  Handshake,
-  Scale,
   Users,
-  ChevronRight,
   Plus,
   Edit,
   Trash2,
   Paperclip,
-  ExternalLink,
   X,
   Search,
   CheckCircle,
@@ -32,11 +28,10 @@ import {
   AlertCircle,
   Tag,
 } from "lucide-react";
-import { BU_LIST, BU_CONFIG } from "@/types/bu";
+import { BU_LIST } from "@/types/bu";
 import type { Process, ProcessCategory } from "@/types/data";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 
 // Categories now use BU values
 const CATEGORIES = BU_LIST.map(bu => ({
@@ -52,142 +47,6 @@ const STATUS_CONFIG = {
   concluido: { label: "Concluído", color: "bg-green-500", bgColor: "bg-green-500/10", textColor: "text-green-500", borderColor: "border-green-500/20" },
 };
 
-const STATUS_ORDER = ["pendente", "em_andamento", "concluido"] as const;
-
-function ProcessCard({ 
-  process, 
-  onEdit, 
-  onDelete 
-}: { 
-  process: Process; 
-  onEdit: (p: Process) => void;
-  onDelete: (id: string) => void;
-}) {
-  return (
-    <div 
-      className={cn(
-        "p-3 rounded-lg border bg-card hover:shadow-md transition-all cursor-pointer group",
-        STATUS_CONFIG[process.status].borderColor
-      )}
-      onClick={() => onEdit(process)}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm text-foreground truncate">{process.name}</p>
-          {process.description && (
-            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{process.description}</p>
-          )}
-          <div className="flex items-center gap-2 mt-2 flex-wrap">
-            {process.subcategory && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground-foreground">
-                {process.subcategory}
-              </span>
-            )}
-            {process.assigned_to && (
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Users className="w-3 h-3" />
-                {process.assigned_to}
-              </span>
-            )}
-            {process.due_date && (
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                {new Date(process.due_date).toLocaleDateString("pt-BR")}
-              </span>
-            )}
-            {process.documents && process.documents.length > 0 && (
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <FileText className="w-3 h-3" />
-                {process.documents.length}
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button 
-            onClick={(e) => { e.stopPropagation(); onEdit(process); }}
-            className="p-1 hover:bg-muted rounded"
-          >
-            <Edit className="w-3.5 h-3.5 text-muted-foreground" />
-          </button>
-          <button 
-            onClick={(e) => { e.stopPropagation(); onDelete(process.id); }}
-            className="p-1 hover:bg-muted rounded"
-          >
-            <Trash2 className="w-3.5 h-3.5 text-destructive" />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function KanbanColumn({
-  status,
-  processes,
-  onProcessMove,
-  onEdit,
-  onDelete,
-  isDragOver,
-  onDragOver,
-  onDragLeave,
-  onDrop,
-}: {
-  status: "pendente" | "em_andamento" | "concluido";
-  processes: Process[];
-  onProcessMove: (id: string, newStatus: string) => void;
-  onEdit: (p: Process) => void;
-  onDelete: (id: string) => void;
-  isDragOver: boolean;
-  onDragOver: () => void;
-  onDragLeave: () => void;
-  onDrop: () => void;
-}) {
-  const handleDragStart = (e: React.DragEvent, processId: string) => {
-    e.dataTransfer.setData("processId", processId);
-  };
-
-  return (
-    <div 
-      className={cn(
-        "flex-shrink-0 w-72 rounded-lg p-2 transition-all",
-        isDragOver && STATUS_CONFIG[status].bgColor
-      )}
-      onDragOver={(e) => { e.preventDefault(); onDragOver(); }}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
-    >
-      <div className={cn(
-        "flex items-center justify-between p-2 rounded-md mb-2",
-        STATUS_CONFIG[status].bgColor
-      )}>
-        <div className="flex items-center gap-2">
-          <div className={cn("w-2 h-2 rounded-full", STATUS_CONFIG[status].color)} />
-          <span className={cn("text-sm font-medium", STATUS_CONFIG[status].textColor)}>
-            {STATUS_CONFIG[status].label}
-          </span>
-        </div>
-        <span className="text-xs text-muted-foreground">{processes.length}</span>
-      </div>
-      <div className="space-y-2 max-h-[400px] overflow-y-auto">
-        {processes.map((process) => (
-          <div
-            key={process.id}
-            draggable
-            onDragStart={(e) => handleDragStart(e, process.id)}
-          >
-            <ProcessCard 
-              process={process} 
-              onEdit={onEdit}
-              onDelete={onDelete}
-            />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default function Processos() {
   const [searchQuery, setSearchQuery] = useState("");
   const [processes, setProcesses] = useState<Process[]>([]);
@@ -196,8 +55,6 @@ export default function Processos() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingProcess, setEditingProcess] = useState<Process | null>(null);
   const [deletingProcessId, setDeletingProcessId] = useState<string | null>(null);
-  const [dragOverStatus, setDragOverStatus] = useState<string | null>(null);
-
 
   const [formData, setFormData] = useState<{
     name: string;
@@ -233,7 +90,7 @@ export default function Processos() {
       if (error) throw error;
       setProcesses(data || []);
     } catch (error) {
-      console.error("Error fetching processes:", error);
+      logger.error("Error fetching processes:", error instanceof Error ? error : undefined);
       toast.error("Erro ao carregar processos");
     } finally {
       setLoading(false);
@@ -264,9 +121,6 @@ export default function Processos() {
     });
     return counts;
   }, [processes]);
-
-  const getProcessesByStatus = (status: string) => 
-    filteredProcesses.filter(p => p.status === status);
 
   const openNewDialog = () => {
     setEditingProcess(null);
@@ -344,7 +198,7 @@ export default function Processos() {
           .eq("id", editingProcess.id);
 
         if (error) {
-          console.error("Update error:", error);
+          logger.error("Update error:", error instanceof Error ? error : undefined);
           throw error;
         }
         toast.success("Processo atualizado!");
@@ -360,7 +214,7 @@ export default function Processos() {
       setIsDialogOpen(false);
       fetchProcesses();
     } catch (error) {
-      console.error("Error saving process:", error);
+      logger.error("Error saving process:", error instanceof Error ? error : undefined);
       toast.error("Erro ao salvar processo");
     }
   };
@@ -379,55 +233,10 @@ export default function Processos() {
         setDeletingProcessId(null);
         fetchProcesses();
       } catch (error) {
-        console.error("Error deleting process:", error);
+        logger.error("Error deleting process:", error instanceof Error ? error : undefined);
         toast.error("Erro ao remover processo");
       }
     }
-  };
-
-  const handleProcessMove = async (processId: string, newStatus: string) => {
-    try {
-      const { error } = await supabase
-        .from("processes")
-        .update({ status: newStatus })
-        .eq("id", processId);
-
-      if (error) throw error;
-      fetchProcesses();
-      toast.success(`Processo movido para ${STATUS_CONFIG[newStatus as keyof typeof STATUS_CONFIG].label}`);
-    } catch (error) {
-      console.error("Error moving process:", error);
-      toast.error("Erro ao mover processo");
-    }
-  };
-
-  const handleDrop = (targetStatus: string) => {
-    setDragOverStatus(null);
-    const processId = document.querySelector('[draggable="true"]:focus')?.getAttribute("data-process-id");
-    // Get from dataTransfer
-    // This is handled in the onDrop event
-  };
-
-  // Handle actual drag and drop
-  const handleDragOverColumn = (status: string) => (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOverStatus(status);
-  };
-
-  const handleDropColumn = (status: string) => async (e: React.DragEvent) => {
-    e.preventDefault();
-    const processId = e.dataTransfer.getData("processId");
-    if (processId) {
-      const process = processes.find(p => p.id === processId);
-      if (process && process.status !== status) {
-        await handleProcessMove(processId, status);
-      }
-    }
-    setDragOverStatus(null);
-  };
-
-  const handleDragLeaveColumn = () => {
-    setDragOverStatus(null);
   };
 
   return (
@@ -714,7 +523,7 @@ export default function Processos() {
                             .replace(/[\u00C0-\u024F]/g, (c) => c.normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
                             .replace(/[^a-zA-Z0-9.-]/g, '_');
                           const fileName = `${Date.now()}-${sanitizedName}`;
-                          const { data, error } = await supabase.storage
+                          const { error } = await supabase.storage
                             .from('process-documents')
                             .upload(fileName, file);
                           
@@ -734,7 +543,7 @@ export default function Processos() {
                           
                           toast.success("Arquivo enviado!");
                         } catch (error) {
-                          console.error("Upload error:", error);
+                          logger.error("Upload error:", error instanceof Error ? error : undefined);
                           toast.error("Erro ao enviar arquivo");
                         }
                       }

@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Notification, NotificationType } from "@/types/notifications";
+import { Notification } from "@/types/notifications";
 import { useAllTasks } from "@/hooks/useTasks";
 import { useAllContracts } from "@/hooks/useContracts";
 import { useAllTickets } from "@/hooks/useTickets";
 import { useAllClients } from "@/hooks/useClients";
-import { formatDistanceToNow, parseISO, isPast, differenceInDays, isToday } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { parseISO, isPast, differenceInDays, isToday } from "date-fns";
 
 // Parse date helper
 const parseDate = (dateString: string): Date | null => {

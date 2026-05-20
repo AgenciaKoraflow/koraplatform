@@ -112,8 +112,6 @@ export function InsightsCanvasEnhanced({ board, onSave, onBack, onRename }: Insi
       });
       
       if (clickedElement && !isConnecting) {
-        // Determine which side was clicked
-        const center = getElementCenter(clickedElement);
         const relX = coords.x - clickedElement.x;
         const relY = coords.y - clickedElement.y;
         const normalizedX = relX / clickedElement.width;
@@ -568,19 +566,23 @@ export function InsightsCanvasEnhanced({ board, onSave, onBack, onRename }: Insi
       >
         <div style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: "0 0" }}>
           {/* Connection preview line */}
-          {isConnecting && connectionStart && connectionPreview && (
-            <svg className="absolute inset-0 pointer-events-none" style={{ overflow: "visible" }}>
-              <line
-                x1={elements.find(e => e.id === connectionStart.elementId)?.x! + elements.find(e => e.id === connectionStart.elementId)?.width! / 2}
-                y1={elements.find(e => e.id === connectionStart.elementId)?.y! + elements.find(e => e.id === connectionStart.elementId)?.height! / 2}
-                x2={connectionPreview.x}
-                y2={connectionPreview.y}
-                stroke={currentColor}
-                strokeWidth="2"
-                strokeDasharray="5,5"
-              />
-            </svg>
-          )}
+          {isConnecting && connectionStart && connectionPreview && (() => {
+            const startEl = elements.find(e => e.id === connectionStart.elementId);
+            if (!startEl) return null;
+            return (
+              <svg className="absolute inset-0 pointer-events-none" style={{ overflow: "visible" }}>
+                <line
+                  x1={startEl.x + startEl.width / 2}
+                  y1={startEl.y + startEl.height / 2}
+                  x2={connectionPreview.x}
+                  y2={connectionPreview.y}
+                  stroke={currentColor}
+                  strokeWidth="2"
+                  strokeDasharray="5,5"
+                />
+              </svg>
+            );
+          })()}
 
           {elements.map((el) => (
             <div

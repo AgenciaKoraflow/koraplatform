@@ -163,7 +163,7 @@ export default function Tarefas() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [viewingTask, setViewingTask] = useState<Task | null>(null);
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
-  const [defaultStatus, setDefaultStatus] = useState<Task["status"]>("todo");
+  const [_defaultStatus, setDefaultStatus] = useState<Task["status"]>("todo");
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -632,7 +632,7 @@ export default function Tarefas() {
           )}
           <DialogFooter>
             <button onClick={() => setIsViewDialogOpen(false)} className="px-4 py-2 rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-colors">Fechar</button>
-            <button onClick={() => { setIsViewDialogOpen(false); viewingTask && openEditDialog(viewingTask); }} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Editar</button>
+            <button onClick={() => { setIsViewDialogOpen(false); if (viewingTask) openEditDialog(viewingTask); }} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Editar</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

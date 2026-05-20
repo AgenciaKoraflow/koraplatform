@@ -28,8 +28,6 @@ const categoryConfig = {
   link: { label: "Link", color: "bg-green-500/10 text-green-500", icon: Link2 },
 };
 
-const tagCategories = ["Cloud", "Técnico", "Desenvolvimento", "Database", "Treinamento", "IA", "Ambiente", "Comercial"];
-
 export default function Conhecimento() {
   const { addKnowledgeItem, updateKnowledgeItem, deleteKnowledgeItem, getKnowledgePassword, isAdding, isUpdating } = useKnowledgeMutations();
   const [searchInput, setSearchInput] = useState("");
@@ -592,7 +590,7 @@ export default function Conhecimento() {
           })()}
           <DialogFooter>
             <button onClick={() => setIsViewDialogOpen(false)} className="px-4 py-2 rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-colors">Fechar</button>
-            <button onClick={() => { setIsViewDialogOpen(false); viewingItem && openEditDialog(viewingItem); }} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Editar</button>
+            <button onClick={() => { setIsViewDialogOpen(false); if (viewingItem) openEditDialog(viewingItem); }} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Editar</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

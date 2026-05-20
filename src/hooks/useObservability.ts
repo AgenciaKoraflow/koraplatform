@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatSupabaseInvokeError } from "@/lib/supabaseFunctions";
@@ -146,7 +147,7 @@ export function useObservability(clientId?: string) {
         .order("recorded_at", { ascending: false });
       return (data ?? []) as IntegrationMetric[];
     } catch (err) {
-      console.error("Failed to fetch metrics:", err);
+      logger.error("Failed to fetch metrics:", err instanceof Error ? err : undefined);
       return [];
     }
   }, []);
@@ -165,7 +166,7 @@ export function useObservability(clientId?: string) {
         .limit(100);
       return (data ?? []) as IntegrationLog[];
     } catch (err) {
-      console.error("Failed to fetch logs:", err);
+      logger.error("Failed to fetch logs:", err instanceof Error ? err : undefined);
       return [];
     }
   }, []);
@@ -181,7 +182,7 @@ export function useObservability(clientId?: string) {
         .single();
       return (data as IntegrationHealth) ?? null;
     } catch (err) {
-      console.error("Failed to fetch health:", err);
+      logger.error("Failed to fetch health:", err instanceof Error ? err : undefined);
       return null;
     }
   }, []);
@@ -196,7 +197,7 @@ export function useObservability(clientId?: string) {
       if (healthError) throw healthError;
       return data;
     } catch (err) {
-      console.error("Failed to check health:", err);
+      logger.error("Failed to check health:", err instanceof Error ? err : undefined);
       const msg = await formatSupabaseInvokeError(err);
       await supabase.from("integration_health").insert({
         integration_id: integrationId,

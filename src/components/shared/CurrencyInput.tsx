@@ -26,7 +26,7 @@ export function CurrencyInput({ value, onChange, placeholder = "R$ 0,00", classN
     if (!inputValue || inputValue.trim() === "") return null;
 
     // Remove currency symbols, spaces, and R$
-    let cleaned = inputValue.replace(/[R$\s]/g, "").trim();
+    const cleaned = inputValue.replace(/[R$\s]/g, "").trim();
     
     if (!cleaned) return null;
 
@@ -78,7 +78,7 @@ export function CurrencyInput({ value, onChange, placeholder = "R$ 0,00", classN
     
     // Allow user to type freely while focused
     // Only keep digits, dots (thousand separator), and comma (decimal separator)
-    const cleaned = inputValue.replace(/[^\d,\.]/g, "");
+    const cleaned = inputValue.replace(/[^\d,.]/g, "");
     
     setDisplayValue(cleaned);
   };

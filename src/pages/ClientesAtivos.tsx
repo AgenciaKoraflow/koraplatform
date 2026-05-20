@@ -1,10 +1,10 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { 
-  Plus, Search, Building2, Mail, Phone, Calendar, Eye, Edit, Trash2, 
+import {
+  Plus, Search, Mail, Phone, Calendar, Edit,
   MessageSquare, FileText, Gift, Clock, CheckCircle2, Users,
-  Video, CalendarDays, StickyNote, TrendingUp, Heart, Star, CheckSquare, Circle, AlertCircle, HeartHandshake
+  Video, CalendarDays, StickyNote, Heart, CheckSquare, Circle, AlertCircle, HeartHandshake
 } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -13,10 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ActionMenu } from "@/components/shared/ActionMenu";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
-import { DatePicker } from "@/components/shared/DatePicker";
 import { useAllClients } from "@/hooks/useClients";
 import { useAllProjects } from "@/hooks/useProjects";
 import { useAllContracts } from "@/hooks/useContracts";
@@ -30,7 +27,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 // Type for interaction/activity
 interface ClientInteraction {
@@ -62,7 +58,7 @@ export default function ClientesAtivos() {
   const { data: tasks = [] } = useAllTasks();
   const getProjectsByClient = (clientId: string) => projects.filter(p => p.clientId === clientId);
   const getContractsByClient = (clientId: string) => contracts.filter(c => c.clientId === clientId);
-  const getTicketsByClient = (clientId: string) => tickets.filter(t => t.clientId === clientId);
+  const _getTicketsByClient = (clientId: string) => tickets.filter(t => t.clientId === clientId);
   const getTasksByClient = (clientId: string) => tasks.filter(t => t.clientId === clientId);
   const getTasksByProject = (projectId: string) => tasks.filter(t => t.projectId === projectId);
   const [searchQuery, setSearchQuery] = useState("");
@@ -93,7 +89,6 @@ export default function ClientesAtivos() {
     : [];
   const clientProjects = selectedClientId ? getProjectsByClient(selectedClientId) : [];
   const clientContracts = selectedClientId ? getContractsByClient(selectedClientId) : [];
-  const clientTickets = selectedClientId ? getTicketsByClient(selectedClientId) : [];
   const clientTasks = selectedClientId ? getTasksByClient(selectedClientId) : [];
 
   const handleAddInteraction = () => {
@@ -250,7 +245,7 @@ export default function ClientesAtivos() {
                 "grid gap-4",
                 selectedClientId ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
               )}>
-                {filteredClients.map((client, index) => {
+                {filteredClients.map((client) => {
                   const anniversary = calculateContractAnniversary(client.id);
                   const daysUntil = anniversary ? getDaysUntilAnniversary(anniversary) : null;
                   

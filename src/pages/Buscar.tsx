@@ -8,8 +8,6 @@ import { useAllContracts } from "@/hooks/useContracts";
 import { useOKRData } from "@/hooks/useOKRData";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Search, FileText, Users, Briefcase, CheckSquare, Target } from "lucide-react";
-import { cn } from "@/lib/utils";
-
 export default function Buscar() {
   const [searchParams] = useSearchParams();
   const initialSearch = searchParams.get("q") || "";

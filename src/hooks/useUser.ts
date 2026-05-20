@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { logger } from "@/lib/logger";
 
 // Module-level cache: persists across re-renders to prevent flickering
 let _userNameCache = "Usuário";
@@ -54,7 +55,7 @@ export function useUser() {
               setUserName(fullName);
               return;
             }
-          } catch {}
+          } catch { /* malformed JSON — fall through to default */ }
         }
 
         // Default fallback
@@ -62,7 +63,7 @@ export function useUser() {
         _userNameFetched = true;
         setUserName("Usuário");
       } catch (error) {
-        console.error('Error getting user name:', error);
+        logger.error('Error getting user name:', error instanceof Error ? error : undefined);
         _userNameCache = "Usuário";
         _userNameFetched = true;
         setUserName("Usuário");

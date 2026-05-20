@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 import type { Tables } from "@/integrations/supabase/types";
 
 type AuditLogRow = Tables<"signature_audit_log">;
@@ -60,7 +61,7 @@ export function useSignatureNotifications() {
       setNotifications(formattedNotifications);
       setUnreadCount(formattedNotifications.filter((n) => !n.read).length);
     } catch (error) {
-      console.error("Error fetching signature notifications:", error);
+      logger.error("Error fetching signature notifications:", error instanceof Error ? error : undefined);
     }
   }, []);
 

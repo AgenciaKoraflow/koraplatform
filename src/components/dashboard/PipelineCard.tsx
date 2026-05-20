@@ -27,7 +27,7 @@ export function PipelineCard() {
 
       {/* Pipeline Bar */}
       <div className="flex h-3 rounded-full overflow-hidden mb-6">
-        {stages.map((stage, index) => (
+        {stages.map((stage) => (
           <div
             key={stage.name}
             className={cn(stage.color, "transition-all duration-500")}

@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { DatePicker } from "@/components/shared/DatePicker";
 import { CurrencyInput } from "@/components/shared/CurrencyInput";
@@ -21,17 +20,13 @@ import { useFinancial } from "@/hooks/useFinancial";
 import { useAllClients } from "@/hooks/useClients";
 import { useAllProjects } from "@/hooks/useProjects";
 import { useAllContracts } from "@/hooks/useContracts";
-import { typographyClasses } from "@/lib/typography";
-import { cn } from "@/lib/utils";
 import { FinancialTransaction, EXPENSE_CATEGORIES, REVENUE_CATEGORIES } from "@/types/financial";
 import { 
   Plus, 
   Search,
   TrendingUp,
   TrendingDown,
-  DollarSign,
   Calendar,
-  Filter,
   Wallet,
   ArrowUpCircle,
   ArrowDownCircle,
@@ -42,7 +37,6 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 
 export default function Financeiro() {
   const { transactions, loading, addTransaction, updateTransaction, deleteTransaction } = useFinancial();

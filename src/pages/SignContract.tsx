@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -191,7 +192,7 @@ export default function SignContract() {
         setDocumentUrl(data.document_data);
       }
     } catch (err) {
-      console.error("Error loading contract:", err);
+      logger.error("Error loading contract:", err instanceof Error ? err : undefined);
       setStatus("error");
     }
   };
@@ -291,7 +292,7 @@ export default function SignContract() {
 
       loadContract();
     } catch (err) {
-      console.error("Error signing contract:", err);
+      logger.error("Error signing contract:", err instanceof Error ? err : undefined);
       toast.error("Erro ao assinar contrato");
     } finally {
       setIsSigning(false);

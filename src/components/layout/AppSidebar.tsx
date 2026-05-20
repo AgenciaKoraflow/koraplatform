@@ -3,7 +3,6 @@ import { useRef } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
-  Settings,
   DollarSign,
   BarChart3,
   Filter,
@@ -19,7 +18,7 @@ import {
   Target,
   Camera,
 } from "lucide-react";
-import { BU, BU_CONFIG } from "@/types/bu";
+import { BU } from "@/types/bu";
 import {
   Tooltip,
   TooltipContent,

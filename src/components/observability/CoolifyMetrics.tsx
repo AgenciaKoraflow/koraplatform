@@ -1,5 +1,5 @@
+import { logger } from "@/lib/logger";
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
@@ -12,8 +12,6 @@ import {
   Activity,
   RefreshCw,
   AlertTriangle,
-  CheckCircle2,
-  Play,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCoolify, type CoolifyDashboard } from "@/hooks/useCoolify";
@@ -44,7 +42,7 @@ export function CoolifyMetrics({ integration }: CoolifyMetricsProps) {
       });
       setDashboard(data);
     } catch (err) {
-      console.error('Failed to fetch Coolify metrics:', err);
+      logger.error('Failed to fetch Coolify metrics:', err instanceof Error ? err : undefined);
     }
   };
 

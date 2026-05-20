@@ -1,7 +1,6 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { callExternalDb, PaginatedResult } from "@/lib/externalDb";
 import { mapDbClient } from "@/lib/mappers";
-import { Client } from "@/types/data";
 import type { DbClientRow } from "@/types/db";
 
 export interface ClientListParams {

@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
-  Plus,
   Search,
   LayoutGrid,
   List,
   PenTool,
   FileText,
-  MoreVertical,
   Edit,
   Trash2,
   Clock,

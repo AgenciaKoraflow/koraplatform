@@ -42,7 +42,7 @@ export function SignaturePadPro({ onSave, onCancel, initialName = "" }: Signatur
 
   const [typedName, setTypedName] = useState(initialName);
   const [selectedFont, setSelectedFont] = useState(SIGNATURE_FONTS[0]);
-  const [typedDataUrl, setTypedDataUrl] = useState<string | null>(null);
+  const [_typedDataUrl, setTypedDataUrl] = useState<string | null>(null);
 
   const [uploadedDataUrl, setUploadedDataUrl] = useState<string | null>(null);
 

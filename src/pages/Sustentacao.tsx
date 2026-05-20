@@ -42,7 +42,6 @@ export default function Sustentacao() {
   const tickets = ticketData?.tickets ?? [];
   const { data: clients = [] } = useAllClients();
   const { data: projects = [] } = useAllProjects();
-  const getClient = (id: string) => clients.find((c) => c.id === id);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -77,11 +76,6 @@ export default function Sustentacao() {
     waiting: tickets.filter(t => t.status === "waiting").length,
     resolved: tickets.filter(t => t.status === "resolved").length,
   }), [tickets]);
-
-  const generateTicketId = useCallback(() => {
-    const num = tickets.length + 1;
-    return `TK-${num.toString().padStart(3, "0")}`;
-  }, [tickets.length]);
 
   const openNewDialog = useCallback(() => {
     setEditingTicket(null);
@@ -545,7 +539,7 @@ export default function Sustentacao() {
           )}
           <DialogFooter>
             <button onClick={() => setIsViewDialogOpen(false)} className="px-4 py-2 rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-colors">Fechar</button>
-            <button onClick={() => { setIsViewDialogOpen(false); viewingTicket && openEditDialog(viewingTicket); }} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Editar</button>
+            <button onClick={() => { setIsViewDialogOpen(false); if (viewingTicket) openEditDialog(viewingTicket); }} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Editar</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

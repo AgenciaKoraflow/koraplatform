@@ -17,7 +17,7 @@ export function calculateMonthsBetween(startDate: string, endDate: string): numb
     try {
       const parsed = new Date(dateStr);
       if (!isNaN(parsed.getTime()) && parsed.getTime() > 0) return parsed;
-    } catch {}
+    } catch { /* invalid date string — return null below */ }
     
     return null;
   };

@@ -23,7 +23,7 @@ interface KnowledgeGroupedByClientProps {
 
 export function KnowledgeGroupedByClient({
   items,
-  clients,
+  clients: _clients,
   getClient,
   onView,
   onEdit,

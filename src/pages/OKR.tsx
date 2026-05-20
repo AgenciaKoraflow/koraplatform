@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { useState, useMemo, FormEvent } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -24,13 +25,13 @@ import { useOKRData } from "@/hooks/useOKRData";
 import { BUMultiSelect } from "@/components/shared/BUMultiSelect";
 
 export default function OKR() {
-  const { objectives, updates, loading, addObjective, updateObjective, deleteObjective, addUpdate } = useOKRData();
+  const { objectives, updates, addObjective, updateObjective, deleteObjective, addUpdate } = useOKRData();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<"all" | OKRStatus>("all");
   const [filterCategory, setFilterCategory] = useState<"all" | OKRObjective["category"]>("all");
   const [filterBU, setFilterBU] = useState<BU[]>([]);
-  const [filterPriority, setFilterPriority] = useState<"all" | OKRObjective["priority"]>("all");
+  const [filterPriority] = useState<"all" | OKRObjective["priority"]>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -109,7 +110,7 @@ export default function OKR() {
         }
       }
     } catch (error) {
-      console.error("Erro ao salvar OKR:", error);
+      logger.error("Erro ao salvar OKR:", error instanceof Error ? error : undefined);
       toast.error("Erro ao salvar OKR");
     } finally {
       setIsSaving(false);
@@ -143,7 +144,7 @@ export default function OKR() {
       setSelectedObjective(null);
       setUpdateFormData({ value: 0, comment: "" });
     } catch (error) {
-      console.error("Erro ao adicionar atualizacao:", error);
+      logger.error("Erro ao adicionar atualizacao:", error instanceof Error ? error : undefined);
     } finally {
       setIsSaving(false);
     }
@@ -190,7 +191,7 @@ export default function OKR() {
       await deleteObjective(id);
       setDeleteId(null);
     } catch (error) {
-      console.error("Erro ao deletar OKR:", error);
+      logger.error("Erro ao deletar OKR:", error instanceof Error ? error : undefined);
     }
   };
 

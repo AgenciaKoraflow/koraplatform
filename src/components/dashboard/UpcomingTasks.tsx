@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Calendar, Clock } from "lucide-react";
+import { Clock } from "lucide-react";
 
 interface Task {
   id: string;

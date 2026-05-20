@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -5,35 +6,24 @@ import {
   Activity,
   Server,
   Database,
-  Key,
-  Zap,
   AlertTriangle,
   CheckCircle2,
-  Clock,
-  TrendingUp,
   RefreshCw,
   Search,
   Settings,
-  HardDrive,
-  Wifi,
   Globe,
-  BarChart3,
   Plus,
   Trash2,
-  ExternalLink,
   Terminal,
-  Lock,
   Building2,
-  X,
   Save,
   Play,
   Pause,
 } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -121,7 +111,7 @@ export default function Observabilidade() {
       if (error) throw error;
       setIntegrations((data as ClientIntegration[]) || []);
     } catch (err) {
-      console.error('Failed to fetch integrations:', err);
+      logger.error('Failed to fetch integrations:', err instanceof Error ? err : undefined);
     } finally {
       setLoading(false);
     }
@@ -135,9 +125,6 @@ export default function Observabilidade() {
   const getIntegrationsByClient = (clientId: string) => {
     return integrations.filter(i => i.client_id === clientId);
   };
-
-  // Get Koraflow internal integrations
-  const koraflowIntegrations = integrations.filter(i => i.client_id === 'koraflow_internal');
 
   // Calculate stats
   const totalIntegrations = integrations.length;
@@ -203,7 +190,7 @@ export default function Observabilidade() {
       setIsAddDialogOpen(false);
       toast.success("Integração adicionada com sucesso!");
     } catch (err) {
-      console.error('Failed to create integration:', err);
+      logger.error('Failed to create integration:', err instanceof Error ? err : undefined);
       toast.error("Erro ao criar integração");
     }
   };
@@ -232,7 +219,7 @@ export default function Observabilidade() {
       setIsEditDialogOpen(false);
       toast.success("Integração atualizada com sucesso!");
     } catch (err) {
-      console.error('Failed to update integration:', err);
+      logger.error('Failed to update integration:', err instanceof Error ? err : undefined);
       toast.error("Erro ao atualizar integração");
     }
   };
@@ -252,7 +239,7 @@ export default function Observabilidade() {
       setIntegrations(prev => prev.filter(i => i.id !== id));
       toast.success("Integração removida com sucesso!");
     } catch (err) {
-      console.error('Failed to delete integration:', err);
+      logger.error('Failed to delete integration:', err instanceof Error ? err : undefined);
       toast.error("Erro ao remover integração");
     }
   };
@@ -274,7 +261,7 @@ export default function Observabilidade() {
       ));
       toast.success(`Integração ${newStatus === 'active' ? 'ativada' : 'desativada'}`);
     } catch (err) {
-      console.error('Failed to toggle status:', err);
+      logger.error('Failed to toggle status:', err instanceof Error ? err : undefined);
       toast.error("Erro ao alterar status");
     }
   };

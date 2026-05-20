@@ -22,12 +22,10 @@ import { BUMultiSelect } from "@/components/shared/BUMultiSelect";
 import { ClientAvatar } from "@/components/shared/ClientAvatar";
 import { UserAvatar } from "@/components/shared/UserAvatar";
 import { useUserAvatar } from "@/hooks/useUserAvatar";
-import { differenceInDays, parse, isValid } from "date-fns";
+import { differenceInDays, isValid } from "date-fns";
 import { useProjects } from "@/hooks/useProjects";
 import { useAllClients } from "@/hooks/useClients";
 import { useDebounce } from "@/hooks/useDebounce";
-import { TableRowSkeleton, CardSkeleton } from "@/components/shared/ListSkeleton";
-import { PaginationControls } from "@/components/shared/PaginationControls";
 
 const typeConfig = {
   projeto: { label: "Projeto", color: "bg-primary/10 text-primary" },
@@ -59,7 +57,7 @@ export default function Projetos() {
 
   const searchQuery = useDebounce(searchInput, 300);
 
-  const { data: projectData, isLoading, isFetching } = useProjects({
+  const { data: projectData } = useProjects({
     page,
     pageSize: PAGE_SIZE,
     search: searchQuery || undefined,
@@ -69,7 +67,6 @@ export default function Projetos() {
   const { data: allClients = [] } = useAllClients();
 
   const rawProjects = projectData?.projects ?? [];
-  const total = projectData?.total ?? 0;
 
   // BU filter applied client-side (not in server-side filter list yet)
   const projects = selectedBU
@@ -867,7 +864,7 @@ export default function Projetos() {
           )}
           <DialogFooter>
             <button onClick={() => setIsViewDialogOpen(false)} className="px-4 py-2 rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-colors">Fechar</button>
-            <button onClick={() => { setIsViewDialogOpen(false); viewingProject && openEditDialog(viewingProject); }} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Editar</button>
+            <button onClick={() => { setIsViewDialogOpen(false); if (viewingProject) openEditDialog(viewingProject); }} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Editar</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

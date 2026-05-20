@@ -2,7 +2,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { useState, useRef, useMemo, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { parseCurrencyToNumber } from "@/lib/currency";
-import { Plus, Search, Building2, Mail, Phone, Calendar, Eye, Edit, Trash2, TrendingUp, Users, DollarSign, Target, ChevronRight, FileText, Clock, AlertTriangle, CheckCircle, GitBranch, Camera, X } from "lucide-react";
+import { Plus, Search, Building2, Mail, Phone, Calendar, Edit, Trash2, TrendingUp, Users, DollarSign, Target, ChevronRight, Clock, AlertTriangle, CheckCircle, GitBranch, Camera, X } from "lucide-react";
 import { ClientAvatar } from "@/components/shared/ClientAvatar";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -25,7 +25,6 @@ import { toast } from "sonner";
 import { CurrencyInput } from "@/components/shared/CurrencyInput";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 
 const stageConfig = {
@@ -57,10 +56,6 @@ export default function Funil() {
     return map;
   }, [projects]);
 
-  const getContractsByClient = useCallback(
-    (clientId: string) => contractsByClient[clientId] ?? [],
-    [contractsByClient],
-  );
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
@@ -403,8 +398,6 @@ export default function Funil() {
             {stageOrder.map((stage, index) => {
               const stageClients = getClientsByStage(stage);
               const stageValue = calculateStageValue(stage);
-              const maxWidth = 100 - (index * 15);
-              
               return (
                 <div 
                   key={stage} 

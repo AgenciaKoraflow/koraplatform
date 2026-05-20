@@ -37,10 +37,6 @@ const STATUS_CFG: Record<Task["status"], { label: string; bar: string; dot: stri
   done:        { label: "Concluído",    bar: "bg-emerald-500",dot: "bg-emerald-500" },
 };
 
-const PRIORITY_CFG: Record<Task["priority"], string> = {
-  low: "text-slate-400", medium: "text-amber-500", high: "text-red-500",
-};
-
 const DAY_PX = 36; // px per day column
 
 // ─── component ───────────────────────────────────────────────────────────────
@@ -54,7 +50,7 @@ export function ProjectGantt({ project, tasks }: Props) {
   const todayRef = useRef<HTMLDivElement>(null);
 
   // Compute timeline bounds
-  const { rangeStart, rangeEnd, totalDays } = useMemo(() => {
+  const { rangeStart, totalDays } = useMemo(() => {
     const projectStart = parseDate(project.createdAt ?? "") || new Date();
     const projectEnd   = parseDate(project.dueDate) || addDays(projectStart, 30);
 

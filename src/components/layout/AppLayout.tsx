@@ -2,9 +2,9 @@ import { ReactNode, useState, useEffect, useRef } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { AppSidebar } from "./AppSidebar";
 import {
-  Menu, X, Bell, Sun, Moon,
-  Filter, FolderKanban, CheckSquare, FileSignature, HeadphonesIcon,
-  MoreHorizontal, Target, DollarSign, BarChart3, BookOpen
+  Menu, X, Sun, Moon,
+  Filter, FolderKanban, CheckSquare, FileSignature,
+  MoreHorizontal,
 } from "lucide-react";
 import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
 import { cn } from "@/lib/utils";

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { InsightsBoard, InsightsBoardInsert, InsightsBoardUpdate, CanvasElement } from "@/types/insights";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 export function useInsightsBoards() {
   const [boards, setBoards] = useState<InsightsBoard[]>([]);
@@ -30,7 +31,7 @@ export function useInsightsBoards() {
 
       setBoards(mappedBoards);
     } catch (error) {
-      console.error("Error fetching boards:", error);
+      logger.error("Error fetching boards:", error instanceof Error ? error : undefined);
       toast.error("Erro ao carregar quadros");
     } finally {
       setIsLoading(false);
@@ -76,7 +77,7 @@ export function useInsightsBoards() {
       toast.success("Quadro criado com sucesso!");
       return newBoard;
     } catch (error) {
-      console.error("Error creating board:", error);
+      logger.error("Error creating board:", error instanceof Error ? error : undefined);
       toast.error("Erro ao criar quadro");
       return null;
     }
@@ -109,7 +110,7 @@ export function useInsightsBoards() {
 
       return true;
     } catch (error) {
-      console.error("Error updating board:", error);
+      logger.error("Error updating board:", error instanceof Error ? error : undefined);
       toast.error("Erro ao salvar quadro");
       return false;
     }
@@ -128,7 +129,7 @@ export function useInsightsBoards() {
       toast.success("Quadro removido com sucesso!");
       return true;
     } catch (error) {
-      console.error("Error deleting board:", error);
+      logger.error("Error deleting board:", error instanceof Error ? error : undefined);
       toast.error("Erro ao remover quadro");
       return false;
     }

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { OKRObjective, OKRUpdate } from '@/types/okr';
 import type { Tables } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 
 type OkrObjectiveRow = Tables<'okr_objectives'>;
 type OkrUpdateRow = Tables<'okr_updates'>;
@@ -63,18 +64,18 @@ export function useOKRData() {
       ]);
 
       if (objResponse.error) {
-        console.error('Erro ao carregar objectives:', objResponse.error);
+        logger.error('Erro ao carregar objectives:', objResponse.error instanceof Error ? objResponse.error : undefined);
         throw objResponse.error;
       }
       if (updateResponse.error) {
-        console.error('Erro ao carregar updates:', updateResponse.error);
+        logger.error('Erro ao carregar updates:', updateResponse.error instanceof Error ? updateResponse.error : undefined);
         throw updateResponse.error;
       }
 
       setObjectives((objResponse.data ?? []).map(mapDbObjective));
       setUpdates((updateResponse.data ?? []).map(mapDbUpdate));
     } catch (e) {
-      console.error('Erro ao carregar OKRs:', e);
+      logger.error('Erro ao carregar OKRs:', e instanceof Error ? e : undefined);
       toast.error('Erro ao carregar OKRs');
     } finally {
       setLoading(false);
@@ -104,7 +105,7 @@ export function useOKRData() {
         .single();
 
       if (error) {
-        console.error('Erro do Supabase:', error);
+        logger.error('Erro do Supabase:', error instanceof Error ? error : undefined);
         throw error;
       }
       const mapped = mapDbObjective(result);
@@ -112,7 +113,7 @@ export function useOKRData() {
       toast.success('OKR criado com sucesso!');
       return mapped;
     } catch (e) {
-      console.error('Erro ao criar OKR:', e);
+      logger.error('Erro ao criar OKR:', e instanceof Error ? e : undefined);
       toast.error(`Erro ao criar OKR: ${errMsg(e)}`);
       return null;
     }
@@ -148,7 +149,7 @@ export function useOKRData() {
       ));
       return true;
     } catch (e) {
-      console.error('Erro ao atualizar OKR:', e);
+      logger.error('Erro ao atualizar OKR:', e instanceof Error ? e : undefined);
       toast.error('Erro ao atualizar OKR');
       return false;
     }
@@ -163,7 +164,7 @@ export function useOKRData() {
       toast.success('OKR removido com sucesso!');
       return true;
     } catch (e) {
-      console.error('Erro ao deletar OKR:', e);
+      logger.error('Erro ao deletar OKR:', e instanceof Error ? e : undefined);
       toast.error('Erro ao deletar OKR');
       return false;
     }
@@ -194,7 +195,7 @@ export function useOKRData() {
       toast.success('Atualização adicionada com sucesso!');
       return mapped;
     } catch (e) {
-      console.error('Erro ao adicionar atualização:', e);
+      logger.error('Erro ao adicionar atualização:', e instanceof Error ? e : undefined);
       toast.error('Erro ao adicionar atualização');
       return null;
     }

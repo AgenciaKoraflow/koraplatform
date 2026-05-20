@@ -1,8 +1,8 @@
+import { logger } from "@/lib/logger";
 import { useState, useEffect, useMemo } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,17 +12,12 @@ import {
   Users,
   DollarSign,
   Target,
-  Clock,
-  Repeat,
   Award,
   BarChart3,
   PieChart,
   Activity,
-  Zap,
   CheckCircle2,
   AlertTriangle,
-  Info,
-  X,
   Lightbulb,
   ArrowRight,
   Calculator,
@@ -30,8 +25,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Area, AreaChart, Tooltip as RechartsTooltip } from "recharts";
+import { XAxis, YAxis, CartesianGrid, ResponsiveContainer, Area, AreaChart, Tooltip as RechartsTooltip } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAllClients } from "@/hooks/useClients";
 import { useAllProjects } from "@/hooks/useProjects";
@@ -78,8 +72,6 @@ const calculateKPIs = (
   const totalRevenue = transactions
     .filter(t => t.type === "receita" && t.status === "paid")
     .reduce((sum, t) => sum + (t.value || 0), 0);
-  
-  const monthlyRevenue = totalRevenue; // Using all revenue as monthly for now
   
   // Calculate MRR from recurring transactions
   const recurringTransactions = transactions.filter(t => t.recurrence_type === "mensal" && t.status === "paid");
@@ -358,14 +350,6 @@ const getCategoryIcon = (category: Benchmark["category"]) => {
   }
 };
 
-const getCategoryLabel = (category: Benchmark["category"]) => {
-  switch (category) {
-    case "financial": return "Financeiro";
-    case "clients": return "Clientes";
-    case "operations": return "Operações";
-    case "growth": return "Crescimento";
-  }
-};
 
 function BenchmarkCard({ benchmark, onClick }: { benchmark: Benchmark; onClick: () => void }) {
   const status = getPerformanceStatus(benchmark);
@@ -710,7 +694,7 @@ export default function Indicadores() {
           .order('created_at', { ascending: false });
         setTransactions(data || []);
       } catch (error) {
-        console.error('Error fetching transactions:', error);
+        logger.error('Error fetching transactions:', error instanceof Error ? error : undefined);
       } finally {
         setLoading(false);
       }

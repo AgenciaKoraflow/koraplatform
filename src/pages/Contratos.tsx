@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useState, useRef } from "react";
 import * as React from "react";
@@ -10,7 +11,7 @@ import { BUSelect } from "@/components/shared/BUSelect";
 import {
   Plus, FileSignature, CheckCircle, Clock, AlertCircle, Send, Download, Eye, Edit, Trash2,
   Search, Upload, FileText, X, Copy, Link2, PenTool, RefreshCw, Shield, User, Building2,
-  Mail, Calendar, Users, Check, Cake, CalendarClock, TrendingUp, Zap
+  Mail, Users, Check, Cake, CalendarClock, TrendingUp, Zap
 } from "lucide-react";
 import { SignaturePadPro } from "@/components/signature/SignaturePadPro";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -32,9 +33,8 @@ import { toast } from "sonner";
 import { CurrencyInput } from "@/components/shared/CurrencyInput";
 import { MultiSelect } from "@/components/shared/MultiSelect";
 import { parseCurrencyToNumber, formatCurrency } from "@/lib/currency";
-import { calculateRecurrenceTotal, calculateMonthsBetween } from "@/lib/recurrence";
-import { addMonths, format, parseISO, startOfMonth } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { calculateRecurrenceTotal } from "@/lib/recurrence";
+import { parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 
 // Sócios autorizados a assinar como Koraflow
@@ -184,8 +184,8 @@ function getContractTypeLabel(contract: Contract, allProjects: Project[]): strin
 }
 
 export default function Contratos() {
-  const { addContract, updateContract, deleteContract, isAdding, isUpdating } = useContractMutations();
-  const { upload: uploadDocument, getSignedUrl, remove: removeStorageFile } = useContractDocument();
+  const { addContract, updateContract, deleteContract } = useContractMutations();
+  const { upload: uploadDocument, getSignedUrl } = useContractDocument();
   const [searchInput, setSearchInput] = useState("");
   const searchQuery = useDebounce(searchInput, 300);
   const { data: contractData } = useContracts({ search: searchQuery || undefined, pageSize: 500 });
@@ -610,7 +610,7 @@ export default function Contratos() {
       });
       
       if (error) {
-        console.error("Error sending email:", error);
+        logger.error("Error sending email:", error instanceof Error ? error : undefined);
         // Still show success as the contract was updated
         toast.warning("Link gerado, mas houve erro ao enviar o e-mail. Copie o link manualmente.");
       } else {
@@ -620,7 +620,7 @@ export default function Contratos() {
       setIsSendToClientDialogOpen(false);
       setSendingContractId(null);
     } catch (error) {
-      console.error("Error:", error);
+      logger.error("Error:", error instanceof Error ? error : undefined);
       toast.error("Erro ao enviar para cliente");
     } finally {
       setIsSending(false);

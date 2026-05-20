@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { FinancialTransaction } from "@/types/financial";
 import { parseCurrencyToNumber } from "@/lib/currency";
 import type { Tables } from "@/integrations/supabase/types";
+import { logger } from "@/lib/logger";
 
 type FinancialTransactionRow = Tables<"financial_transactions">;
 
@@ -65,7 +66,7 @@ export function useFinancial() {
       if (error) throw error;
       setTransactions((data ?? []).map(mapDbTransaction));
     } catch (error) {
-      console.error("Error loading transactions:", error);
+      logger.error("Error loading transactions:", error instanceof Error ? error : undefined);
       toast.error("Erro ao carregar transações");
     } finally {
       setLoading(false);
@@ -113,7 +114,7 @@ export function useFinancial() {
       }
       return null;
     } catch (error) {
-      console.error("Error adding transaction:", error);
+      logger.error("Error adding transaction:", error instanceof Error ? error : undefined);
       toast.error("Erro ao adicionar transação");
       return null;
     }
@@ -150,7 +151,7 @@ export function useFinancial() {
       setTransactions((prev) => prev.map((t) => (t.id === id ? { ...t, ...transaction } : t)));
       toast.success("Transação atualizada com sucesso");
     } catch (error) {
-      console.error("Error updating transaction:", error);
+      logger.error("Error updating transaction:", error instanceof Error ? error : undefined);
       toast.error("Erro ao atualizar transação");
     }
   };
@@ -162,7 +163,7 @@ export function useFinancial() {
       setTransactions((prev) => prev.filter((t) => t.id !== id));
       toast.success("Transação excluída com sucesso");
     } catch (error) {
-      console.error("Error deleting transaction:", error);
+      logger.error("Error deleting transaction:", error instanceof Error ? error : undefined);
       toast.error("Erro ao excluir transação");
     }
   };
