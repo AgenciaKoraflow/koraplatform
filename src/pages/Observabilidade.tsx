@@ -114,7 +114,7 @@ export default function Observabilidade() {
   const fetchIntegrations = async () => {
     try {
       const { data, error } = await supabase
-        .from('client_integrations' as any)
+        .from('client_integrations')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -183,7 +183,7 @@ export default function Observabilidade() {
 
     try {
       const { data, error } = await supabase
-        .from('client_integrations' as any)
+        .from('client_integrations')
         .insert({
           client_id: selectedClientId,
           integration_type: formData.integration_type,
@@ -214,7 +214,7 @@ export default function Observabilidade() {
 
     try {
       const { data, error } = await supabase
-        .from('client_integrations' as any)
+        .from('client_integrations')
         .update({
           display_name: formData.display_name,
           description: formData.description,
@@ -243,7 +243,7 @@ export default function Observabilidade() {
 
     try {
       const { error } = await supabase
-        .from('client_integrations' as any)
+        .from('client_integrations')
         .delete()
         .eq('id', id);
 
@@ -263,7 +263,7 @@ export default function Observabilidade() {
 
     try {
       const { error } = await supabase
-        .from('client_integrations' as any)
+        .from('client_integrations')
         .update({ status: newStatus, updated_at: new Date().toISOString() })
         .eq('id', integration.id);
 

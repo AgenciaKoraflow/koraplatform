@@ -279,14 +279,14 @@ export default function Contratos() {
         clientId: contract.clientId,
         projectIds: contract.projectIds || [],
         value: contract.value,
-        implementationValue: (contract as any).implementationValue || "",
+        implementationValue: contract.implementationValue || "",
         status: contract.status,
         type: contract.type,
         billingType: contract.billingType || "projeto",
         recurrenceValue: contract.recurrenceValue || "",
         recurrenceStartDate: contract.recurrenceStartDate || "",
-        recurrenceType: (contract as any).recurrenceType || "",
-        recurrenceEndDate: (contract as any).recurrenceEndDate || "",
+        recurrenceType: contract.recurrenceType || "",
+        recurrenceEndDate: contract.recurrenceEndDate || "",
         expiresAt: contract.expiresAt,
         documentName: contract.documentName || "",
         documentData: contract.documentData || "",
@@ -440,7 +440,7 @@ export default function Contratos() {
           documentStoragePath: storagePath,
           documentVersion: version || undefined,
           bu: formData.bu ? [formData.bu] : undefined,
-        } as any);
+        });
       } else {
         const hasDocument = !!(pendingDocumentFile || formData.documentStoragePath);
         const newContract = await addContract({
@@ -462,14 +462,14 @@ export default function Contratos() {
           documentData: undefined,
           documentType: formData.documentType || undefined,
           bu: formData.bu ? [formData.bu] : undefined,
-        } as any);
+        });
 
         if (newContract && pendingDocumentFile) {
           const path = await uploadDocument(newContract.id, pendingDocumentFile, 1);
           await updateContract(newContract.id, {
             documentStoragePath: path,
             documentVersion: 1,
-          } as any);
+          });
         }
       }
     } catch {
@@ -1247,7 +1247,7 @@ export default function Contratos() {
 
             <div className="space-y-2">
               <Label htmlFor="recurrenceType">Recorrência</Label>
-              <Select value={formData.recurrenceType || "none"} onValueChange={(value) => setFormData({ ...formData, recurrenceType: value === "none" ? "" : value as any })}>
+              <Select value={formData.recurrenceType || "none"} onValueChange={(value) => setFormData({ ...formData, recurrenceType: value === "none" ? "" : value })}>
                 <SelectTrigger className="bg-input border-border">
                   <SelectValue placeholder="Sem recorrência" />
                 </SelectTrigger>

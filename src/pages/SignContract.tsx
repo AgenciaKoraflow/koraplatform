@@ -265,7 +265,7 @@ export default function SignContract() {
         }
       }
 
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
         client_signed_at: now,
         client_signature_data: signatureData,
         client_signer_name: signerName,

@@ -1,21 +1,34 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import type { Tables } from "@/integrations/supabase/types";
+
+type AuditLogRow = Tables<"signature_audit_log">;
+
+const SIGNATURE_EVENTS = ["client_signed", "contractor_signed", "fully_signed"] as const;
+type SignatureEventType = (typeof SIGNATURE_EVENTS)[number];
 
 export interface SignatureNotification {
   id: string;
   contractId: string;
   contractTitle: string;
-  eventType: "client_signed" | "contractor_signed" | "fully_signed";
+  eventType: SignatureEventType;
   createdAt: string;
   read: boolean;
+}
+
+interface AuditLogWithContract {
+  id: string;
+  contract_id: string;
+  event_type: string;
+  created_at: string;
+  contracts: { title: string | null } | null;
 }
 
 export function useSignatureNotifications() {
   const [notifications, setNotifications] = useState<SignatureNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Fetch existing notifications
   const fetchNotifications = useCallback(async () => {
     try {
       const { data, error } = await supabase
@@ -27,33 +40,33 @@ export function useSignatureNotifications() {
           created_at,
           contracts!inner(title)
         `)
-        .in("event_type", ["client_signed", "contractor_signed", "fully_signed"])
+        .in("event_type", [...SIGNATURE_EVENTS])
         .order("created_at", { ascending: false })
         .limit(20);
 
       if (error) throw error;
 
-      const formattedNotifications: SignatureNotification[] = (data || []).map((item: any) => ({
+      const formattedNotifications: SignatureNotification[] = (
+        (data ?? []) as unknown as AuditLogWithContract[]
+      ).map((item) => ({
         id: item.id,
         contractId: item.contract_id,
-        contractTitle: item.contracts?.title || "Contrato",
-        eventType: item.event_type,
+        contractTitle: item.contracts?.title ?? "Contrato",
+        eventType: item.event_type as SignatureEventType,
         createdAt: item.created_at,
-        read: false, // We'll track this locally for now
+        read: false,
       }));
 
       setNotifications(formattedNotifications);
-      setUnreadCount(formattedNotifications.filter(n => !n.read).length);
+      setUnreadCount(formattedNotifications.filter((n) => !n.read).length);
     } catch (error) {
       console.error("Error fetching signature notifications:", error);
     }
   }, []);
 
-  // Subscribe to new signature events
   useEffect(() => {
     fetchNotifications();
 
-    // Set up real-time subscription
     const channel = supabase
       .channel("signature-notifications")
       .on(
@@ -64,10 +77,9 @@ export function useSignatureNotifications() {
           table: "signature_audit_log",
         },
         async (payload) => {
-          const newData = payload.new as any;
-          
-          if (["client_signed", "contractor_signed", "fully_signed"].includes(newData.event_type)) {
-            // Fetch contract title
+          const newData = payload.new as AuditLogRow;
+
+          if (SIGNATURE_EVENTS.includes(newData.event_type as SignatureEventType)) {
             const { data: contract } = await supabase
               .from("contracts")
               .select("title")
@@ -77,32 +89,31 @@ export function useSignatureNotifications() {
             const notification: SignatureNotification = {
               id: newData.id,
               contractId: newData.contract_id,
-              contractTitle: contract?.title || "Contrato",
-              eventType: newData.event_type,
+              contractTitle: contract?.title ?? "Contrato",
+              eventType: newData.event_type as SignatureEventType,
               createdAt: newData.created_at,
               read: false,
             };
 
-            setNotifications(prev => [notification, ...prev]);
-            setUnreadCount(prev => prev + 1);
+            setNotifications((prev) => [notification, ...prev]);
+            setUnreadCount((prev) => prev + 1);
 
-            // Show toast notification
-            const messages = {
+            const messages: Record<SignatureEventType, string> = {
               client_signed: `O cliente assinou o contrato "${notification.contractTitle}"`,
               contractor_signed: `O contratante assinou o contrato "${notification.contractTitle}"`,
               fully_signed: `O contrato "${notification.contractTitle}" foi totalmente assinado!`,
             };
 
-            toast.success(messages[newData.event_type as keyof typeof messages], {
+            toast.success(messages[newData.event_type as SignatureEventType], {
               action: {
                 label: "Ver",
                 onClick: () => {
-                  window.location.href = `/contratos`;
+                  window.location.href = "/contratos";
                 },
               },
             });
           }
-        }
+        },
       )
       .subscribe();
 
@@ -111,21 +122,18 @@ export function useSignatureNotifications() {
     };
   }, [fetchNotifications]);
 
-  // Mark notification as read
   const markAsRead = useCallback((notificationId: string) => {
-    setNotifications(prev =>
-      prev.map(n => (n.id === notificationId ? { ...n, read: true } : n))
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n)),
     );
-    setUnreadCount(prev => Math.max(0, prev - 1));
+    setUnreadCount((prev) => Math.max(0, prev - 1));
   }, []);
 
-  // Mark all as read
   const markAllAsRead = useCallback(() => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     setUnreadCount(0);
   }, []);
 
-  // Clear all notifications
   const clearNotifications = useCallback(() => {
     setNotifications([]);
     setUnreadCount(0);

@@ -1,7 +1,7 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { callExternalDb, PaginatedResult } from "@/lib/externalDb";
 import { mapDbTask } from "@/lib/mappers";
-import { Task } from "@/types/data";
+import type { DbTaskRow } from "@/types/db";
 
 export interface TaskListParams {
   page?: number;
@@ -41,7 +41,7 @@ export function useTasks(params: TaskListParams = {}) {
         undefined,
         Object.keys(filters).length > 0 ? filters : undefined,
         { limit: pageSize, offset: page * pageSize, search },
-      )) as PaginatedResult<unknown>;
+      )) as PaginatedResult<DbTaskRow>;
       return {
         tasks: (result.data ?? []).map(mapDbTask),
         total: result.total,
@@ -58,7 +58,7 @@ export function useAllTasks() {
     queryKey: taskKeys.allItems(),
     queryFn: async () => {
       const data = await callExternalDb("select", "tasks");
-      return ((data as any[]) ?? []).map(mapDbTask) as Task[];
+      return ((data as DbTaskRow[]) ?? []).map(mapDbTask);
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -72,7 +72,7 @@ export function useClientTasks(clientId: string | null | undefined) {
       const data = await callExternalDb("select", "tasks", undefined, undefined, {
         client_id: clientId,
       });
-      return ((data as any[]) ?? []).map(mapDbTask) as Task[];
+      return ((data as DbTaskRow[]) ?? []).map(mapDbTask);
     },
     enabled: !!clientId,
     staleTime: 5 * 60 * 1000,
@@ -87,7 +87,7 @@ export function useProjectTasks(projectId: string | null | undefined) {
       const data = await callExternalDb("select", "tasks", undefined, undefined, {
         project_id: projectId,
       });
-      return ((data as any[]) ?? []).map(mapDbTask) as Task[];
+      return ((data as DbTaskRow[]) ?? []).map(mapDbTask);
     },
     enabled: !!projectId,
     staleTime: 5 * 60 * 1000,

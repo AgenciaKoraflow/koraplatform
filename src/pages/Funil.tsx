@@ -108,7 +108,7 @@ export default function Funil() {
   const handleDragEnd = useCallback(() => {
     setDraggedClientId(null);
     setDragOverStage(null);
-  };
+  }, []);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     name: "",
@@ -190,7 +190,7 @@ export default function Funil() {
         value: client.value,
         anniversary: client.anniversary || "",
         head: client.head || "",
-        briefing: (client as any).briefing || "",
+        briefing: client.briefing || "",
         proposalSentDate: client.proposalSentDate || "",
         bu: (Array.isArray(client.bu) ? client.bu[0] : client.bu) || "kora-agents" as BU,
         logo: client.logo || "",

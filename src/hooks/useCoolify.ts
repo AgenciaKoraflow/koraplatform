@@ -64,7 +64,7 @@ export interface CoolifyDashboard {
   };
   projects: {
     total: number;
-    data: any[];
+    data: Record<string, unknown>[];
   };
   resources: {
     cpu_usage: number;
@@ -87,7 +87,7 @@ export function useCoolify() {
     action: string,
     config: CoolifyConfig,
     params?: Record<string, string>
-  ): Promise<any> => {
+  ): Promise<unknown> => {
     setLoading(true);
     setError(null);
 

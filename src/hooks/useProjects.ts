@@ -1,7 +1,7 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { callExternalDb, PaginatedResult } from "@/lib/externalDb";
 import { mapDbProject } from "@/lib/mappers";
-import { Project } from "@/types/data";
+import type { DbProjectRow } from "@/types/db";
 
 export interface ProjectListParams {
   page?: number;
@@ -37,7 +37,7 @@ export function useProjects(params: ProjectListParams = {}) {
         undefined,
         Object.keys(filters).length > 0 ? filters : undefined,
         { limit: pageSize, offset: page * pageSize, search },
-      )) as PaginatedResult<unknown>;
+      )) as PaginatedResult<DbProjectRow>;
       return {
         projects: (result.data ?? []).map(mapDbProject),
         total: result.total,
@@ -54,7 +54,7 @@ export function useAllProjects() {
     queryKey: projectKeys.allItems(),
     queryFn: async () => {
       const data = await callExternalDb("select", "projects");
-      return ((data as any[]) ?? []).map(mapDbProject) as Project[];
+      return ((data as DbProjectRow[]) ?? []).map(mapDbProject);
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -68,7 +68,7 @@ export function useClientProjects(clientId: string | null | undefined) {
       const data = await callExternalDb("select", "projects", undefined, undefined, {
         client_id: clientId,
       });
-      return ((data as any[]) ?? []).map(mapDbProject) as Project[];
+      return ((data as DbProjectRow[]) ?? []).map(mapDbProject);
     },
     enabled: !!clientId,
     staleTime: 5 * 60 * 1000,

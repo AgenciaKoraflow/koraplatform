@@ -43,19 +43,18 @@ export function useInsightsBoards() {
 
   const createBoard = async (board: InsightsBoardInsert): Promise<InsightsBoard | null> => {
     try {
-      // Using any to bypass strict typing issues with Supabase's generated types
       const insertData = {
         name: board.name,
         type: board.type,
-        description: board.description || null,
-        thumbnail_url: board.thumbnailUrl || null,
-        elements: board.elements || [],
-        content: board.content || null,
+        description: board.description ?? null,
+        thumbnail_url: board.thumbnailUrl ?? null,
+        elements: JSON.parse(JSON.stringify(board.elements ?? [])),
+        content: board.content ?? null,
       };
 
       const { data, error } = await supabase
         .from("insights_boards")
-        .insert(insertData as any)
+        .insert(insertData)
         .select()
         .single();
 

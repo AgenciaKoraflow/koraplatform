@@ -17,7 +17,7 @@ export interface Notification {
   read: boolean;
   actionUrl?: string;
   priority: "low" | "medium" | "high" | "critical";
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export const notificationConfig: Record<NotificationType, { icon: string; color: string }> = {

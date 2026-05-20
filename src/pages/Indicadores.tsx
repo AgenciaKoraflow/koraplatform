@@ -37,6 +37,10 @@ import { useAllClients } from "@/hooks/useClients";
 import { useAllProjects } from "@/hooks/useProjects";
 import { useOKRData } from "@/hooks/useOKRData";
 import { cn } from "@/lib/utils";
+import type { Client } from "@/types/data";
+import type { Tables } from "@/integrations/supabase/types";
+
+type FinancialTransactionRow = Tables<"financial_transactions">;
 
 interface HistoryPoint {
   month: string;
@@ -63,9 +67,9 @@ interface Benchmark {
 
 // KPIs definitions with real data calculation
 const calculateKPIs = (
-  clients: any[],
-  projects: any[],
-  transactions: any[]
+  clients: Client[],
+  projects: { status: string }[],
+  transactions: FinancialTransactionRow[]
 ): Benchmark[] => {
   // Filter active clients
   const activeClients = clients.filter(c => c.stage === "cliente");
@@ -692,7 +696,7 @@ export default function Indicadores() {
   const [selectedBenchmark, setSelectedBenchmark] = useState<Benchmark | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<FinancialTransactionRow[]>([]);
   
   const { data: clients = [] } = useAllClients();
   const { data: projects = [] } = useAllProjects();

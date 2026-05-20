@@ -102,8 +102,12 @@ function usePreloadAllPages() {
     };
 
     if ("requestIdleCallback" in window) {
-      const id = (window as any).requestIdleCallback(preload, { timeout: 3000 });
-      return () => (window as any).cancelIdleCallback(id);
+      const w = window as Window & {
+        requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number;
+        cancelIdleCallback: (id: number) => void;
+      };
+      const id = w.requestIdleCallback(preload, { timeout: 3000 });
+      return () => w.cancelIdleCallback(id);
     } else {
       const id = setTimeout(preload, 2000);
       return () => clearTimeout(id);

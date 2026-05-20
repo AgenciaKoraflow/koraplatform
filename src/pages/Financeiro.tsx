@@ -351,7 +351,7 @@ export default function Financeiro() {
                   {formData.isRecurring && (
                     <div className="space-y-2">
                       <Label>Frequência</Label>
-                      <Select value={formData.recurrenceType} onValueChange={(v) => setFormData({ ...formData, recurrenceType: v as any })}>
+                      <Select value={formData.recurrenceType} onValueChange={(v) => setFormData({ ...formData, recurrenceType: v as "" | "mensal" | "trimestral" | "semestral" | "anual" })}>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione..." />
                         </SelectTrigger>
@@ -442,7 +442,7 @@ export default function Financeiro() {
                     </div>
                     <div className="space-y-2">
                       <Label>Status</Label>
-                      <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v as any })}>
+                      <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v as "pendente" | "pago" | "cancelado" | "atrasado" })}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
@@ -594,7 +594,7 @@ export default function Financeiro() {
                   className="pl-10"
                 />
               </div>
-              <Select value={filterType} onValueChange={(v: any) => setFilterType(v)}>
+              <Select value={filterType} onValueChange={(v) => setFilterType(v as typeof filterType)}>
                 <SelectTrigger className="w-[150px]">
                   <SelectValue placeholder="Tipo" />
                 </SelectTrigger>
@@ -604,7 +604,7 @@ export default function Financeiro() {
                   <SelectItem value="despesa">Despesas</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={filterStatus} onValueChange={(v: any) => setFilterStatus(v)}>
+              <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as typeof filterStatus)}>
                 <SelectTrigger className="w-[150px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>

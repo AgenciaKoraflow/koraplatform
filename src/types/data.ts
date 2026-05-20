@@ -77,8 +77,11 @@ export interface Contract {
   status: "draft" | "awaiting_koraflow_signature" | "awaiting_client_signature" | "signed" | "expired";
   type: "prestacao_servico" | "projeto_unico";
   billingType: "projeto" | "implantacao_recorrencia";
+  implementationValue?: string;
   recurrenceValue?: string;
   recurrenceStartDate?: string;
+  recurrenceType?: string;
+  recurrenceEndDate?: string;
   createdAt: string;
   signedAt?: string;
   expiresAt: string;

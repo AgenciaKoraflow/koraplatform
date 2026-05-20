@@ -1,6 +1,14 @@
 import { Client, Project, Task, Contract, KnowledgeItem, SupportTicket } from "@/types/data";
 import { parseCurrencyToNumber } from "@/lib/currency";
 import type { BU } from "@/types/bu";
+import type {
+  DbClientRow,
+  DbProjectRow,
+  DbTaskRow,
+  DbContractRow,
+  DbKnowledgeItemRow,
+  DbSupportTicketRow,
+} from "@/types/db";
 
 const VALID_BUS = new Set(["kora-agents", "kora-dev", "kora-studio", "kora-corp"]);
 
@@ -43,41 +51,41 @@ export function toISODate(dateString: string | undefined): string | null {
   return null;
 }
 
-export function mapDbClient(db: any): Client {
+export function mapDbClient(db: DbClientRow): Client {
   return {
     id: db.id,
-    name: db.name || "",
-    company: db.company || "",
-    email: db.email || "",
-    phone: db.phone || "",
-    stage: db.pipeline_stage || db.status || "prospeccao",
-    value: db.notes || "R$ 0",
+    name: db.name ?? "",
+    company: db.company ?? "",
+    email: db.email ?? "",
+    phone: db.phone ?? "",
+    stage: (db.pipeline_stage as Client["stage"]) ?? "prospeccao",
+    value: db.notes ?? "R$ 0",
     lastContact: db.updated_at ? formatDate(db.updated_at) : "Nunca",
-    anniversary: db.anniversary,
-    briefing: db.briefing || undefined,
-    proposalSentDate: db.proposal_sent_date || undefined,
-    head: db.head || undefined,
+    anniversary: db.anniversary ?? undefined,
+    briefing: db.briefing ?? undefined,
+    proposalSentDate: db.proposal_sent_date ?? undefined,
+    head: db.head ?? undefined,
     bu: sanitizeBU(db.bu),
-    logo: db.logo || undefined,
+    logo: db.logo ?? undefined,
   };
 }
 
-export function mapDbProject(db: any): Project {
+export function mapDbProject(db: DbProjectRow): Project {
   return {
     id: db.id,
     clientId: db.client_id,
-    name: db.name || "",
-    description: db.description || "",
-    status: db.status || "planning",
-    progress: db.progress || 0,
+    name: db.name ?? "",
+    description: db.description ?? "",
+    status: (db.status as Project["status"]) ?? "planning",
+    progress: db.progress ?? 0,
     dueDate: db.end_date ? formatDate(db.end_date) : "",
-    team: db.team || [],
+    team: db.team ?? [],
     tasks: 0,
     completedTasks: 0,
-    head: db.head || undefined,
+    head: db.head ?? undefined,
     value: db.value ? formatValue(db.value) : undefined,
-    billingType: db.billing_type || "projeto",
-    type: db.type || "projeto",
+    billingType: (db.billing_type as Project["billingType"]) ?? "projeto",
+    type: (db.type as Project["type"]) ?? "projeto",
     recurrenceValue: db.recurrence_value ? formatValue(db.recurrence_value) : undefined,
     recurrenceStartDate: db.recurrence_start_date
       ? formatDate(db.recurrence_start_date)
@@ -86,29 +94,29 @@ export function mapDbProject(db: any): Project {
   };
 }
 
-export function mapDbTask(db: any): Task {
+export function mapDbTask(db: DbTaskRow): Task {
   return {
     id: db.id,
     clientId: db.client_id,
-    projectId: db.project_id,
-    title: db.title || "",
-    description: db.description || "",
-    status: db.status || "todo",
-    priority: db.priority || "medium",
-    dueDate: formatDisplayDate(db.due_date) || "",
-    createdAt: db.created_at || undefined,
+    projectId: db.project_id ?? undefined,
+    title: db.title ?? "",
+    description: db.description ?? "",
+    status: (db.status as Task["status"]) ?? "todo",
+    priority: (db.priority as Task["priority"]) ?? "medium",
+    dueDate: formatDisplayDate(db.due_date) ?? "",
+    createdAt: db.created_at ?? undefined,
     assignees: db.assigned_to
       ? db.assigned_to
           .split(",")
-          .map((s: string) => s.trim())
+          .map((s) => s.trim())
           .filter(Boolean)
       : [],
     bu: sanitizeBU(db.bu),
   };
 }
 
-export function mapDbContract(db: any): Contract {
-  const formatContractValue = (val: any): string => {
+export function mapDbContract(db: DbContractRow): Contract {
+  const formatContractValue = (val: string | number | null | undefined): string => {
     if (val === null || val === undefined || val === "") return "R$ 0,00";
     const num = typeof val === "number" ? val : parseCurrencyToNumber(String(val));
     return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
@@ -116,15 +124,18 @@ export function mapDbContract(db: any): Contract {
     );
   };
 
-  const mapStatus = (status: string): Contract["status"] => {
-    const valid = [
-      "draft",
-      "awaiting_koraflow_signature",
-      "awaiting_client_signature",
-      "signed",
-      "expired",
-    ] as const;
-    if (valid.includes(status as any)) return status as Contract["status"];
+  const CONTRACT_STATUSES = [
+    "draft",
+    "awaiting_koraflow_signature",
+    "awaiting_client_signature",
+    "signed",
+    "expired",
+  ] as const;
+
+  const mapStatus = (status: string | null): Contract["status"] => {
+    if (status && CONTRACT_STATUSES.includes(status as Contract["status"])) {
+      return status as Contract["status"];
+    }
     if (status === "pending_signature") return "awaiting_client_signature";
     return "draft";
   };
@@ -139,15 +150,15 @@ export function mapDbContract(db: any): Contract {
       : db.project_id
         ? [db.project_id]
         : [],
-    title: db.title || "",
+    title: db.title ?? "",
     value: formatContractValue(db.value),
     status: mapStatus(db.status),
-    type: db.type || "prestacao_servico",
-    billingType: db.billing_type || "projeto",
+    type: (db.type as Contract["type"]) ?? "prestacao_servico",
+    billingType: (db.billing_type as Contract["billingType"]) ?? "projeto",
     recurrenceValue: db.recurrence_value
       ? formatContractValue(db.recurrence_value)
       : undefined,
-    recurrenceStartDate: db.recurrence_start_date || undefined,
+    recurrenceStartDate: db.recurrence_start_date ?? undefined,
     createdAt: db.created_at ? formatDate(db.created_at) : "",
     signedAt: db.signed_at ? formatDate(db.signed_at) : undefined,
     expiresAt: db.end_date
@@ -155,46 +166,46 @@ export function mapDbContract(db: any): Contract {
       : db.expires_at
         ? formatDate(db.expires_at)
         : "",
-    documentName: db.document_name,
-    documentData: db.document_data,
-    documentType: db.document_type,
-    documentStoragePath: db.document_storage_path,
+    documentName: db.document_name ?? undefined,
+    documentData: db.document_data ?? undefined,
+    documentType: db.document_type ?? undefined,
+    documentStoragePath: db.document_storage_path ?? undefined,
     documentVersion: db.document_version ?? 0,
-    signedDocumentStoragePath: db.signed_document_storage_path,
-    signatureLinkToken: db.signature_link_token,
-    signatureLinkExpiresAt: db.signature_link_expires_at,
+    signedDocumentStoragePath: db.signed_document_storage_path ?? undefined,
+    signatureLinkToken: db.signature_link_token ?? undefined,
+    signatureLinkExpiresAt: db.signature_link_expires_at ?? undefined,
     signatureSentAt: db.signature_sent_at ? formatDate(db.signature_sent_at) : undefined,
     koraflowSignedAt: db.koraflow_signed_at
       ? formatDate(db.koraflow_signed_at)
       : db.contractor_signed_at
         ? formatDate(db.contractor_signed_at)
         : undefined,
-    koraflowSignatureData: db.koraflow_signature_data || db.contractor_signature_data,
-    koraflowSignerName: db.koraflow_signer_name || db.contractor_signer_name,
-    koraflowSignerEmail: db.koraflow_signer_email || db.contractor_signer_email,
-    koraflowSignerUserId: db.koraflow_signer_user_id,
+    koraflowSignatureData: db.koraflow_signature_data ?? db.contractor_signature_data ?? undefined,
+    koraflowSignerName: db.koraflow_signer_name ?? db.contractor_signer_name ?? undefined,
+    koraflowSignerEmail: db.koraflow_signer_email ?? db.contractor_signer_email ?? undefined,
+    koraflowSignerUserId: db.koraflow_signer_user_id ?? undefined,
     clientSignedAt: db.client_signed_at ? formatDate(db.client_signed_at) : undefined,
-    clientSignatureData: db.client_signature_data,
-    clientSignerName: db.client_signer_name,
-    clientSignerEmail: db.client_signer_email,
-    clientCpf: db.client_cpf,
-    signedDocumentData: db.signed_document_data,
+    clientSignatureData: db.client_signature_data ?? undefined,
+    clientSignerName: db.client_signer_name ?? undefined,
+    clientSignerEmail: db.client_signer_email ?? undefined,
+    clientCpf: db.client_cpf ?? undefined,
+    signedDocumentData: db.signed_document_data ?? undefined,
     fullySignedAt: db.fully_signed_at ? formatDate(db.fully_signed_at) : undefined,
-    signatureOrder: db.signature_order,
+    signatureOrder: (db.signature_order as Contract["signatureOrder"]) ?? undefined,
     contractorSignedAt: db.contractor_signed_at
       ? formatDate(db.contractor_signed_at)
       : undefined,
-    contractorSignatureData: db.contractor_signature_data,
-    contractorSignerName: db.contractor_signer_name,
-    contractorSignerEmail: db.contractor_signer_email,
+    contractorSignatureData: db.contractor_signature_data ?? undefined,
+    contractorSignerName: db.contractor_signer_name ?? undefined,
+    contractorSignerEmail: db.contractor_signer_email ?? undefined,
     bu: sanitizeBU(db.bu),
   };
 }
 
-export function mapDbKnowledge(db: any): KnowledgeItem {
+export function mapDbKnowledge(db: DbKnowledgeItemRow): KnowledgeItem {
   return {
     id: db.id,
-    clientId: db.client_id,
+    clientId: db.client_id ?? undefined,
     projectIds: db.project_ids
       ? Array.isArray(db.project_ids)
         ? db.project_ids
@@ -202,19 +213,19 @@ export function mapDbKnowledge(db: any): KnowledgeItem {
       : db.project_id
         ? [db.project_id]
         : [],
-    title: db.title || "",
-    category: db.category || "documento",
-    content: db.content || "",
-    username: db.username,
+    title: db.title ?? "",
+    category: (db.category as KnowledgeItem["category"]) ?? "documento",
+    content: db.content ?? "",
+    username: db.username ?? undefined,
     hasPassword: Boolean(db.has_password),
-    url: db.url,
-    tags: db.tags || [],
+    url: db.url ?? undefined,
+    tags: db.tags ?? [],
     createdAt: db.created_at ? formatDate(db.created_at) : "",
     updatedAt: db.updated_at ? formatDate(db.updated_at) : "",
   };
 }
 
-export function mapDbTicket(db: any): SupportTicket {
+export function mapDbTicket(db: DbSupportTicketRow): SupportTicket {
   return {
     id: db.id,
     clientId: db.client_id,
@@ -225,10 +236,10 @@ export function mapDbTicket(db: any): SupportTicket {
       : db.project_id
         ? [db.project_id]
         : [],
-    title: db.title || "",
-    description: db.description || "",
-    status: db.status || "open",
-    priority: db.priority || "medium",
+    title: db.title ?? "",
+    description: db.description ?? "",
+    status: (db.status as SupportTicket["status"]) ?? "open",
+    priority: (db.priority as SupportTicket["priority"]) ?? "medium",
     createdAt: db.created_at ? formatDate(db.created_at) : "",
     updatedAt: db.updated_at ? formatDate(db.updated_at) : "",
     assignee: undefined,

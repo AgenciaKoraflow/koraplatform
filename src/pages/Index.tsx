@@ -16,7 +16,7 @@ const Index = () => {
   const { data: clients = [] } = useAllClients();
   const { data: projects = [] } = useAllProjects();
   const { data: contracts = [] } = useAllContracts();
-  const proposals: any[] = [];
+  const proposals: never[] = [];
   
   // Date filter state
   const [startDate, setStartDate] = useState(() => startOfMonth(subMonths(new Date(), 5)));

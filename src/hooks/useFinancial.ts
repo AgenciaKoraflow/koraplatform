@@ -3,26 +3,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { FinancialTransaction } from "@/types/financial";
 import { parseCurrencyToNumber } from "@/lib/currency";
+import type { Tables } from "@/integrations/supabase/types";
+
+type FinancialTransactionRow = Tables<"financial_transactions">;
 
 function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('pt-BR');
+  return new Date(dateString).toLocaleDateString("pt-BR");
 }
 
 function toISODate(dateString: string | undefined): string | null {
   if (!dateString) return null;
-  
-  // Check if already in ISO format (YYYY-MM-DD)
-  if (/^\d{4}-\d{2}-\d{2}/.test(dateString)) {
-    return dateString.split('T')[0];
-  }
-  
-  // Convert DD/MM/YYYY to YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}/.test(dateString)) return dateString.split("T")[0];
   const match = dateString.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if (match) {
-    return `${match[3]}-${match[2]}-${match[1]}`;
-  }
-  
+  if (match) return `${match[3]}-${match[2]}-${match[1]}`;
   return null;
 }
 
@@ -30,29 +23,30 @@ function parseValue(value: string): number {
   return parseCurrencyToNumber(value);
 }
 
-function mapDbTransaction(db: any): FinancialTransaction {
+function mapDbTransaction(db: FinancialTransactionRow): FinancialTransaction {
   return {
     id: db.id,
-    type: db.type,
-    category: db.category || '',
-    description: db.description || '',
-    value: db.value ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(db.value) : 'R$ 0,00',
-    isRecurring: db.is_recurring || false,
-    recurrenceType: db.recurrence_type,
-    dueDate: db.due_date || undefined,
-    dueDay: db.due_day || undefined,
-    paidDate: db.paid_date || undefined,
-    status: db.status || 'pendente',
-    clientId: db.client_id || undefined,
-    projectId: db.project_id || undefined,
-    notes: db.notes || undefined,
-    otherCategoryNote: db.other_category_note || undefined,
-    createdAt: db.created_at ? formatDate(db.created_at) : '',
-    updatedAt: db.updated_at ? formatDate(db.updated_at) : '',
-    // New installment fields
+    type: db.type as FinancialTransaction["type"],
+    category: db.category ?? "",
+    description: db.description ?? "",
+    value: db.value
+      ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(db.value)
+      : "R$ 0,00",
+    isRecurring: db.is_recurring,
+    recurrenceType: (db.recurrence_type as FinancialTransaction["recurrenceType"]) ?? undefined,
+    dueDate: db.due_date ?? undefined,
+    dueDay: db.due_day ?? undefined,
+    paidDate: db.paid_date ?? undefined,
+    status: (db.status as FinancialTransaction["status"]) ?? "pendente",
+    clientId: db.client_id ?? undefined,
+    projectId: db.project_id ?? undefined,
+    notes: db.notes ?? undefined,
+    otherCategoryNote: db.other_category_note ?? undefined,
+    createdAt: db.created_at ? formatDate(db.created_at) : "",
+    updatedAt: db.updated_at ? formatDate(db.updated_at) : "",
     installmentCount: db.installment_count ?? undefined,
-    firstPaymentDate: db.first_payment_date || undefined,
-    isIndefinite: db.is_indefinite || false
+    firstPaymentDate: db.first_payment_date ?? undefined,
+    isIndefinite: db.is_indefinite,
   };
 }
 
@@ -64,15 +58,15 @@ export function useFinancial() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('financial_transactions')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
+        .from("financial_transactions")
+        .select("*")
+        .order("created_at", { ascending: false });
+
       if (error) throw error;
-      setTransactions((data || []).map(mapDbTransaction));
+      setTransactions((data ?? []).map(mapDbTransaction));
     } catch (error) {
-      console.error('Error loading transactions:', error);
-      toast.error('Erro ao carregar transações');
+      console.error("Error loading transactions:", error);
+      toast.error("Erro ao carregar transações");
     } finally {
       setLoading(false);
     }
@@ -90,93 +84,86 @@ export function useFinancial() {
         description: transaction.description,
         value: parseValue(transaction.value),
         is_recurring: transaction.isRecurring,
-        recurrence_type: transaction.recurrenceType || null,
+        recurrence_type: transaction.recurrenceType ?? null,
         due_date: toISODate(transaction.dueDate),
-        due_day: transaction.dueDay || null,
+        due_day: transaction.dueDay ?? null,
         paid_date: toISODate(transaction.paidDate),
         status: transaction.status,
-        client_id: transaction.clientId || null,
-        project_id: transaction.projectId || null,
-        notes: transaction.notes || null,
-        other_category_note: transaction.otherCategoryNote || null,
-        // New installment fields
+        client_id: transaction.clientId ?? null,
+        project_id: transaction.projectId ?? null,
+        notes: transaction.notes ?? null,
+        other_category_note: transaction.otherCategoryNote ?? null,
         installment_count: transaction.installmentCount ?? null,
         first_payment_date: toISODate(transaction.firstPaymentDate),
-        is_indefinite: transaction.isIndefinite || false
+        is_indefinite: transaction.isIndefinite ?? false,
       };
-      
+
       const { data: result, error } = await supabase
-        .from('financial_transactions')
+        .from("financial_transactions")
         .insert(dbData)
         .select();
-      
+
       if (error) throw error;
-      
-      if (result && result[0]) {
+
+      if (result?.[0]) {
         const newTransaction = mapDbTransaction(result[0]);
-        setTransactions(prev => [newTransaction, ...prev]);
-        toast.success('Transação adicionada com sucesso');
+        setTransactions((prev) => [newTransaction, ...prev]);
+        toast.success("Transação adicionada com sucesso");
         return newTransaction;
       }
       return null;
     } catch (error) {
-      console.error('Error adding transaction:', error);
-      toast.error('Erro ao adicionar transação');
+      console.error("Error adding transaction:", error);
+      toast.error("Erro ao adicionar transação");
       return null;
     }
   };
 
   const updateTransaction = async (id: string, transaction: Partial<FinancialTransaction>) => {
     try {
-      const dbData: any = {};
+      const dbData: Record<string, unknown> = {};
       if (transaction.type) dbData.type = transaction.type;
       if (transaction.category) dbData.category = transaction.category;
       if (transaction.description) dbData.description = transaction.description;
       if (transaction.value) dbData.value = parseValue(transaction.value);
       if (transaction.isRecurring !== undefined) dbData.is_recurring = transaction.isRecurring;
-      if (transaction.recurrenceType !== undefined) dbData.recurrence_type = transaction.recurrenceType || null;
+      if (transaction.recurrenceType !== undefined) dbData.recurrence_type = transaction.recurrenceType ?? null;
       if (transaction.dueDate !== undefined) dbData.due_date = toISODate(transaction.dueDate);
-      if (transaction.dueDay !== undefined) dbData.due_day = transaction.dueDay || null;
+      if (transaction.dueDay !== undefined) dbData.due_day = transaction.dueDay ?? null;
       if (transaction.paidDate !== undefined) dbData.paid_date = toISODate(transaction.paidDate);
       if (transaction.status) dbData.status = transaction.status;
-      if (transaction.clientId !== undefined) dbData.client_id = transaction.clientId || null;
-      if (transaction.projectId !== undefined) dbData.project_id = transaction.projectId || null;
-      if (transaction.notes !== undefined) dbData.notes = transaction.notes || null;
-      if (transaction.otherCategoryNote !== undefined) dbData.other_category_note = transaction.otherCategoryNote || null;
-      // New installment fields
+      if (transaction.clientId !== undefined) dbData.client_id = transaction.clientId ?? null;
+      if (transaction.projectId !== undefined) dbData.project_id = transaction.projectId ?? null;
+      if (transaction.notes !== undefined) dbData.notes = transaction.notes ?? null;
+      if (transaction.otherCategoryNote !== undefined) dbData.other_category_note = transaction.otherCategoryNote ?? null;
       if (transaction.installmentCount !== undefined) dbData.installment_count = transaction.installmentCount ?? null;
       if (transaction.firstPaymentDate !== undefined) dbData.first_payment_date = toISODate(transaction.firstPaymentDate);
       if (transaction.isIndefinite !== undefined) dbData.is_indefinite = transaction.isIndefinite;
-      
+
       const { error } = await supabase
-        .from('financial_transactions')
+        .from("financial_transactions")
         .update(dbData)
-        .eq('id', id);
-      
+        .eq("id", id);
+
       if (error) throw error;
-      
-      setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...transaction } : t));
-      toast.success('Transação atualizada com sucesso');
+
+      setTransactions((prev) => prev.map((t) => (t.id === id ? { ...t, ...transaction } : t)));
+      toast.success("Transação atualizada com sucesso");
     } catch (error) {
-      console.error('Error updating transaction:', error);
-      toast.error('Erro ao atualizar transação');
+      console.error("Error updating transaction:", error);
+      toast.error("Erro ao atualizar transação");
     }
   };
 
   const deleteTransaction = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('financial_transactions')
-        .delete()
-        .eq('id', id);
-      
+      const { error } = await supabase.from("financial_transactions").delete().eq("id", id);
       if (error) throw error;
-      
-      setTransactions(prev => prev.filter(t => t.id !== id));
-      toast.success('Transação excluída com sucesso');
+      setTransactions((prev) => prev.filter((t) => t.id !== id));
+      toast.success("Transação excluída com sucesso");
     } catch (error) {
-      console.error('Error deleting transaction:', error);
-      toast.error('Erro ao excluir transação');
+      console.error("Error deleting transaction:", error);
+      toast.error("Erro ao excluir transação");
     }
   };
 
@@ -186,6 +173,6 @@ export function useFinancial() {
     addTransaction,
     updateTransaction,
     deleteTransaction,
-    refreshTransactions: loadTransactions
+    refreshTransactions: loadTransactions,
   };
 }

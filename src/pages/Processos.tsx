@@ -318,7 +318,7 @@ export default function Processos() {
 
     try {
       // Build update/insert data
-      const processData = {
+      const processData: Record<string, unknown> = {
         name: formData.name,
         description: formData.description,
         category: formData.category,
@@ -326,15 +326,15 @@ export default function Processos() {
         assigned_to: formData.assigned_to || null,
         due_date: convertDateToISO(formData.due_date),
       };
-      
+
       // Add subcategory only if it has a value and is not empty
       if (formData.subcategory && formData.subcategory.trim()) {
-        (processData as any).subcategory = formData.subcategory;
+        processData.subcategory = formData.subcategory;
       }
-      
+
       // Add documents if there are any
       if (formData.documents && formData.documents.length > 0) {
-        (processData as any).documents = formData.documents;
+        processData.documents = formData.documents;
       }
 
       if (editingProcess) {

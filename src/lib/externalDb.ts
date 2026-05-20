@@ -37,7 +37,7 @@ export async function callExternalDb(
   id?: string,
   filters?: Record<string, unknown>,
   pagination?: PaginationParams,
-): Promise<any> {
+): Promise<unknown> {
   const body: Record<string, unknown> = { action, table };
   if (data !== undefined) body.data = data;
   if (id !== undefined) body.id = id;

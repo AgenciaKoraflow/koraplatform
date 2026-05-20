@@ -2,6 +2,7 @@ import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { callExternalDb, PaginatedResult } from "@/lib/externalDb";
 import { mapDbClient } from "@/lib/mappers";
 import { Client } from "@/types/data";
+import type { DbClientRow } from "@/types/db";
 
 export interface ClientListParams {
   page?: number;
@@ -34,7 +35,7 @@ export function useClients(params: ClientListParams = {}) {
         undefined,
         Object.keys(filters).length > 0 ? filters : undefined,
         { limit: pageSize, offset: page * pageSize, search },
-      )) as PaginatedResult<unknown>;
+      )) as PaginatedResult<DbClientRow>;
       return {
         clients: (result.data ?? []).map(mapDbClient),
         total: result.total,
@@ -51,7 +52,7 @@ export function useAllClients() {
     queryKey: clientKeys.allItems(),
     queryFn: async () => {
       const data = await callExternalDb("select", "clients");
-      return ((data as any[]) ?? []).map(mapDbClient) as Client[];
+      return ((data as DbClientRow[]) ?? []).map(mapDbClient);
     },
     staleTime: 5 * 60 * 1000,
   });

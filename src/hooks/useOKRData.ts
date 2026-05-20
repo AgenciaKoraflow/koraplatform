@@ -1,47 +1,59 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { OKRObjective, OKRUpdate } from '@/types/okr';
+import type { Tables } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
+
+type OkrObjectiveRow = Tables<'okr_objectives'>;
+type OkrUpdateRow = Tables<'okr_updates'>;
+
+function mapDbObjective(db: OkrObjectiveRow): OKRObjective {
+  return {
+    id: db.id,
+    title: db.title,
+    description: db.description ?? '',
+    target: db.target,
+    current: db.current ?? 0,
+    unit: db.unit ?? '',
+    status: db.status as OKRObjective['status'],
+    startDate: db.start_date,
+    endDate: db.end_date,
+    priority: db.priority as OKRObjective['priority'],
+    category: db.category as OKRObjective['category'],
+    bu: Array.isArray(db.bu) ? (db.bu as string[]) : typeof db.bu === 'string' ? [db.bu] : [],
+    progress: db.progress ?? 0,
+    lastUpdate: db.last_update
+      ? new Date(db.last_update).toISOString().split('T')[0]
+      : new Date().toISOString().split('T')[0],
+    createdAt: db.created_at,
+    updatedAt: db.updated_at,
+  };
+}
+
+function mapDbUpdate(db: OkrUpdateRow): OKRUpdate {
+  return {
+    id: db.id,
+    objectiveId: db.objective_id,
+    date: db.date,
+    value: db.value,
+    comment: db.comment ?? '',
+    // updated_by is a UUID in the DB — show "equipe" for legacy records
+    updatedBy: db.updated_by
+      ? db.updated_by.includes('@') ? db.updated_by : 'equipe'
+      : 'sistema',
+    createdAt: db.created_at,
+  };
+}
+
+function errMsg(e: unknown): string {
+  return e instanceof Error ? e.message : 'Erro desconhecido';
+}
 
 export function useOKRData() {
   const [objectives, setObjectives] = useState<OKRObjective[]>([]);
   const [updates, setUpdates] = useState<OKRUpdate[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Helper to map DB columns to frontend camelCase
-  const mapDbObjective = (db: any): OKRObjective => ({
-    id: db.id,
-    title: db.title,
-    description: db.description || '',
-    target: db.target,
-    current: db.current || 0,
-    unit: db.unit || '',
-    status: db.status,
-    startDate: db.start_date,
-    endDate: db.end_date,
-    priority: db.priority,
-    category: db.category,
-    bu: Array.isArray(db.bu) ? db.bu : (typeof db.bu === 'string' ? [db.bu] : []),
-    progress: db.progress || 0,
-    lastUpdate: db.last_update ? new Date(db.last_update).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-    createdAt: db.created_at,
-    updatedAt: db.updated_at,
-  });
-
-  const mapDbUpdate = (db: any): OKRUpdate => ({
-    id: db.id,
-    objectiveId: db.objective_id,
-    date: db.date,
-    value: db.value,
-    comment: db.comment || '',
-    // updated_by is a UUID in the DB — show "equipe" for legacy records
-    updatedBy: db.updated_by
-      ? (db.updated_by.includes('@') ? db.updated_by : 'equipe')
-      : 'sistema',
-    createdAt: db.created_at,
-  });
-
-  // Fetch data from Supabase
   const fetchOKRs = useCallback(async () => {
     try {
       setLoading(true);
@@ -59,23 +71,16 @@ export function useOKRData() {
         throw updateResponse.error;
       }
 
-      console.log('OKRs carregados:', objResponse.data?.length);
-      setObjectives((objResponse.data || []).map(mapDbObjective));
-      setUpdates((updateResponse.data || []).map(mapDbUpdate));
-    } catch (error: any) {
-      console.error('Erro ao carregar OKRs:', {
-        message: error?.message,
-        code: error?.code,
-        details: error?.details,
-        fullError: error
-      });
+      setObjectives((objResponse.data ?? []).map(mapDbObjective));
+      setUpdates((updateResponse.data ?? []).map(mapDbUpdate));
+    } catch (e) {
+      console.error('Erro ao carregar OKRs:', e);
       toast.error('Erro ao carregar OKRs');
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Add objective
   const addObjective = useCallback(async (data: Omit<OKRObjective, 'id' | 'createdAt' | 'updatedAt'>): Promise<OKRObjective | null> => {
     try {
       const { data: result, error } = await supabase
@@ -106,24 +111,16 @@ export function useOKRData() {
       setObjectives(prev => [mapped, ...prev]);
       toast.success('OKR criado com sucesso!');
       return mapped;
-    } catch (error: any) {
-      console.error('Erro ao criar OKR:', {
-        message: error?.message,
-        code: error?.code,
-        details: error?.details,
-        hint: error?.hint,
-        status: error?.status,
-        fullError: error
-      });
-      toast.error(`Erro ao criar OKR: ${error?.message || 'Erro desconhecido'}`);
+    } catch (e) {
+      console.error('Erro ao criar OKR:', e);
+      toast.error(`Erro ao criar OKR: ${errMsg(e)}`);
       return null;
     }
   }, []);
 
-  // Update objective
   const updateObjective = useCallback(async (id: string, data: Partial<OKRObjective>): Promise<boolean> => {
     try {
-      const updateData: any = {};
+      const updateData: Record<string, unknown> = {};
       if (data.title !== undefined) updateData.title = data.title;
       if (data.description !== undefined) updateData.description = data.description;
       if (data.target !== undefined) updateData.target = data.target;
@@ -137,7 +134,6 @@ export function useOKRData() {
       if (data.bu !== undefined) updateData.bu = data.bu;
       if (data.progress !== undefined) updateData.progress = data.progress;
       if (data.lastUpdate !== undefined) updateData.last_update = data.lastUpdate;
-
       updateData.updated_at = new Date().toISOString();
 
       const { error } = await supabase
@@ -151,40 +147,33 @@ export function useOKRData() {
         obj.id === id ? { ...obj, ...data, updatedAt: new Date().toISOString() } : obj
       ));
       return true;
-    } catch (error) {
-      console.error('Erro ao atualizar OKR:', error);
+    } catch (e) {
+      console.error('Erro ao atualizar OKR:', e);
       toast.error('Erro ao atualizar OKR');
       return false;
     }
   }, []);
 
-  // Delete objective
   const deleteObjective = useCallback(async (id: string): Promise<boolean> => {
     try {
-      const { error } = await supabase
-        .from('okr_objectives')
-        .delete()
-        .eq('id', id);
-
+      const { error } = await supabase.from('okr_objectives').delete().eq('id', id);
       if (error) throw error;
-
       setObjectives(prev => prev.filter(obj => obj.id !== id));
       setUpdates(prev => prev.filter(upd => upd.objectiveId !== id));
       toast.success('OKR removido com sucesso!');
       return true;
-    } catch (error) {
-      console.error('Erro ao deletar OKR:', error);
+    } catch (e) {
+      console.error('Erro ao deletar OKR:', e);
       toast.error('Erro ao deletar OKR');
       return false;
     }
   }, []);
 
-  // Add update
   const addUpdate = useCallback(async (objectiveId: string, data: Omit<OKRUpdate, 'id' | 'createdAt'>): Promise<OKRUpdate | null> => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const userId = session?.user?.id ?? null;
-      const displayName = session?.user?.email || data.updatedBy || 'sistema';
+      const displayName = session?.user?.email ?? data.updatedBy ?? 'sistema';
 
       const { data: result, error } = await supabase
         .from('okr_updates')
@@ -204,8 +193,8 @@ export function useOKRData() {
       setUpdates(prev => [mapped, ...prev]);
       toast.success('Atualização adicionada com sucesso!');
       return mapped;
-    } catch (error) {
-      console.error('Erro ao adicionar atualização:', error);
+    } catch (e) {
+      console.error('Erro ao adicionar atualização:', e);
       toast.error('Erro ao adicionar atualização');
       return null;
     }

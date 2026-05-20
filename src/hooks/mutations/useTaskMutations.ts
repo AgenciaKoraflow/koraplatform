@@ -4,6 +4,7 @@ import { mapDbTask, toISODate } from "@/lib/mappers";
 import { Task } from "@/types/data";
 import { taskKeys } from "@/hooks/useTasks";
 import { projectKeys } from "@/hooks/useProjects";
+import type { DbTaskRow } from "@/types/db";
 import { toast } from "sonner";
 
 function errMsg(e: unknown) {
@@ -15,10 +16,10 @@ async function syncProjectProgress(projectId: string, qc: ReturnType<typeof useQ
     const allTasks = await callExternalDb("select", "tasks", undefined, undefined, {
       project_id: projectId,
     });
-    const tasks = (allTasks as any[]) ?? [];
+    const tasks = (allTasks as DbTaskRow[]) ?? [];
     const total = tasks.length;
     if (total === 0) return;
-    const completed = tasks.filter((t: any) => t.status === "done").length;
+    const completed = tasks.filter((t) => t.status === "done").length;
     const progress = Math.round((completed / total) * 100);
     await callExternalDb("update", "projects", { progress }, projectId);
     qc.invalidateQueries({ queryKey: projectKeys.all });
@@ -44,8 +45,9 @@ export function useTaskMutations() {
       };
       if (task.bu) dbData.bu = task.bu;
       const result = await callExternalDb("insert", "tasks", dbData);
-      if (!result?.[0]) throw new Error("Resposta vazia ao criar tarefa");
-      return mapDbTask(result[0]);
+      const rows = result as DbTaskRow[] | null;
+      if (!rows?.[0]) throw new Error("Resposta vazia ao criar tarefa");
+      return mapDbTask(rows[0]);
     },
     onSuccess: async (newTask) => {
       qc.invalidateQueries({ queryKey: taskKeys.all });
@@ -92,9 +94,10 @@ export function useTaskMutations() {
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const tasks = await callExternalDb("select", "tasks", undefined, id);
-      const projectId = Array.isArray(tasks) ? tasks[0]?.project_id : undefined;
+      const rows = tasks as DbTaskRow[] | null;
+      const projectId = Array.isArray(rows) ? rows[0]?.project_id ?? undefined : undefined;
       await callExternalDb("delete", "tasks", undefined, id);
-      return projectId as string | undefined;
+      return projectId;
     },
     onSuccess: async (projectId) => {
       qc.invalidateQueries({ queryKey: taskKeys.all });

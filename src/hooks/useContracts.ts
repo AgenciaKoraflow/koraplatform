@@ -1,7 +1,7 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { callExternalDb, PaginatedResult } from "@/lib/externalDb";
 import { mapDbContract } from "@/lib/mappers";
-import { Contract } from "@/types/data";
+import type { DbContractRow } from "@/types/db";
 
 export interface ContractListParams {
   page?: number;
@@ -36,7 +36,7 @@ export function useContracts(params: ContractListParams = {}) {
         undefined,
         Object.keys(filters).length > 0 ? filters : undefined,
         { limit: pageSize, offset: page * pageSize, search },
-      )) as PaginatedResult<unknown>;
+      )) as PaginatedResult<DbContractRow>;
       return {
         contracts: (result.data ?? []).map(mapDbContract),
         total: result.total,
@@ -53,7 +53,7 @@ export function useAllContracts() {
     queryKey: contractKeys.allItems(),
     queryFn: async () => {
       const data = await callExternalDb("select", "contracts");
-      return ((data as any[]) ?? []).map(mapDbContract) as Contract[];
+      return ((data as DbContractRow[]) ?? []).map(mapDbContract);
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -67,7 +67,7 @@ export function useClientContracts(clientId: string | null | undefined) {
       const data = await callExternalDb("select", "contracts", undefined, undefined, {
         client_id: clientId,
       });
-      return ((data as any[]) ?? []).map(mapDbContract) as Contract[];
+      return ((data as DbContractRow[]) ?? []).map(mapDbContract);
     },
     enabled: !!clientId,
     staleTime: 5 * 60 * 1000,

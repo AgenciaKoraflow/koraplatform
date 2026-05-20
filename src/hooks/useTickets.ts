@@ -1,7 +1,7 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { callExternalDb, PaginatedResult } from "@/lib/externalDb";
 import { mapDbTicket } from "@/lib/mappers";
-import { SupportTicket } from "@/types/data";
+import type { DbSupportTicketRow } from "@/types/db";
 
 export interface TicketListParams {
   page?: number;
@@ -36,7 +36,7 @@ export function useTickets(params: TicketListParams = {}) {
         undefined,
         Object.keys(filters).length > 0 ? filters : undefined,
         { limit: pageSize, offset: page * pageSize, search },
-      )) as PaginatedResult<unknown>;
+      )) as PaginatedResult<DbSupportTicketRow>;
       return {
         tickets: (result.data ?? []).map(mapDbTicket),
         total: result.total,
@@ -53,7 +53,7 @@ export function useAllTickets() {
     queryKey: ticketKeys.allItems(),
     queryFn: async () => {
       const data = await callExternalDb("select", "support_tickets");
-      return ((data as any[]) ?? []).map(mapDbTicket) as SupportTicket[];
+      return ((data as DbSupportTicketRow[]) ?? []).map(mapDbTicket);
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -67,7 +67,7 @@ export function useClientTickets(clientId: string | null | undefined) {
       const data = await callExternalDb("select", "support_tickets", undefined, undefined, {
         client_id: clientId,
       });
-      return ((data as any[]) ?? []).map(mapDbTicket) as SupportTicket[];
+      return ((data as DbSupportTicketRow[]) ?? []).map(mapDbTicket);
     },
     enabled: !!clientId,
     staleTime: 5 * 60 * 1000,

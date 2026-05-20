@@ -1,7 +1,7 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { callExternalDb, PaginatedResult } from "@/lib/externalDb";
 import { mapDbKnowledge } from "@/lib/mappers";
-import { KnowledgeItem } from "@/types/data";
+import type { DbKnowledgeItemRow } from "@/types/db";
 
 export interface KnowledgeListParams {
   page?: number;
@@ -36,7 +36,7 @@ export function useKnowledgeItems(params: KnowledgeListParams = {}) {
         undefined,
         Object.keys(filters).length > 0 ? filters : undefined,
         { limit: pageSize, offset: page * pageSize, search },
-      )) as PaginatedResult<unknown>;
+      )) as PaginatedResult<DbKnowledgeItemRow>;
       return {
         items: (result.data ?? []).map(mapDbKnowledge),
         total: result.total,
@@ -53,7 +53,7 @@ export function useAllKnowledgeItems() {
     queryKey: knowledgeKeys.allItems(),
     queryFn: async () => {
       const data = await callExternalDb("select", "knowledge_items");
-      return ((data as any[]) ?? []).map(mapDbKnowledge) as KnowledgeItem[];
+      return ((data as DbKnowledgeItemRow[]) ?? []).map(mapDbKnowledge);
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -67,7 +67,7 @@ export function useClientKnowledge(clientId: string | null | undefined) {
       const data = await callExternalDb("select", "knowledge_items", undefined, undefined, {
         client_id: clientId,
       });
-      return ((data as any[]) ?? []).map(mapDbKnowledge) as KnowledgeItem[];
+      return ((data as DbKnowledgeItemRow[]) ?? []).map(mapDbKnowledge);
     },
     enabled: !!clientId,
     staleTime: 5 * 60 * 1000,
