@@ -396,7 +396,7 @@ export default function Sustentacao() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="bg-card border-border sm:max-w-lg">
+        <DialogContent className="bg-card border-border sm:max-w-lg" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle className="text-foreground">{editingTicket ? "Editar Ticket" : "Novo Ticket"}</DialogTitle>
           </DialogHeader>
@@ -490,7 +490,7 @@ export default function Sustentacao() {
 
       {/* View Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="bg-card border-border sm:max-w-lg">
+        <DialogContent className="bg-card border-border sm:max-w-lg" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle className="text-foreground">Detalhes do Ticket</DialogTitle>
           </DialogHeader>

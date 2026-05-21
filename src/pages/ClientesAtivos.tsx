@@ -665,7 +665,7 @@ export default function ClientesAtivos() {
 
       {/* Add Interaction Dialog */}
       <Dialog open={isInteractionDialogOpen} onOpenChange={setIsInteractionDialogOpen}>
-        <DialogContent className="bg-card border-border sm:max-w-lg">
+        <DialogContent className="bg-card border-border sm:max-w-lg" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Nova Interação</DialogTitle>
           </DialogHeader>
@@ -732,7 +732,7 @@ export default function ClientesAtivos() {
 
       {/* Birthday Dialog */}
       <Dialog open={showAnniversaryDialog} onOpenChange={setShowAnniversaryDialog}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Gift className="w-5 h-5 text-amber-500" />

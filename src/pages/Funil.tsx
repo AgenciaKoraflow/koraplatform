@@ -792,7 +792,7 @@ export default function Funil() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="bg-card border-border sm:max-w-lg">
+        <DialogContent className="bg-card border-border sm:max-w-lg" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle className="text-foreground">{editingClient ? "Editar Lead" : "Novo Lead"}</DialogTitle>
           </DialogHeader>

@@ -19,6 +19,7 @@ export const ALLOWED_ACTIONS = [
   "get_password",
   "migrate_encrypt_passwords",
   "get_document_url",
+  "sign_contract",
 ] as const;
 
 export type Table = (typeof ALLOWED_TABLES)[number];
@@ -38,7 +39,7 @@ export const TABLE_WRITABLE_FIELDS: Record<Table, Set<string>> = {
   ]),
   tasks: new Set([
     "client_id", "project_id", "title", "description", "status",
-    "priority", "due_date", "assignees", "bu",
+    "priority", "due_date", "assigned_to", "bu",
   ]),
   contracts: new Set([
     "client_id", "project_ids", "title", "value", "status", "type",
@@ -103,7 +104,7 @@ export const TABLE_ALLOWED_ACTIONS: Record<Table, Set<Action>> = {
   clients: new Set(["select", "insert", "update", "delete"]),
   projects: new Set(["select", "insert", "update", "delete"]),
   tasks: new Set(["select", "insert", "update", "delete"]),
-  contracts: new Set(["select", "insert", "update", "delete", "get_document_url"]),
+  contracts: new Set(["select", "insert", "update", "delete", "get_document_url", "sign_contract"]),
   knowledge_items: new Set(["select", "insert", "update", "delete", "get_password"]),
   support_tickets: new Set(["select", "insert", "update", "delete"]),
 };

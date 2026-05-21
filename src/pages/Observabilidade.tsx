@@ -579,7 +579,7 @@ export default function Observabilidade() {
 
       {/* Add Integration Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="bg-card border-border sm:max-w-lg">
+        <DialogContent className="bg-card border-border sm:max-w-lg" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle className="text-foreground">Nova Integração</DialogTitle>
           </DialogHeader>
@@ -650,7 +650,7 @@ export default function Observabilidade() {
 
       {/* Edit Integration Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="bg-card border-border sm:max-w-lg">
+        <DialogContent className="bg-card border-border sm:max-w-lg" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle className="text-foreground">Editar Integração</DialogTitle>
           </DialogHeader>

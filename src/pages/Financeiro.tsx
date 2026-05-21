@@ -253,7 +253,7 @@ export default function Financeiro() {
                     Nova Transação
                   </Button>
                 </DialogTrigger>
-              <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
                 <DialogHeader>
                   <DialogTitle>
                     {editingTransaction ? "Editar Transação" : "Nova Transação"}

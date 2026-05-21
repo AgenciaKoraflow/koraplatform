@@ -144,7 +144,7 @@ export function InsightsManager() {
 
       {/* Create Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="bg-card border-border">
+        <DialogContent className="bg-card border-border" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle className="text-foreground">
               {createType === "canvas" ? "Novo Canvas" : "Novo Documento"}
@@ -184,7 +184,7 @@ export function InsightsManager() {
 
       {/* Rename Dialog */}
       <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
-        <DialogContent className="bg-card border-border">
+        <DialogContent className="bg-card border-border" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle className="text-foreground">Renomear Quadro</DialogTitle>
           </DialogHeader>

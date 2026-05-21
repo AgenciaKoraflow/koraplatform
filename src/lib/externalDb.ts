@@ -50,7 +50,10 @@ export async function callExternalDb(
     if (pagination.search) body.search = pagination.search;
   }
 
-  const { data: result, error } = await supabase.functions.invoke("external-db", { body });
+  const { data: result, error } = await supabase.functions.invoke("external-db", {
+    body: JSON.stringify(body),
+    headers: { "Content-Type": "application/json" },
+  });
 
   if (error) {
     const message = await formatSupabaseInvokeError(error);

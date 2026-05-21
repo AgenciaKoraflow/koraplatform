@@ -101,7 +101,7 @@ async function checkConnection(): Promise<ConnectionStatus> {
   const start = Date.now();
   try {
     const { error } = await withTimeout(
-      supabase.from('clients').select('id', { count: 'exact', head: true }).limit(1),
+      supabase.from('system_health_checks').select('id', { count: 'exact', head: true }).limit(1),
       CHECK_TIMEOUT_MS,
       'connection',
     );
@@ -120,15 +120,10 @@ async function checkConnection(): Promise<ConnectionStatus> {
 // ─── Database tables check (parallel) ─────────────────────────────────────────
 
 const MONITORED_TABLES = [
-  'clients',
-  'projects',
-  'contracts',
-  'tasks',
   'financial_transactions',
-  'processes',
-  'observations',
   'okr_objectives',
   'okr_updates',
+  'signature_audit_log',
 ] as const;
 
 async function checkDatabase(): Promise<DatabaseStatus> {

@@ -33,6 +33,9 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { SignaturePadPro } from "@/components/signature/SignaturePadPro";
 
+const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+const PUBLIC_INVOKE_HEADERS = { Authorization: `Bearer ${ANON_KEY}` };
+
 interface ContractData {
   id: string;
   title: string;
@@ -128,6 +131,7 @@ export default function SignContract() {
           table: "contracts",
           filters: { signature_link_token: token },
         },
+        headers: PUBLIC_INVOKE_HEADERS,
       });
 
       if (error || !result?.data || result.data.length === 0) {
@@ -140,7 +144,8 @@ export default function SignContract() {
       let clientData = null;
       if (data.client_id) {
         const { data: clientResult } = await supabase.functions.invoke("external-db", {
-          body: { action: "select", table: "clients", filters: { id: data.client_id } },
+          body: { action: "select", table: "clients", filters: { id: data.client_id }, token },
+          headers: PUBLIC_INVOKE_HEADERS,
         });
         if (clientResult?.data && clientResult.data.length > 0) clientData = clientResult.data[0];
       }
@@ -182,6 +187,7 @@ export default function SignContract() {
         try {
           const { data: urlResult } = await supabase.functions.invoke("external-db", {
             body: { action: "get_document_url", table: "contracts", token },
+            headers: PUBLIC_INVOKE_HEADERS,
           });
           if (urlResult?.signedUrl) setDocumentUrl(urlResult.signedUrl);
         } catch {
@@ -258,6 +264,7 @@ export default function SignContract() {
               },
               sendEmail: { to: signerEmail, fromAlias: "contratos@koraflow.com.br" },
             },
+            headers: PUBLIC_INVOKE_HEADERS,
           }
         );
 
@@ -278,7 +285,8 @@ export default function SignContract() {
       if (signedDocumentData) updateData.document_data = signedDocumentData;
 
       const { error } = await supabase.functions.invoke("external-db", {
-        body: { action: "update", table: "contracts", data: updateData, id: contract.id },
+        body: { action: "sign_contract", table: "contracts", data: updateData, token },
+        headers: PUBLIC_INVOKE_HEADERS,
       });
       if (error) throw error;
 
@@ -288,6 +296,7 @@ export default function SignContract() {
 
       await supabase.functions.invoke("signature-notifications", {
         body: { action: "notify_fully_signed", contractId: contract.id },
+        headers: PUBLIC_INVOKE_HEADERS,
       });
 
       loadContract();
@@ -714,7 +723,7 @@ export default function SignContract() {
 
       {/* Document Viewer */}
       <Dialog open={showDocument} onOpenChange={setShowDocument}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
+        <DialogContent className="max-w-4xl max-h-[90vh]" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>{contract?.document_name}</DialogTitle>
           </DialogHeader>
