@@ -238,11 +238,11 @@ async function checkFunctions(): Promise<FunctionsStatus> {
   const start = Date.now();
   try {
     const { error } = await withTimeout(
-      supabase.functions.invoke('external-db', {
-        body: { action: '__health_probe__', table: '__probe__' },
+      supabase.functions.invoke('sign-contract', {
+        body: { action: '__health_probe__' },
       }),
       CHECK_TIMEOUT_MS,
-      'functions:external-db',
+      'functions:sign-contract',
     );
 
     const latency = Date.now() - start;
@@ -253,7 +253,7 @@ async function checkFunctions(): Promise<FunctionsStatus> {
       return { accessible: false, available: [], latency, error: 'Edge function unreachable' };
     }
 
-    return { accessible: true, available: ['external-db'], latency };
+    return { accessible: true, available: ['sign-contract'], latency };
   } catch (e) {
     return {
       accessible: false,

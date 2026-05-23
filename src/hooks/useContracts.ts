@@ -1,5 +1,5 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { callExternalDb, PaginatedResult } from "@/lib/externalDb";
+import { supabase } from "@/integrations/supabase/client";
 import { mapDbContract } from "@/lib/mappers";
 import type { DbContractRow } from "@/types/db";
 
@@ -22,24 +22,22 @@ export const contractKeys = {
 export function useContracts(params: ContractListParams = {}) {
   const { page = 0, pageSize = 50, search, status, clientId } = params;
 
-  const filters: Record<string, unknown> = {};
-  if (status) filters.status = status;
-  if (clientId) filters.client_id = clientId;
-
   return useQuery({
     queryKey: contractKeys.list({ page, pageSize, search, status, clientId }),
     queryFn: async () => {
-      const result = (await callExternalDb(
-        "select",
-        "contracts",
-        undefined,
-        undefined,
-        Object.keys(filters).length > 0 ? filters : undefined,
-        { limit: pageSize, offset: page * pageSize, search },
-      )) as PaginatedResult<DbContractRow>;
+      let query = supabase.from("contracts").select("*", { count: "exact" });
+      if (status) query = query.eq("status", status);
+      if (clientId) query = query.eq("client_id", clientId);
+      if (search) {
+        const safe = search.replace(/[,()'"`;\\]/g, "").trim().substring(0, 50);
+        if (safe) query = query.ilike("title", `%${safe}%`);
+      }
+      query = query.range(page * pageSize, page * pageSize + pageSize - 1);
+      const { data, error, count } = await query;
+      if (error) throw new Error(error.message);
       return {
-        contracts: (result.data ?? []).map(mapDbContract),
-        total: result.total,
+        contracts: (data ?? []).map((row) => mapDbContract(row as DbContractRow)),
+        total: count ?? 0,
       };
     },
     staleTime: 5 * 60 * 1000,
@@ -52,8 +50,9 @@ export function useAllContracts() {
   return useQuery({
     queryKey: contractKeys.allItems(),
     queryFn: async () => {
-      const data = await callExternalDb("select", "contracts");
-      return ((data as DbContractRow[]) ?? []).map(mapDbContract);
+      const { data, error } = await supabase.from("contracts").select("*");
+      if (error) throw new Error(error.message);
+      return (data ?? []).map((row) => mapDbContract(row as DbContractRow));
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -64,10 +63,12 @@ export function useClientContracts(clientId: string | null | undefined) {
   return useQuery({
     queryKey: contractKeys.byClient(clientId ?? ""),
     queryFn: async () => {
-      const data = await callExternalDb("select", "contracts", undefined, undefined, {
-        client_id: clientId,
-      });
-      return ((data as DbContractRow[]) ?? []).map(mapDbContract);
+      const { data, error } = await supabase
+        .from("contracts")
+        .select("*")
+        .eq("client_id", clientId!);
+      if (error) throw new Error(error.message);
+      return (data ?? []).map((row) => mapDbContract(row as DbContractRow));
     },
     enabled: !!clientId,
     staleTime: 5 * 60 * 1000,

@@ -1,5 +1,5 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { callExternalDb, PaginatedResult } from "@/lib/externalDb";
+import { supabase } from "@/integrations/supabase/client";
 import { mapDbClient } from "@/lib/mappers";
 import type { DbClientRow } from "@/types/db";
 
@@ -21,23 +21,21 @@ export const clientKeys = {
 export function useClients(params: ClientListParams = {}) {
   const { page = 0, pageSize = 50, search, stage } = params;
 
-  const filters: Record<string, unknown> = {};
-  if (stage) filters.pipeline_stage = stage;
-
   return useQuery({
     queryKey: clientKeys.list({ page, pageSize, search, stage }),
     queryFn: async () => {
-      const result = (await callExternalDb(
-        "select",
-        "clients",
-        undefined,
-        undefined,
-        Object.keys(filters).length > 0 ? filters : undefined,
-        { limit: pageSize, offset: page * pageSize, search },
-      )) as PaginatedResult<DbClientRow>;
+      let query = supabase.from("clients").select("*", { count: "exact" });
+      if (stage) query = query.eq("pipeline_stage", stage);
+      if (search) {
+        const safe = search.replace(/[,()'"`;\\]/g, "").trim().substring(0, 50);
+        if (safe) query = query.or(`name.ilike.%${safe}%,company.ilike.%${safe}%,email.ilike.%${safe}%`);
+      }
+      query = query.range(page * pageSize, page * pageSize + pageSize - 1);
+      const { data, error, count } = await query;
+      if (error) throw new Error(error.message);
       return {
-        clients: (result.data ?? []).map(mapDbClient),
-        total: result.total,
+        clients: (data ?? []).map((row) => mapDbClient(row as DbClientRow)),
+        total: count ?? 0,
       };
     },
     staleTime: 5 * 60 * 1000,
@@ -50,8 +48,9 @@ export function useAllClients() {
   return useQuery({
     queryKey: clientKeys.allItems(),
     queryFn: async () => {
-      const data = await callExternalDb("select", "clients");
-      return ((data as DbClientRow[]) ?? []).map(mapDbClient);
+      const { data, error } = await supabase.from("clients").select("*");
+      if (error) throw new Error(error.message);
+      return (data ?? []).map((row) => mapDbClient(row as DbClientRow));
     },
     staleTime: 5 * 60 * 1000,
   });

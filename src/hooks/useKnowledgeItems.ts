@@ -1,5 +1,5 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { callExternalDb, PaginatedResult } from "@/lib/externalDb";
+import { supabase } from "@/integrations/supabase/client";
 import { mapDbKnowledge } from "@/lib/mappers";
 import type { DbKnowledgeItemRow } from "@/types/db";
 
@@ -19,27 +19,32 @@ export const knowledgeKeys = {
   byClient: (clientId: string) => [...knowledgeKeys.all, "by-client", clientId] as const,
 };
 
+// Strip the encrypted password blob and compute has_password so mapDbKnowledge
+// never receives the raw ciphertext (the decryption key is server-side only).
+function toDbRow(raw: Record<string, unknown>): DbKnowledgeItemRow {
+  const { password, ...rest } = raw;
+  return { ...rest, has_password: password !== null && password !== undefined && password !== "" } as DbKnowledgeItemRow;
+}
+
 export function useKnowledgeItems(params: KnowledgeListParams = {}) {
   const { page = 0, pageSize = 50, search, category, clientId } = params;
-
-  const filters: Record<string, unknown> = {};
-  if (category) filters.category = category;
-  if (clientId) filters.client_id = clientId;
 
   return useQuery({
     queryKey: knowledgeKeys.list({ page, pageSize, search, category, clientId }),
     queryFn: async () => {
-      const result = (await callExternalDb(
-        "select",
-        "knowledge_items",
-        undefined,
-        undefined,
-        Object.keys(filters).length > 0 ? filters : undefined,
-        { limit: pageSize, offset: page * pageSize, search },
-      )) as PaginatedResult<DbKnowledgeItemRow>;
+      let query = supabase.from("knowledge_items").select("*", { count: "exact" });
+      if (category) query = query.eq("category", category);
+      if (clientId) query = query.eq("client_id", clientId);
+      if (search) {
+        const safe = search.replace(/[,()'"`;\\]/g, "").trim().substring(0, 50);
+        if (safe) query = query.or(`title.ilike.%${safe}%,content.ilike.%${safe}%`);
+      }
+      query = query.range(page * pageSize, page * pageSize + pageSize - 1);
+      const { data, error, count } = await query;
+      if (error) throw new Error(error.message);
       return {
-        items: (result.data ?? []).map(mapDbKnowledge),
-        total: result.total,
+        items: (data ?? []).map((row) => mapDbKnowledge(toDbRow(row as Record<string, unknown>))),
+        total: count ?? 0,
       };
     },
     staleTime: 5 * 60 * 1000,
@@ -52,8 +57,9 @@ export function useAllKnowledgeItems() {
   return useQuery({
     queryKey: knowledgeKeys.allItems(),
     queryFn: async () => {
-      const data = await callExternalDb("select", "knowledge_items");
-      return ((data as DbKnowledgeItemRow[]) ?? []).map(mapDbKnowledge);
+      const { data, error } = await supabase.from("knowledge_items").select("*");
+      if (error) throw new Error(error.message);
+      return (data ?? []).map((row) => mapDbKnowledge(toDbRow(row as Record<string, unknown>)));
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -64,10 +70,12 @@ export function useClientKnowledge(clientId: string | null | undefined) {
   return useQuery({
     queryKey: knowledgeKeys.byClient(clientId ?? ""),
     queryFn: async () => {
-      const data = await callExternalDb("select", "knowledge_items", undefined, undefined, {
-        client_id: clientId,
-      });
-      return ((data as DbKnowledgeItemRow[]) ?? []).map(mapDbKnowledge);
+      const { data, error } = await supabase
+        .from("knowledge_items")
+        .select("*")
+        .eq("client_id", clientId!);
+      if (error) throw new Error(error.message);
+      return (data ?? []).map((row) => mapDbKnowledge(toDbRow(row as Record<string, unknown>)));
     },
     enabled: !!clientId,
     staleTime: 5 * 60 * 1000,

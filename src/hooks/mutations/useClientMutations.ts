@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { callExternalDb } from "@/lib/externalDb";
+import { supabase } from "@/integrations/supabase/client";
 import { mapDbClient, toISODate } from "@/lib/mappers";
 import { Client } from "@/types/data";
 import { clientKeys } from "@/hooks/useClients";
@@ -8,6 +8,7 @@ import { taskKeys } from "@/hooks/useTasks";
 import { contractKeys } from "@/hooks/useContracts";
 import { knowledgeKeys } from "@/hooks/useKnowledgeItems";
 import { ticketKeys } from "@/hooks/useTickets";
+import type { DbClientRow } from "@/types/db";
 import { toast } from "sonner";
 
 function errMsg(e: unknown) {
@@ -35,9 +36,10 @@ export function useClientMutations() {
       if (client.head?.trim()) dbData.head = client.head.trim();
       if (client.bu) dbData.bu = client.bu;
       if (client.logo?.trim()) dbData.logo = client.logo.trim();
-      const result = await callExternalDb("insert", "clients", dbData);
-      if (!result?.[0]) throw new Error("Resposta vazia ao criar cliente");
-      return mapDbClient(result[0]);
+      const { data: rows, error } = await supabase.from("clients").insert(dbData).select();
+      if (error) throw new Error(error.message);
+      if (!rows?.[0]) throw new Error("Resposta vazia ao criar cliente");
+      return mapDbClient(rows[0] as DbClientRow);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: clientKeys.all });
@@ -62,7 +64,8 @@ export function useClientMutations() {
       if (data.head !== undefined) dbData.head = data.head?.trim() || null;
       if (data.bu !== undefined) dbData.bu = data.bu;
       if (data.logo !== undefined) dbData.logo = data.logo || null;
-      await callExternalDb("update", "clients", dbData, id);
+      const { error } = await supabase.from("clients").update(dbData).eq("id", id);
+      if (error) throw new Error(error.message);
     },
     onMutate: async ({ id, data }) => {
       await qc.cancelQueries({ queryKey: clientKeys.allItems() });
@@ -82,7 +85,8 @@ export function useClientMutations() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await callExternalDb("delete", "clients", undefined, id);
+      const { error } = await supabase.from("clients").delete().eq("id", id);
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       [clientKeys.all, projectKeys.all, taskKeys.all, contractKeys.all, knowledgeKeys.all, ticketKeys.all]

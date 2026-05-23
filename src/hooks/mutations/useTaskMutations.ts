@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { callExternalDb } from "@/lib/externalDb";
+import { supabase } from "@/integrations/supabase/client";
 import { mapDbTask, toISODate } from "@/lib/mappers";
 import { Task } from "@/types/data";
 import { taskKeys } from "@/hooks/useTasks";
@@ -13,15 +13,15 @@ function errMsg(e: unknown) {
 
 async function syncProjectProgress(projectId: string, qc: ReturnType<typeof useQueryClient>) {
   try {
-    const allTasks = await callExternalDb("select", "tasks", undefined, undefined, {
-      project_id: projectId,
-    });
-    const tasks = (allTasks as DbTaskRow[]) ?? [];
-    const total = tasks.length;
+    const { data: tasks } = await supabase
+      .from("tasks")
+      .select("status")
+      .eq("project_id", projectId);
+    const total = tasks?.length ?? 0;
     if (total === 0) return;
-    const completed = tasks.filter((t) => t.status === "done").length;
+    const completed = (tasks ?? []).filter((t) => t.status === "done").length;
     const progress = Math.round((completed / total) * 100);
-    await callExternalDb("update", "projects", { progress }, projectId);
+    await supabase.from("projects").update({ progress }).eq("id", projectId);
     qc.invalidateQueries({ queryKey: projectKeys.all });
   } catch {
     // Non-critical — progress corrected on next data load
@@ -44,10 +44,10 @@ export function useTaskMutations() {
         assigned_to: task.assignees.join(", "),
       };
       if (task.bu) dbData.bu = task.bu;
-      const result = await callExternalDb("insert", "tasks", dbData);
-      const rows = result as DbTaskRow[] | null;
+      const { data: rows, error } = await supabase.from("tasks").insert(dbData).select();
+      if (error) throw new Error(error.message);
       if (!rows?.[0]) throw new Error("Resposta vazia ao criar tarefa");
-      return mapDbTask(rows[0]);
+      return mapDbTask(rows[0] as DbTaskRow);
     },
     onSuccess: async (newTask) => {
       qc.invalidateQueries({ queryKey: taskKeys.all });
@@ -69,7 +69,8 @@ export function useTaskMutations() {
       if (data.dueDate) dbData.due_date = toISODate(data.dueDate);
       if (data.assignees) dbData.assigned_to = data.assignees.join(", ");
       if (data.bu !== undefined) dbData.bu = data.bu;
-      await callExternalDb("update", "tasks", dbData, id);
+      const { error } = await supabase.from("tasks").update(dbData).eq("id", id);
+      if (error) throw new Error(error.message);
       return data.projectId;
     },
     onMutate: async ({ id, data }) => {
@@ -93,10 +94,14 @@ export function useTaskMutations() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const tasks = await callExternalDb("select", "tasks", undefined, id);
-      const rows = tasks as DbTaskRow[] | null;
-      const projectId = Array.isArray(rows) ? rows[0]?.project_id ?? undefined : undefined;
-      await callExternalDb("delete", "tasks", undefined, id);
+      const { data: taskRow } = await supabase
+        .from("tasks")
+        .select("project_id")
+        .eq("id", id)
+        .single();
+      const projectId = taskRow?.project_id ?? undefined;
+      const { error } = await supabase.from("tasks").delete().eq("id", id);
+      if (error) throw new Error(error.message);
       return projectId;
     },
     onSuccess: async (projectId) => {

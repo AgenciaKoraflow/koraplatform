@@ -1,5 +1,5 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { callExternalDb, PaginatedResult } from "@/lib/externalDb";
+import { supabase } from "@/integrations/supabase/client";
 import { mapDbTicket } from "@/lib/mappers";
 import type { DbSupportTicketRow } from "@/types/db";
 
@@ -22,24 +22,22 @@ export const ticketKeys = {
 export function useTickets(params: TicketListParams = {}) {
   const { page = 0, pageSize = 50, search, status, clientId } = params;
 
-  const filters: Record<string, unknown> = {};
-  if (status) filters.status = status;
-  if (clientId) filters.client_id = clientId;
-
   return useQuery({
     queryKey: ticketKeys.list({ page, pageSize, search, status, clientId }),
     queryFn: async () => {
-      const result = (await callExternalDb(
-        "select",
-        "support_tickets",
-        undefined,
-        undefined,
-        Object.keys(filters).length > 0 ? filters : undefined,
-        { limit: pageSize, offset: page * pageSize, search },
-      )) as PaginatedResult<DbSupportTicketRow>;
+      let query = supabase.from("support_tickets").select("*", { count: "exact" });
+      if (status) query = query.eq("status", status);
+      if (clientId) query = query.eq("client_id", clientId);
+      if (search) {
+        const safe = search.replace(/[,()'"`;\\]/g, "").trim().substring(0, 50);
+        if (safe) query = query.or(`title.ilike.%${safe}%,description.ilike.%${safe}%`);
+      }
+      query = query.range(page * pageSize, page * pageSize + pageSize - 1);
+      const { data, error, count } = await query;
+      if (error) throw new Error(error.message);
       return {
-        tickets: (result.data ?? []).map(mapDbTicket),
-        total: result.total,
+        tickets: (data ?? []).map((row) => mapDbTicket(row as DbSupportTicketRow)),
+        total: count ?? 0,
       };
     },
     staleTime: 5 * 60 * 1000,
@@ -52,8 +50,9 @@ export function useAllTickets() {
   return useQuery({
     queryKey: ticketKeys.allItems(),
     queryFn: async () => {
-      const data = await callExternalDb("select", "support_tickets");
-      return ((data as DbSupportTicketRow[]) ?? []).map(mapDbTicket);
+      const { data, error } = await supabase.from("support_tickets").select("*");
+      if (error) throw new Error(error.message);
+      return (data ?? []).map((row) => mapDbTicket(row as DbSupportTicketRow));
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -64,10 +63,12 @@ export function useClientTickets(clientId: string | null | undefined) {
   return useQuery({
     queryKey: ticketKeys.byClient(clientId ?? ""),
     queryFn: async () => {
-      const data = await callExternalDb("select", "support_tickets", undefined, undefined, {
-        client_id: clientId,
-      });
-      return ((data as DbSupportTicketRow[]) ?? []).map(mapDbTicket);
+      const { data, error } = await supabase
+        .from("support_tickets")
+        .select("*")
+        .eq("client_id", clientId!);
+      if (error) throw new Error(error.message);
+      return (data ?? []).map((row) => mapDbTicket(row as DbSupportTicketRow));
     },
     enabled: !!clientId,
     staleTime: 5 * 60 * 1000,

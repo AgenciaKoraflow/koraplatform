@@ -1,8 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { callExternalDb } from "@/lib/externalDb";
+import { supabase } from "@/integrations/supabase/client";
 import { mapDbTicket } from "@/lib/mappers";
 import { SupportTicket } from "@/types/data";
 import { ticketKeys } from "@/hooks/useTickets";
+import type { DbSupportTicketRow } from "@/types/db";
 import { toast } from "sonner";
 
 function errMsg(e: unknown) {
@@ -23,9 +24,10 @@ export function useTicketMutations() {
         status: ticket.status,
         priority: ticket.priority,
       };
-      const result = await callExternalDb("insert", "support_tickets", dbData);
-      if (!result?.[0]) throw new Error("Resposta vazia ao criar ticket");
-      return mapDbTicket(result[0]);
+      const { data: rows, error } = await supabase.from("support_tickets").insert(dbData).select();
+      if (error) throw new Error(error.message);
+      if (!rows?.[0]) throw new Error("Resposta vazia ao criar ticket");
+      return mapDbTicket(rows[0] as DbSupportTicketRow);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ticketKeys.all });
@@ -45,7 +47,8 @@ export function useTicketMutations() {
       if (data.description) dbData.description = data.description;
       if (data.status) dbData.status = data.status;
       if (data.priority) dbData.priority = data.priority;
-      await callExternalDb("update", "support_tickets", dbData, id);
+      const { error } = await supabase.from("support_tickets").update(dbData).eq("id", id);
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ticketKeys.all });
@@ -56,7 +59,8 @@ export function useTicketMutations() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await callExternalDb("delete", "support_tickets", undefined, id);
+      const { error } = await supabase.from("support_tickets").delete().eq("id", id);
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ticketKeys.all });

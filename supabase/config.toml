@@ -1,4 +1,4 @@
 project_id = "jucejqnalymzeegjieyh"
 
-[functions.external-db]
+[functions.sign-contract]
 verify_jwt = false

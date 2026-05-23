@@ -1,8 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { callExternalDb } from "@/lib/externalDb";
+import { supabase } from "@/integrations/supabase/client";
 import { mapDbContract, toISODate, parseValue } from "@/lib/mappers";
 import { Contract } from "@/types/data";
 import { contractKeys } from "@/hooks/useContracts";
+import type { DbContractRow } from "@/types/db";
 import { toast } from "sonner";
 
 function errMsg(e: unknown) {
@@ -42,9 +43,10 @@ export function useContractMutations() {
       if (contract.expiresAt) dbData.end_date = toISODate(contract.expiresAt);
       if (contract.createdAt) dbData.start_date = toISODate(contract.createdAt);
       if (contract.bu) dbData.bu = contract.bu;
-      const result = await callExternalDb("insert", "contracts", dbData);
-      if (!result?.[0]) throw new Error("Resposta vazia ao criar contrato");
-      return mapDbContract(result[0]);
+      const { data: rows, error } = await supabase.from("contracts").insert(dbData).select();
+      if (error) throw new Error(error.message);
+      if (!rows?.[0]) throw new Error("Resposta vazia ao criar contrato");
+      return mapDbContract(rows[0] as DbContractRow);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: contractKeys.all });
@@ -107,7 +109,8 @@ export function useContractMutations() {
       if (data.clientSignerName) dbData.client_signer_name = data.clientSignerName;
       if (data.clientSignerEmail) dbData.client_signer_email = data.clientSignerEmail;
       if (data.fullySignedAt) dbData.fully_signed_at = toISODate(data.fullySignedAt);
-      await callExternalDb("update", "contracts", dbData, id);
+      const { error } = await supabase.from("contracts").update(dbData).eq("id", id);
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: contractKeys.all });
@@ -118,7 +121,8 @@ export function useContractMutations() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await callExternalDb("delete", "contracts", undefined, id);
+      const { error } = await supabase.from("contracts").delete().eq("id", id);
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: contractKeys.all });

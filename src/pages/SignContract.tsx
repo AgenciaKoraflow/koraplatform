@@ -125,7 +125,7 @@ export default function SignContract() {
 
   const loadContract = async () => {
     try {
-      const { data: result, error } = await supabase.functions.invoke("external-db", {
+      const { data: result, error } = await supabase.functions.invoke("sign-contract", {
         body: {
           action: "select",
           table: "contracts",
@@ -143,7 +143,7 @@ export default function SignContract() {
 
       let clientData = null;
       if (data.client_id) {
-        const { data: clientResult } = await supabase.functions.invoke("external-db", {
+        const { data: clientResult } = await supabase.functions.invoke("sign-contract", {
           body: { action: "select", table: "clients", filters: { id: data.client_id }, token },
           headers: PUBLIC_INVOKE_HEADERS,
         });
@@ -185,7 +185,7 @@ export default function SignContract() {
       const storagePath = data.signed_document_storage_path || data.document_storage_path;
       if (storagePath && token) {
         try {
-          const { data: urlResult } = await supabase.functions.invoke("external-db", {
+          const { data: urlResult } = await supabase.functions.invoke("sign-contract", {
             body: { action: "get_document_url", table: "contracts", token },
             headers: PUBLIC_INVOKE_HEADERS,
           });
@@ -284,7 +284,7 @@ export default function SignContract() {
       };
       if (signedDocumentData) updateData.document_data = signedDocumentData;
 
-      const { error } = await supabase.functions.invoke("external-db", {
+      const { error } = await supabase.functions.invoke("sign-contract", {
         body: { action: "sign_contract", table: "contracts", data: updateData, token },
         headers: PUBLIC_INVOKE_HEADERS,
       });

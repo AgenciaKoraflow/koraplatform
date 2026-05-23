@@ -1,6 +1,5 @@
 /**
- * Raw row shapes returned by the external-db edge function.
- * These mirror the PostgreSQL schema of the external database.
+ * Raw row shapes from the business tables in the main Supabase project.
  * Use these types in mappers; never let them leak into UI components.
  */
 

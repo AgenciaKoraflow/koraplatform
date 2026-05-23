@@ -1,5 +1,5 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { callExternalDb, PaginatedResult } from "@/lib/externalDb";
+import { supabase } from "@/integrations/supabase/client";
 import { mapDbProject } from "@/lib/mappers";
 import type { DbProjectRow } from "@/types/db";
 
@@ -23,24 +23,22 @@ export const projectKeys = {
 export function useProjects(params: ProjectListParams = {}) {
   const { page = 0, pageSize = 50, search, status, clientId } = params;
 
-  const filters: Record<string, unknown> = {};
-  if (status) filters.status = status;
-  if (clientId) filters.client_id = clientId;
-
   return useQuery({
     queryKey: projectKeys.list({ page, pageSize, search, status, clientId }),
     queryFn: async () => {
-      const result = (await callExternalDb(
-        "select",
-        "projects",
-        undefined,
-        undefined,
-        Object.keys(filters).length > 0 ? filters : undefined,
-        { limit: pageSize, offset: page * pageSize, search },
-      )) as PaginatedResult<DbProjectRow>;
+      let query = supabase.from("projects").select("*", { count: "exact" });
+      if (status) query = query.eq("status", status);
+      if (clientId) query = query.eq("client_id", clientId);
+      if (search) {
+        const safe = search.replace(/[,()'"`;\\]/g, "").trim().substring(0, 50);
+        if (safe) query = query.or(`name.ilike.%${safe}%,description.ilike.%${safe}%`);
+      }
+      query = query.range(page * pageSize, page * pageSize + pageSize - 1);
+      const { data, error, count } = await query;
+      if (error) throw new Error(error.message);
       return {
-        projects: (result.data ?? []).map(mapDbProject),
-        total: result.total,
+        projects: (data ?? []).map((row) => mapDbProject(row as DbProjectRow)),
+        total: count ?? 0,
       };
     },
     staleTime: 5 * 60 * 1000,
@@ -53,8 +51,9 @@ export function useAllProjects() {
   return useQuery({
     queryKey: projectKeys.allItems(),
     queryFn: async () => {
-      const data = await callExternalDb("select", "projects");
-      return ((data as DbProjectRow[]) ?? []).map(mapDbProject);
+      const { data, error } = await supabase.from("projects").select("*");
+      if (error) throw new Error(error.message);
+      return (data ?? []).map((row) => mapDbProject(row as DbProjectRow));
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -65,10 +64,12 @@ export function useClientProjects(clientId: string | null | undefined) {
   return useQuery({
     queryKey: projectKeys.byClient(clientId ?? ""),
     queryFn: async () => {
-      const data = await callExternalDb("select", "projects", undefined, undefined, {
-        client_id: clientId,
-      });
-      return ((data as DbProjectRow[]) ?? []).map(mapDbProject);
+      const { data, error } = await supabase
+        .from("projects")
+        .select("*")
+        .eq("client_id", clientId!);
+      if (error) throw new Error(error.message);
+      return (data ?? []).map((row) => mapDbProject(row as DbProjectRow));
     },
     enabled: !!clientId,
     staleTime: 5 * 60 * 1000,

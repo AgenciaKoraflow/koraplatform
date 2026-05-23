@@ -1,12 +1,18 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { callExternalDb } from "@/lib/externalDb";
+import { supabase } from "@/integrations/supabase/client";
 import { mapDbKnowledge } from "@/lib/mappers";
 import { KnowledgeItem } from "@/types/data";
 import { knowledgeKeys } from "@/hooks/useKnowledgeItems";
+import type { DbKnowledgeItemRow } from "@/types/db";
 import { toast } from "sonner";
 
 function errMsg(e: unknown) {
   return e instanceof Error ? e.message : "Erro desconhecido";
+}
+
+function toDbRow(raw: Record<string, unknown>): DbKnowledgeItemRow {
+  const { password, ...rest } = raw;
+  return { ...rest, has_password: password !== null && password !== undefined && password !== "" } as DbKnowledgeItemRow;
 }
 
 export function useKnowledgeMutations() {
@@ -24,10 +30,17 @@ export function useKnowledgeMutations() {
         url: item.url ?? null,
         tags: item.tags,
       };
-      if (item.password) dbData.password = item.password;
-      const result = await callExternalDb("insert", "knowledge_items", dbData);
-      if (!result?.[0]) throw new Error("Resposta vazia ao criar item");
-      return mapDbKnowledge(result[0]);
+      const { data: rows, error } = await supabase.from("knowledge_items").insert(dbData).select();
+      if (error) throw new Error(error.message);
+      if (!rows?.[0]) throw new Error("Resposta vazia ao criar item");
+      const newItem = mapDbKnowledge(toDbRow(rows[0] as Record<string, unknown>));
+      // Encrypt and save password server-side if provided
+      if (item.password) {
+        await supabase.functions.invoke("get-password", {
+          body: { id: newItem.id, password: item.password },
+        });
+      }
+      return newItem;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: knowledgeKeys.all });
@@ -51,10 +64,18 @@ export function useKnowledgeMutations() {
       if (data.category) dbData.category = data.category;
       if (data.content !== undefined) dbData.content = data.content;
       if (data.username !== undefined) dbData.username = data.username;
-      if (data.password) dbData.password = data.password;
       if (data.url !== undefined) dbData.url = data.url;
       if (data.tags) dbData.tags = data.tags;
-      await callExternalDb("update", "knowledge_items", dbData, id);
+      if (Object.keys(dbData).length > 0) {
+        const { error } = await supabase.from("knowledge_items").update(dbData).eq("id", id);
+        if (error) throw new Error(error.message);
+      }
+      // Encrypt and save password server-side if provided
+      if (data.password) {
+        await supabase.functions.invoke("get-password", {
+          body: { id, password: data.password },
+        });
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: knowledgeKeys.all });
@@ -65,7 +86,8 @@ export function useKnowledgeMutations() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await callExternalDb("delete", "knowledge_items", undefined, id);
+      const { error } = await supabase.from("knowledge_items").delete().eq("id", id);
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: knowledgeKeys.all });
@@ -76,8 +98,11 @@ export function useKnowledgeMutations() {
 
   const getKnowledgePassword = async (id: string): Promise<string | null> => {
     try {
-      const result = await callExternalDb("get_password", "knowledge_items", undefined, id);
-      const pw = (result as { password?: string } | null)?.password;
+      const { data: result, error } = await supabase.functions.invoke("get-password", {
+        body: { id },
+      });
+      if (error) throw new Error(error.message);
+      const pw = (result as { data?: { password?: string } } | null)?.data?.password;
       return typeof pw === "string" ? pw : null;
     } catch (error) {
       toast.error(`Erro ao obter senha: ${errMsg(error)}`);

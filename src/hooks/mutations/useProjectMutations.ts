@@ -1,10 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { callExternalDb } from "@/lib/externalDb";
+import { supabase } from "@/integrations/supabase/client";
 import { mapDbProject, toISODate } from "@/lib/mappers";
 import { parseCurrencyToNumber } from "@/lib/currency";
 import { Project } from "@/types/data";
 import { projectKeys } from "@/hooks/useProjects";
 import { taskKeys } from "@/hooks/useTasks";
+import type { DbProjectRow } from "@/types/db";
 import { toast } from "sonner";
 
 function errMsg(e: unknown) {
@@ -34,9 +35,10 @@ export function useProjectMutations() {
       if (project.recurrenceStartDate)
         dbData.recurrence_start_date = toISODate(project.recurrenceStartDate);
       if (project.bu) dbData.bu = project.bu;
-      const result = await callExternalDb("insert", "projects", dbData);
-      if (!result?.[0]) throw new Error("Resposta vazia ao criar projeto");
-      return mapDbProject(result[0]);
+      const { data: rows, error } = await supabase.from("projects").insert(dbData).select();
+      if (error) throw new Error(error.message);
+      if (!rows?.[0]) throw new Error("Resposta vazia ao criar projeto");
+      return mapDbProject(rows[0] as DbProjectRow);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: projectKeys.all });
@@ -70,7 +72,8 @@ export function useProjectMutations() {
       if (data.team !== undefined) dbData.team = data.team || [];
       if (data.bu !== undefined) dbData.bu = data.bu;
       if (Object.keys(dbData).length === 0) return;
-      await callExternalDb("update", "projects", dbData, id);
+      const { error } = await supabase.from("projects").update(dbData).eq("id", id);
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: projectKeys.all });
@@ -81,7 +84,8 @@ export function useProjectMutations() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await callExternalDb("delete", "projects", undefined, id);
+      const { error } = await supabase.from("projects").delete().eq("id", id);
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: projectKeys.all });
