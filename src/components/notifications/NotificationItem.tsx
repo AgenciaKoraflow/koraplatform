@@ -1,15 +1,16 @@
 import { cn } from "@/lib/utils";
 import { Notification } from "@/types/notifications";
-import { 
-  Clock, 
-  AlertTriangle, 
-  MessageSquare, 
-  FileSignature, 
-  AlertCircle, 
-  Cake, 
-  Eye, 
+import {
+  Clock,
+  AlertTriangle,
+  MessageSquare,
+  FileSignature,
+  AlertCircle,
+  Cake,
+  Eye,
   DollarSign,
-  X
+  ShieldAlert,
+  X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -22,6 +23,7 @@ const iconMap = {
   client_anniversary: Cake,
   proposal_viewed: Eye,
   payment_received: DollarSign,
+  password_expiry: ShieldAlert,
 };
 
 const colorMap = {
@@ -33,6 +35,7 @@ const colorMap = {
   client_anniversary: "bg-pink-500/15 text-pink-700 dark:text-pink-400 border border-pink-200 dark:border-pink-900",
   proposal_viewed: "bg-slate-500/15 text-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-900",
   payment_received: "bg-green-500/15 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-900",
+  password_expiry: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900",
 };
 
 const priorityIndicator = {

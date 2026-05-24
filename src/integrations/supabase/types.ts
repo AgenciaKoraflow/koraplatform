@@ -9,6 +9,51 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      profiles: {
+        Row: {
+          id: string;
+          full_name: string | null;
+          description: string | null;
+          cargo: string | null;
+          vertente: string | null;
+          avatar_url: string | null;
+          phone: string | null;
+          role: 'admin' | 'operador' | 'observador';
+          first_login: boolean;
+          password_changed_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          full_name?: string | null;
+          description?: string | null;
+          cargo?: string | null;
+          vertente?: string | null;
+          avatar_url?: string | null;
+          phone?: string | null;
+          role?: 'admin' | 'operador' | 'observador';
+          first_login?: boolean;
+          password_changed_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          full_name?: string | null;
+          description?: string | null;
+          cargo?: string | null;
+          vertente?: string | null;
+          avatar_url?: string | null;
+          phone?: string | null;
+          role?: 'admin' | 'operador' | 'observador';
+          first_login?: boolean;
+          password_changed_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       system_health_checks: {
         Row: {
           id: string;
@@ -30,7 +75,6 @@ export interface Database {
       clients: {
         Row: {
           id: string;
-          org_id: string;
           name: string | null;
           company: string | null;
           email: string | null;
@@ -48,7 +92,6 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          org_id?: string;
           name?: string | null;
           company?: string | null;
           email?: string | null;
@@ -66,7 +109,6 @@ export interface Database {
         };
         Update: {
           id?: string;
-          org_id?: string;
           name?: string | null;
           company?: string | null;
           email?: string | null;
@@ -87,7 +129,6 @@ export interface Database {
       projects: {
         Row: {
           id: string;
-          org_id: string;
           client_id: string;
           name: string | null;
           description: string | null;
@@ -107,7 +148,6 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          org_id?: string;
           client_id: string;
           name?: string | null;
           description?: string | null;
@@ -127,7 +167,6 @@ export interface Database {
         };
         Update: {
           id?: string;
-          org_id?: string;
           client_id?: string;
           name?: string | null;
           description?: string | null;
@@ -150,7 +189,6 @@ export interface Database {
       tasks: {
         Row: {
           id: string;
-          org_id: string;
           client_id: string;
           project_id: string | null;
           title: string | null;
@@ -165,7 +203,6 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          org_id?: string;
           client_id: string;
           project_id?: string | null;
           title?: string | null;
@@ -180,7 +217,6 @@ export interface Database {
         };
         Update: {
           id?: string;
-          org_id?: string;
           client_id?: string;
           project_id?: string | null;
           title?: string | null;
@@ -198,7 +234,6 @@ export interface Database {
       contracts: {
         Row: {
           id: string;
-          org_id: string;
           client_id: string;
           project_ids: string[] | null;
           project_id: string | null;
@@ -244,7 +279,6 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          org_id?: string;
           client_id: string;
           project_ids?: string[] | null;
           project_id?: string | null;
@@ -290,7 +324,6 @@ export interface Database {
         };
         Update: {
           id?: string;
-          org_id?: string;
           client_id?: string;
           project_ids?: string[] | null;
           project_id?: string | null;
@@ -339,7 +372,6 @@ export interface Database {
       knowledge_items: {
         Row: {
           id: string;
-          org_id: string;
           client_id: string | null;
           project_ids: string[] | null;
           project_id: string | null;
@@ -355,7 +387,6 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          org_id?: string;
           client_id?: string | null;
           project_ids?: string[] | null;
           project_id?: string | null;
@@ -371,7 +402,6 @@ export interface Database {
         };
         Update: {
           id?: string;
-          org_id?: string;
           client_id?: string | null;
           project_ids?: string[] | null;
           project_id?: string | null;
@@ -390,7 +420,6 @@ export interface Database {
       support_tickets: {
         Row: {
           id: string;
-          org_id: string;
           client_id: string;
           project_ids: string[] | null;
           project_id: string | null;
@@ -404,7 +433,6 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          org_id?: string;
           client_id: string;
           project_ids?: string[] | null;
           project_id?: string | null;
@@ -418,7 +446,6 @@ export interface Database {
         };
         Update: {
           id?: string;
-          org_id?: string;
           client_id?: string;
           project_ids?: string[] | null;
           project_id?: string | null;

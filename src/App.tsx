@@ -2,13 +2,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { lazy, Suspense, useEffect } from "react";
 import { RouteErrorBoundary } from "@/components/error-boundary";
 import { supabase } from "@/integrations/supabase/client";
 import { clearAllToasts } from "@/hooks/use-toast";
+import { ForcePasswordChangeModal } from "@/components/auth/ForcePasswordChangeModal";
 
 // Separate importers so we can preload them without re-creating the lazy component
 const importFunil = () => import("./pages/Funil");
@@ -28,6 +29,8 @@ const importNotFound = () => import("./pages/NotFound");
 const importOKR = () => import("./pages/OKR");
 const importBuscar = () => import("./pages/Buscar");
 const importLogin = () => import("./pages/Login");
+const importPerfilPessoal = () => import("./pages/PerfilPessoal");
+const importGerenciarUsuarios = () => import("./pages/GerenciarUsuarios");
 
 const Funil = lazy(importFunil);
 const ClientesAtivos = lazy(importClientesAtivos);
@@ -46,6 +49,8 @@ const NotFound = lazy(importNotFound);
 const OKR = lazy(importOKR);
 const Buscar = lazy(importBuscar);
 const Login = lazy(importLogin);
+const PerfilPessoal = lazy(importPerfilPessoal);
+const GerenciarUsuarios = lazy(importGerenciarUsuarios);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -55,8 +60,9 @@ const queryClient = new QueryClient({
   },
 });
 
-// Clears all React Query cache and toasts on sign-out so one user's data
-// cannot leak into the next session within the same browser tab.
+// Routes accessible by Observers (limited access)
+const OBSERVER_ALLOWED_PATHS = ["/tarefas", "/projetos", "/sustentacao", "/buscar", "/perfil"];
+
 function CacheManager() {
   const qc = useQueryClient();
   useEffect(() => {
@@ -77,8 +83,6 @@ const PageLoader = () => (
   </div>
 );
 
-// Preload all page chunks in the background after the app is idle.
-// This ensures navigations after the first page load are instant — no Suspense flash.
 function usePreloadAllPages() {
   useEffect(() => {
     const preload = () => {
@@ -99,6 +103,8 @@ function usePreloadAllPages() {
       importOKR();
       importBuscar();
       importLogin();
+      importPerfilPessoal();
+      importGerenciarUsuarios();
     };
 
     if ("requestIdleCallback" in window) {
@@ -115,10 +121,12 @@ function usePreloadAllPages() {
   }, []);
 }
 
+// Requires authentication + applies observer route restrictions
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, profile, profileLoading } = useAuth();
+  const location = useLocation();
 
-  if (loading) {
+  if (loading || (user && profileLoading)) {
     return <PageLoader />;
   }
 
@@ -126,14 +134,47 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/login" replace />;
   }
 
+  // Observer role: only allowed on specific paths
+  if (profile?.role === "observador" && !OBSERVER_ALLOWED_PATHS.includes(location.pathname)) {
+    return <Navigate to="/tarefas" replace />;
+  }
+
   return <>{children}</>;
 };
+
+// Requires admin role
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading, profile, profileLoading } = useAuth();
+
+  if (loading || (user && profileLoading)) {
+    return <PageLoader />;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (profile?.role !== "admin") {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+// Renders the forced password change modal globally when first_login is true
+function GlobalModals() {
+  const { user, profile, profileLoading } = useAuth();
+  if (!user || profileLoading) return null;
+  if (profile?.first_login) return <ForcePasswordChangeModal />;
+  return null;
+}
 
 function AppRoutes() {
   usePreloadAllPages();
 
   return (
     <RouteErrorBoundary>
+      <GlobalModals />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<ProtectedRoute><Funil /></ProtectedRoute>} />
@@ -149,8 +190,10 @@ function AppRoutes() {
           <Route path="/indicadores" element={<ProtectedRoute><Indicadores /></ProtectedRoute>} />
           <Route path="/processos" element={<ProtectedRoute><Processos /></ProtectedRoute>} />
           <Route path="/okr" element={<ProtectedRoute><OKR /></ProtectedRoute>} />
-          <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
           <Route path="/buscar" element={<ProtectedRoute><Buscar /></ProtectedRoute>} />
+          <Route path="/perfil" element={<ProtectedRoute><PerfilPessoal /></ProtectedRoute>} />
+          <Route path="/configuracoes" element={<AdminRoute><Configuracoes /></AdminRoute>} />
+          <Route path="/usuarios" element={<AdminRoute><GerenciarUsuarios /></AdminRoute>} />
           <Route path="/login" element={<Login />} />
           <Route path="/sign/:token" element={<SignContract />} />
           <Route path="*" element={<NotFound />} />

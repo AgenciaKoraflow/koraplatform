@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useRef } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -17,6 +17,8 @@ import {
   Workflow,
   Target,
   Camera,
+  Users,
+  Settings,
 } from "lucide-react";
 import { BU } from "@/types/bu";
 import {
@@ -27,24 +29,39 @@ import {
 } from "@/components/ui/tooltip";
 import { KoraSystemLogo, KoraSystemLogoIcon } from "@/components/shared/KoraSystemLogo";
 import { useAuth } from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useUserAvatar } from "@/hooks/useUserAvatar";
+import type { Profile } from "@/hooks/useProfile";
 
-type NavItem = { name: string; href: string; icon: typeof Filter; bu: BU };
+type NavItem = {
+  name: string;
+  href: string;
+  icon: typeof Filter;
+  bu: BU;
+  adminOnly?: boolean;
+  hiddenForObserver?: boolean;
+};
 
 const navigation: NavItem[] = [
-  { name: "Funil", href: "/", icon: Filter, bu: "kora-agents" },
-  { name: "Clientes", href: "/clientes", icon: Heart, bu: "kora-agents" },
-  { name: "Contratos", href: "/contratos", icon: FileSignature, bu: "kora-agents" },
+  { name: "Funil", href: "/", icon: Filter, bu: "kora-agents", hiddenForObserver: true },
+  { name: "Clientes", href: "/clientes", icon: Heart, bu: "kora-agents", hiddenForObserver: true },
+  { name: "Contratos", href: "/contratos", icon: FileSignature, bu: "kora-agents", hiddenForObserver: true },
   { name: "Projetos", href: "/projetos", icon: FolderKanban, bu: "kora-dev" },
   { name: "Tarefas", href: "/tarefas", icon: CheckSquare, bu: "kora-dev" },
   { name: "Sustentação", href: "/sustentacao", icon: HeadphonesIcon, bu: "kora-dev" },
-  { name: "Observabilidade", href: "/observabilidade", icon: Activity, bu: "kora-dev" },
-  { name: "Conhecimento", href: "/conhecimento", icon: BookOpen, bu: "kora-studio" },
-  { name: "Processos", href: "/processos", icon: Workflow, bu: "kora-corp" },
-  { name: "Financeiro", href: "/financeiro", icon: DollarSign, bu: "kora-corp" },
-  { name: "Indicadores", href: "/indicadores", icon: BarChart3, bu: "kora-corp" },
-  { name: "OKR", href: "/okr", icon: Target, bu: "kora-corp" },
+  { name: "Observabilidade", href: "/observabilidade", icon: Activity, bu: "kora-dev", hiddenForObserver: true },
+  { name: "Conhecimento", href: "/conhecimento", icon: BookOpen, bu: "kora-studio", hiddenForObserver: true },
+  { name: "Processos", href: "/processos", icon: Workflow, bu: "kora-corp", hiddenForObserver: true },
+  { name: "Financeiro", href: "/financeiro", icon: DollarSign, bu: "kora-corp", hiddenForObserver: true },
+  { name: "Indicadores", href: "/indicadores", icon: BarChart3, bu: "kora-corp", hiddenForObserver: true },
+  { name: "OKR", href: "/okr", icon: Target, bu: "kora-corp", hiddenForObserver: true },
 ];
+
+const roleMeta: Record<Profile['role'], { label: string; class: string }> = {
+  admin: { label: "Admin", class: "bg-violet-500/20 text-violet-400" },
+  operador: { label: "Operador", class: "bg-blue-500/20 text-blue-400" },
+  observador: { label: "Observador", class: "bg-gray-500/20 text-gray-400" },
+};
 
 interface AppSidebarProps {
   onNavigate?: () => void;
@@ -53,9 +70,16 @@ interface AppSidebarProps {
 
 export function AppSidebar({ onNavigate, collapsed = false }: AppSidebarProps) {
   const location = useLocation();
-  const { signOut, user } = useAuth();
+  const navigate = useNavigate();
+  const { signOut, user, profile } = useAuth();
+  const { isAdmin, isObservador } = usePermissions();
   const { avatarUrl, uploadAvatar, isUploading } = useUserAvatar();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const visibleNavItems = navigation.filter((item) => {
+    if (isObservador && item.hiddenForObserver) return false;
+    return true;
+  });
 
   const handleNavClick = () => {
     if (onNavigate) onNavigate();
@@ -68,7 +92,6 @@ export function AppSidebar({ onNavigate, collapsed = false }: AppSidebarProps) {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    // Client-side guard before the hook does the same check — fail fast
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Arquivo muito grande. Máximo 5 MB.");
       e.target.value = "";
@@ -80,9 +103,11 @@ export function AppSidebar({ onNavigate, collapsed = false }: AppSidebarProps) {
     } catch {
       toast.error("Não foi possível atualizar a foto. Tente novamente.");
     }
-    // Reset so the same file can be re-selected
     e.target.value = "";
   };
+
+  const displayName = profile?.full_name ?? user?.email?.split("@")[0] ?? "login";
+  const roleInfo = profile?.role ? roleMeta[profile.role] : null;
 
   const UserAvatarButton = () => (
     <Tooltip>
@@ -103,7 +128,6 @@ export function AppSidebar({ onNavigate, collapsed = false }: AppSidebarProps) {
           ) : (
             <span>{user?.email?.charAt(0).toUpperCase() || "K"}</span>
           )}
-          {/* Camera overlay on hover */}
           <span className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity">
             {isUploading ? (
               <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -142,7 +166,7 @@ export function AppSidebar({ onNavigate, collapsed = false }: AppSidebarProps) {
 
         {/* Navigation */}
         <nav className="flex-1 py-3 space-y-0.5 overflow-y-auto px-2">
-          {navigation.map((item) => {
+          {visibleNavItems.map((item) => {
             const isActive = location.pathname === item.href;
             const navLink = (
               <NavLink
@@ -172,6 +196,61 @@ export function AppSidebar({ onNavigate, collapsed = false }: AppSidebarProps) {
               </Tooltip>
             );
           })}
+
+          {/* Admin-only items */}
+          {isAdmin && (
+            <>
+              <div className={cn("my-1 border-t border-sidebar-border", collapsed ? "mx-2" : "mx-1")} />
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <NavLink
+                    to="/usuarios"
+                    onClick={handleNavClick}
+                    className={cn(
+                      "relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150",
+                      collapsed ? "justify-center" : "",
+                      location.pathname === "/usuarios"
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+                    )}
+                  >
+                    <Users className="w-5 h-5 flex-shrink-0" />
+                    {!collapsed && <span>Usuários</span>}
+                  </NavLink>
+                </TooltipTrigger>
+                {collapsed && (
+                  <TooltipContent side="right" className="bg-popover text-popover-foreground">
+                    <p>Usuários</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <NavLink
+                    to="/configuracoes"
+                    onClick={handleNavClick}
+                    className={cn(
+                      "relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150",
+                      collapsed ? "justify-center" : "",
+                      location.pathname === "/configuracoes"
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+                    )}
+                  >
+                    <Settings className="w-5 h-5 flex-shrink-0" />
+                    {!collapsed && <span>Configurações</span>}
+                  </NavLink>
+                </TooltipTrigger>
+                {collapsed && (
+                  <TooltipContent side="right" className="bg-popover text-popover-foreground">
+                    <p>Configurações</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </>
+          )}
         </nav>
 
         {/* User Profile & Logout */}
@@ -179,7 +258,6 @@ export function AppSidebar({ onNavigate, collapsed = false }: AppSidebarProps) {
           "border-t border-sidebar-border p-3 transition-all duration-300",
           collapsed ? "flex flex-col items-center gap-2" : "flex items-center justify-between"
         )}>
-          {/* Hidden file input */}
           <input
             ref={fileInputRef}
             type="file"
@@ -189,19 +267,26 @@ export function AppSidebar({ onNavigate, collapsed = false }: AppSidebarProps) {
           />
 
           {!collapsed ? (
-            <div className="flex items-center gap-3 min-w-0 flex-1">
+            <button
+              onClick={() => navigate('/perfil')}
+              className="flex items-center gap-3 min-w-0 flex-1 rounded-xl p-1.5 hover:bg-sidebar-accent/50 transition-all text-left"
+            >
               <UserAvatarButton />
               <div className="flex flex-col min-w-0">
                 <span className="text-sm font-medium text-sidebar-foreground truncate">
-                  {user?.email?.split("@")[0] || "login"}
+                  {displayName}
                 </span>
-                <span className="text-xs text-sidebar-foreground/60 truncate">
-                  {user?.email || "---"}
-                </span>
+                {roleInfo && (
+                  <span className={cn("text-xs font-medium px-1.5 py-0.5 rounded-md w-fit mt-0.5", roleInfo.class)}>
+                    {roleInfo.label}
+                  </span>
+                )}
               </div>
-            </div>
+            </button>
           ) : (
-            <UserAvatarButton />
+            <button onClick={() => navigate('/perfil')}>
+              <UserAvatarButton />
+            </button>
           )}
 
           <Tooltip>

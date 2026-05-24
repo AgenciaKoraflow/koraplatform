@@ -4,6 +4,7 @@ import { useAllTasks } from "@/hooks/useTasks";
 import { useAllContracts } from "@/hooks/useContracts";
 import { useAllTickets } from "@/hooks/useTickets";
 import { useAllClients } from "@/hooks/useClients";
+import { useAuth } from "@/hooks/useAuth";
 import { parseISO, isPast, differenceInDays, isToday } from "date-fns";
 
 // Parse date helper
@@ -26,12 +27,32 @@ export function useNotifications() {
   const { data: contracts = [] } = useAllContracts();
   const { data: tickets = [] } = useAllTickets();
   const { data: clients = [] } = useAllClients();
+  const { profile } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Generate notifications from real data
   const generatedNotifications = useMemo(() => {
     const notifs: Notification[] = [];
+
+    // Password expiry — pinned at the top if > 90 days without change
+    if (profile?.password_changed_at) {
+      const changedAt = parseISO(profile.password_changed_at);
+      const daysSinceChange = differenceInDays(new Date(), changedAt);
+      if (daysSinceChange >= 90) {
+        notifs.push({
+          id: "password-expiry",
+          type: "password_expiry",
+          title: "Recomendamos trocar sua senha",
+          message: `Sua senha não é alterada há ${daysSinceChange} dias. Acesse seu perfil para atualizá-la.`,
+          timestamp: changedAt,
+          read: false,
+          actionUrl: "/perfil",
+          priority: daysSinceChange >= 180 ? "high" : "medium",
+          metadata: { daysSinceChange },
+        });
+      }
+    }
 
     // Overdue tasks
     tasks.forEach((task) => {
@@ -165,7 +186,7 @@ export function useNotifications() {
 
     // Sort by timestamp (most recent first) - create a copy to avoid mutating
     return [...notifs].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-  }, [tasks, contracts, tickets, clients]);
+  }, [tasks, contracts, tickets, clients, profile]);
 
   useEffect(() => {
     setIsLoading(true);

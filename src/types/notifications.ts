@@ -1,12 +1,13 @@
-export type NotificationType = 
-  | "task_due" 
-  | "task_overdue" 
-  | "new_ticket" 
-  | "contract_pending" 
+export type NotificationType =
+  | "task_due"
+  | "task_overdue"
+  | "new_ticket"
+  | "contract_pending"
   | "contract_expiring"
   | "client_anniversary"
   | "proposal_viewed"
-  | "payment_received";
+  | "payment_received"
+  | "password_expiry";
 
 export interface Notification {
   id: string;
@@ -29,4 +30,5 @@ export const notificationConfig: Record<NotificationType, { icon: string; color:
   client_anniversary: { icon: "Cake", color: "text-pink-500" },
   proposal_viewed: { icon: "Eye", color: "text-muted-foreground" },
   payment_received: { icon: "DollarSign", color: "text-green-500" },
+  password_expiry: { icon: "ShieldAlert", color: "text-amber-500" },
 };

@@ -1,5 +1,7 @@
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, createContext, useContext, useCallback, ReactNode } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Profile } from '@/hooks/useProfile';
 
 interface User {
   id: string;
@@ -9,9 +11,12 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
+  profile: Profile | null;
   loading: boolean;
+  profileLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  refreshProfile: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,6 +24,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const qc = useQueryClient();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -47,6 +53,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => { subscription.unsubscribe(); };
   }, []);
 
+  const profileQueryKey = ['profile', user?.id ?? ''];
+
+  const { data: profile = null, isLoading: profileLoading } = useQuery({
+    queryKey: profileQueryKey,
+    enabled: !!user?.id,
+    staleTime: 2 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user!.id)
+        .single<Profile>();
+      if (error) return null;
+      return data;
+    },
+  });
+
+  const refreshProfile = useCallback(() => {
+    qc.invalidateQueries({ queryKey: profileQueryKey });
+  }, [qc, profileQueryKey]);
+
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error: error ? new Error(error.message) : null };
@@ -59,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{
-      user, loading, signIn, signOut,
+      user, profile, loading, profileLoading, signIn, signOut, refreshProfile,
     }}>
       {children}
     </AuthContext.Provider>
