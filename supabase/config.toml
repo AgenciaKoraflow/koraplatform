@@ -2,3 +2,6 @@ project_id = "jucejqnalymzeegjieyh"
 
 [functions.sign-contract]
 verify_jwt = false
+
+[functions.change-password]
+verify_jwt = false
