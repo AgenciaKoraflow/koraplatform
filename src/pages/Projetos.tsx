@@ -45,6 +45,34 @@ const statusConfig = {
 
 const statusOrder: (keyof typeof statusConfig)[] = ["planning", "in_progress", "review", "completed", "on_hold"];
 
+const taskStatusConfig = {
+  todo:          { label: "A Fazer",      color: "text-slate-400",  dot: "bg-slate-400",  bg: "bg-slate-500/10"  },
+  in_progress:   { label: "Em Progresso", color: "text-primary",    dot: "bg-primary",    bg: "bg-primary/10"    },
+  blocked:       { label: "Impedimento",  color: "text-red-400",    dot: "bg-red-400",    bg: "bg-red-500/10"    },
+  review:        { label: "Em Revisão",   color: "text-amber-400",  dot: "bg-amber-400",  bg: "bg-amber-500/10"  },
+  client_review: { label: "Em Cliente",   color: "text-purple-400", dot: "bg-purple-400", bg: "bg-purple-500/10" },
+  done:          { label: "Concluído",    color: "text-green-400",  dot: "bg-green-400",  bg: "bg-green-500/10"  },
+};
+
+const MONTHS_PT = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+
+function getMonthKey(dueDate: string): string {
+  if (!dueDate || dueDate === "A definir") return "Sem data";
+  const m = dueDate.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (m) return `${MONTHS_PT[+m[2] - 1]} ${m[3]}`;
+  const d = new Date(dueDate);
+  if (!isNaN(d.getTime())) return `${MONTHS_PT[d.getMonth()]} ${d.getFullYear()}`;
+  return "Sem data";
+}
+
+function parseTaskDate(d: string): number {
+  if (!d || d === "A definir") return Infinity;
+  const m = d.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (m) return new Date(+m[3], +m[2] - 1, +m[1]).getTime();
+  const ts = new Date(d).getTime();
+  return isNaN(ts) ? Infinity : ts;
+}
+
 const PAGE_SIZE = 50;
 
 export default function Projetos() {
@@ -386,7 +414,7 @@ export default function Projetos() {
               return (
               <div
                 key={project.id}
-                onClick={() => openEditDialog(project)}
+                onClick={() => openViewDialog(project)}
                 className="p-5 rounded-xl bg-card border border-border shadow-soft hover:shadow-medium transition-all duration-300 animate-slide-up cursor-pointer"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
@@ -511,7 +539,7 @@ export default function Projetos() {
                     return (
                     <div
                       key={project.id}
-                      onClick={() => openEditDialog(project)}
+                      onClick={() => openViewDialog(project)}
                       className="p-4 rounded-xl bg-card border border-border shadow-soft hover:shadow-medium transition-all cursor-pointer"
                     >
                       <h4 className="font-medium text-foreground mb-1">{project.name}</h4>
@@ -592,10 +620,10 @@ export default function Projetos() {
                   const deadlineStatus = getDeadlineStatus(project.dueDate, project.progress, project.status);
                   
                   return (
-                  <tr 
-                    key={project.id} 
+                  <tr
+                    key={project.id}
                     className="hover:bg-muted/20 transition-colors cursor-pointer"
-                    onClick={() => openEditDialog(project)}
+                    onClick={() => openViewDialog(project)}
                   >
                     <td className="px-6 py-4 font-medium text-foreground">{project.name}</td>
                     <td className="px-6 py-4">
@@ -900,6 +928,64 @@ export default function Projetos() {
                   </div>
                 </div>
               )}
+
+              {/* Roadmap / Histórico de tarefas */}
+              {viewingProjectTasks.length > 0 && (() => {
+                const sorted = [...viewingProjectTasks].sort((a, b) => parseTaskDate(a.dueDate) - parseTaskDate(b.dueDate));
+                const grouped = sorted.reduce<Record<string, typeof sorted>>((acc, task) => {
+                  const key = getMonthKey(task.dueDate);
+                  (acc[key] ??= []).push(task);
+                  return acc;
+                }, {});
+                return (
+                  <div className="pt-4 border-t border-border">
+                    <p className="text-xs font-medium text-muted-foreground mb-4 flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5" />
+                      Roadmap
+                    </p>
+                    <div className="relative">
+                      <div className="absolute left-[6px] top-2 bottom-2 w-px bg-border" />
+                      {Object.entries(grouped).map(([month, tasks]) => (
+                        <div key={month} className="mb-4">
+                          <p className="text-xs font-semibold text-muted-foreground mb-2 ml-6">{month}</p>
+                          <div className="space-y-2.5">
+                            {tasks.map((task) => {
+                              const cfg = taskStatusConfig[task.status];
+                              return (
+                                <div key={task.id} className="flex items-start gap-3">
+                                  <div className={cn("w-3.5 h-3.5 rounded-full border-2 border-card mt-0.5 shrink-0 z-10", cfg.dot)} />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="text-sm font-medium text-foreground truncate">{task.title}</span>
+                                      <span className={cn("px-1.5 py-0.5 rounded text-xs font-medium", cfg.bg, cfg.color)}>
+                                        {cfg.label}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
+                                      {task.dueDate && task.dueDate !== "A definir" && (
+                                        <span className="flex items-center gap-1">
+                                          <Calendar className="w-3 h-3" />
+                                          {task.dueDate}
+                                        </span>
+                                      )}
+                                      {task.assignees.length > 0 && (
+                                        <span>
+                                          {task.assignees.slice(0, 2).join(", ")}
+                                          {task.assignees.length > 2 ? ` +${task.assignees.length - 2}` : ""}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
 
               <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
                 <div>
