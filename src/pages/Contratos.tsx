@@ -14,7 +14,7 @@ import {
   Mail, Users, Check, Cake, CalendarClock, TrendingUp, Zap
 } from "lucide-react";
 import { SignaturePadPro } from "@/components/signature/SignaturePadPro";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogBody, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -1178,11 +1178,11 @@ export default function Contratos() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="bg-card border-border sm:max-w-2xl max-h-[90vh] overflow-y-auto mx-4">
+        <DialogContent className="bg-card border-border sm:max-w-2xl mx-4">
           <DialogHeader>
             <DialogTitle className="text-foreground">{editingContract ? "Editar Contrato" : "Novo Contrato"}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <DialogBody className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="title">Título *</Label>
               <Input id="title" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="Título do contrato" className="bg-input border-border" />
@@ -1325,7 +1325,7 @@ export default function Contratos() {
                 )}
               </div>
             </div>
-          </div>
+          </DialogBody>
           <DialogFooter>
             <button onClick={() => setIsDialogOpen(false)} className="px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors">
               Cancelar
@@ -1339,13 +1339,13 @@ export default function Contratos() {
 
       {/* View Contract Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="bg-card border-border sm:max-w-2xl max-h-[90vh] overflow-y-auto mx-4">
+        <DialogContent className="bg-card border-border sm:max-w-2xl mx-4">
           <DialogHeader>
             <DialogTitle className="text-foreground">{viewingContract?.title}</DialogTitle>
             <DialogDescription>Detalhes do contrato</DialogDescription>
           </DialogHeader>
           {viewingContract && (
-            <div className="space-y-6 py-4">
+            <DialogBody className="space-y-6 py-4">
               {/* Status */}
               <div className="flex items-center gap-3">
                 <span className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border", statusConfig[viewingContract.status]?.color || statusConfig.draft.color)}>
@@ -1539,14 +1539,14 @@ export default function Contratos() {
                   </div>
                 </div>
               )}
-            </div>
+            </DialogBody>
           )}
         </DialogContent>
       </Dialog>
 
       {/* Koraflow Sign Dialog */}
       <Dialog open={isKoraflowSignDialogOpen} onOpenChange={setIsKoraflowSignDialogOpen}>
-        <DialogContent className="bg-card border-border sm:max-w-3xl mx-4 max-h-[90vh] overflow-y-auto">
+        <DialogContent className="bg-card border-border sm:max-w-3xl mx-4">
           <DialogHeader>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
@@ -1560,7 +1560,7 @@ export default function Contratos() {
               </div>
             </div>
           </DialogHeader>
-          <div className="space-y-5 py-4">
+          <DialogBody className="space-y-5 py-4">
             <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/20 text-sm text-amber-700">
               <strong>Sócio signatário:</strong> apenas sócios autorizados podem assinar pela Koraflow.
             </div>
@@ -1627,7 +1627,7 @@ export default function Contratos() {
                 </p>
               </div>
             </div>
-          </div>
+          </DialogBody>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsKoraflowSignDialogOpen(false)}>
               Cancelar
@@ -1653,7 +1653,7 @@ export default function Contratos() {
               O cliente receberá um e-mail com o link para assinar o contrato
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <DialogBody className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="clientEmail">E-mail do Cliente *</Label>
               <Input
@@ -1698,7 +1698,7 @@ export default function Contratos() {
                 </p>
               </div>
             </div>
-          </div>
+          </DialogBody>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsSendToClientDialogOpen(false)}>
               Cancelar

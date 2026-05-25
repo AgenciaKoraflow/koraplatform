@@ -5,7 +5,7 @@ import { parseCurrencyToNumber } from "@/lib/currency";
 import { Plus, Search, Building2, Mail, Phone, Calendar, Edit, Trash2, TrendingUp, Users, DollarSign, Target, ChevronRight, Clock, AlertTriangle, CheckCircle, GitBranch, Camera, X } from "lucide-react";
 import { ClientAvatar } from "@/components/shared/ClientAvatar";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogBody, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -796,7 +796,7 @@ export default function Funil() {
           <DialogHeader>
             <DialogTitle className="text-foreground">{editingClient ? "Editar Lead" : "Novo Lead"}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-1">
+          <DialogBody className="space-y-4 py-4">
             {/* Logo upload */}
             <div className="flex flex-col items-center gap-2">
               <input
@@ -916,7 +916,7 @@ export default function Funil() {
                 )}
               </div>
             )}
-          </div>
+          </DialogBody>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
             <Button onClick={handleSave} disabled={isAdding || isUpdating}>{editingClient ? "Salvar" : "Criar"}</Button>

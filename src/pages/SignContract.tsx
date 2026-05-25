@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogBody, DialogTitle } from "@/components/ui/dialog";
 import {
   FileSignature,
   CheckCircle,
@@ -723,11 +723,11 @@ export default function SignContract() {
 
       {/* Document Viewer */}
       <Dialog open={showDocument} onOpenChange={setShowDocument}>
-        <DialogContent className="max-w-4xl max-h-[90vh]" aria-describedby={undefined}>
+        <DialogContent className="max-w-4xl" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>{contract?.document_name}</DialogTitle>
           </DialogHeader>
-          <div className="overflow-auto max-h-[75vh]">
+          <DialogBody>
             {documentUrl ? (
               contract?.document_type?.includes("image") ? (
                 <img src={documentUrl} alt="Documento" className="max-w-full" />
@@ -737,7 +737,7 @@ export default function SignContract() {
             ) : (
               <p className="text-center text-muted-foreground py-8">Visualização não disponível</p>
             )}
-          </div>
+          </DialogBody>
         </DialogContent>
       </Dialog>
 

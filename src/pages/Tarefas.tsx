@@ -3,7 +3,7 @@ import { useState, useMemo, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Search, Calendar, CheckCircle2, Circle, Clock, Eye, Edit, Trash2, AlertTriangle, User, ListChecks } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogBody, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -482,7 +482,7 @@ export default function Tarefas() {
           <DialogHeader>
             <DialogTitle className="text-foreground">{editingTask ? "Editar Tarefa" : "Nova Tarefa"}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <DialogBody className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="title">Título *</Label>
               <Input id="title" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="Título da tarefa" className="bg-input border-border" />
@@ -567,7 +567,7 @@ export default function Tarefas() {
               <Label htmlFor="bu">BU</Label>
               <BUSelect value={formData.bu} onChange={(bu) => setFormData({ ...formData, bu })} />
             </div>
-          </div>
+          </DialogBody>
           <DialogFooter>
             <button onClick={() => setIsDialogOpen(false)} className="px-4 py-2 rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-colors">Cancelar</button>
             <button onClick={handleSave} disabled={isAdding || isUpdating} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Salvar</button>
@@ -582,7 +582,7 @@ export default function Tarefas() {
             <DialogTitle className="text-foreground">Detalhes da Tarefa</DialogTitle>
           </DialogHeader>
           {viewingTask && (
-            <div className="space-y-4 py-4">
+            <DialogBody className="space-y-4 py-4">
               <div className="flex items-center gap-2">
                 <span className={cn("px-2.5 py-1 rounded-full text-xs font-medium", viewingTask.status === "done" ? "bg-green-500/10 text-green-500" : viewingTask.status === "in_progress" ? "bg-primary/10 text-primary" : viewingTask.status === "review" ? "bg-amber-500/10 text-amber-500" : "bg-muted text-muted-foreground")}>
                   {statusColumns.find(s => s.id === viewingTask.status)?.label}
@@ -628,7 +628,7 @@ export default function Tarefas() {
                   )}
                 </div>
               </div>
-            </div>
+          </DialogBody>
           )}
           <DialogFooter>
             <button onClick={() => setIsViewDialogOpen(false)} className="px-4 py-2 rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-colors">Fechar</button>

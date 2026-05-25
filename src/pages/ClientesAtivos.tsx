@@ -7,7 +7,7 @@ import {
   Video, CalendarDays, StickyNote, Heart, CheckSquare, Circle, AlertCircle, HeartHandshake
 } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogBody, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -669,7 +669,7 @@ export default function ClientesAtivos() {
           <DialogHeader>
             <DialogTitle>Nova Interação</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <DialogBody className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Tipo de Interação</Label>
               <Select value={interactionForm.type} onValueChange={(value: ClientInteraction["type"]) => setInteractionForm({ ...interactionForm, type: value })}>
@@ -718,7 +718,7 @@ export default function ClientesAtivos() {
                 className="bg-input border-border min-h-[100px]"
               />
             </div>
-          </div>
+          </DialogBody>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsInteractionDialogOpen(false)}>
               Cancelar
@@ -739,7 +739,7 @@ export default function ClientesAtivos() {
               Aniversários Próximos
             </DialogTitle>
           </DialogHeader>
-          <div className="py-4">
+          <DialogBody className="py-4">
             {upcomingBirthdays.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">
                 Nenhum aniversário nos próximos 30 dias
@@ -775,7 +775,7 @@ export default function ClientesAtivos() {
                 ))}
               </div>
             )}
-          </div>
+          </DialogBody>
         </DialogContent>
       </Dialog>
     </AppLayout>

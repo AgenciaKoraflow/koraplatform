@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogBody, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { DatePicker } from "@/components/shared/DatePicker";
@@ -253,12 +253,13 @@ export default function Financeiro() {
                     Nova Transação
                   </Button>
                 </DialogTrigger>
-              <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
+              <DialogContent className="max-w-3xl" aria-describedby={undefined}>
                 <DialogHeader>
                   <DialogTitle>
                     {editingTransaction ? "Editar Transação" : "Nova Transação"}
                   </DialogTitle>
                 </DialogHeader>
+                <DialogBody>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {/* Tipo */}
                   <div className="flex gap-4">
@@ -518,6 +519,7 @@ export default function Financeiro() {
                     </Button>
                   </div>
                 </form>
+                </DialogBody>
               </DialogContent>
             </Dialog>
             </>

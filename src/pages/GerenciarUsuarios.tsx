@@ -9,6 +9,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogBody,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useQueryClient } from '@tanstack/react-query';
@@ -96,6 +97,7 @@ function InviteDialog({ open, onClose }: InviteDialogProps) {
           <DialogTitle>Convidar usuário</DialogTitle>
         </DialogHeader>
 
+        <DialogBody>
         <form onSubmit={handleSubmit} noValidate className="space-y-4 pt-2">
           <div>
             <label htmlFor="invite-name" className="block text-sm font-medium text-foreground mb-1.5">Nome completo</label>
@@ -159,6 +161,7 @@ function InviteDialog({ open, onClose }: InviteDialogProps) {
             </button>
           </div>
         </form>
+        </DialogBody>
       </DialogContent>
     </Dialog>
   );

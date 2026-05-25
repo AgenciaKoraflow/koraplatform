@@ -28,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogBody, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useAllClients } from "@/hooks/useClients";
 import { supabase } from "@/integrations/supabase/client";
 import type { IntegrationType, IntegrationStatus, ClientIntegration } from "@/types/data";
@@ -583,7 +583,7 @@ export default function Observabilidade() {
           <DialogHeader>
             <DialogTitle className="text-foreground">Nova Integração</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <DialogBody className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="type">Tipo de Integração *</Label>
               <Select
@@ -635,7 +635,7 @@ export default function Observabilidade() {
             </div>
 
             {renderConfigFields()}
-          </div>
+          </DialogBody>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
               Cancelar
@@ -654,7 +654,7 @@ export default function Observabilidade() {
           <DialogHeader>
             <DialogTitle className="text-foreground">Editar Integração</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <DialogBody className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Tipo</Label>
               <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/30">
@@ -687,7 +687,7 @@ export default function Observabilidade() {
             </div>
 
             {renderConfigFields()}
-          </div>
+          </DialogBody>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Cancelar

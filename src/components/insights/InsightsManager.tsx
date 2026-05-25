@@ -4,7 +4,7 @@ import { InsightsBoardList } from "./InsightsBoardList";
 import { InsightsCanvasEnhanced } from "./InsightsCanvasEnhanced";
 import { InsightsDocEditor } from "./InsightsDocEditor";
 import { InsightsBoard, CanvasElement } from "@/types/insights";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogBody, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -150,7 +150,7 @@ export function InsightsManager() {
               {createType === "canvas" ? "Novo Canvas" : "Novo Documento"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <DialogBody className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="name">Nome</Label>
               <Input
@@ -170,7 +170,7 @@ export function InsightsManager() {
                 rows={3}
               />
             </div>
-          </div>
+          </DialogBody>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
               Cancelar
@@ -188,7 +188,7 @@ export function InsightsManager() {
           <DialogHeader>
             <DialogTitle className="text-foreground">Renomear Quadro</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <DialogBody className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="rename-name">Nome</Label>
               <Input
@@ -208,7 +208,7 @@ export function InsightsManager() {
                 rows={3}
               />
             </div>
-          </div>
+          </DialogBody>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsRenameDialogOpen(false)}>
               Cancelar

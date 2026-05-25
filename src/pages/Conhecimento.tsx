@@ -2,7 +2,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { useState, useMemo, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Search, FileText, Key, Link2, Eye, EyeOff, Copy, ExternalLink, Edit, Trash2, Users, Lightbulb, BookOpen } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogBody, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -408,7 +408,7 @@ export default function Conhecimento() {
           <DialogHeader>
             <DialogTitle className="text-foreground">{editingItem ? "Editar Item" : "Adicionar Item"}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
+          <DialogBody className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="title">Título *</Label>
               <Input id="title" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="Nome do item" className="bg-input border-border" />
@@ -493,7 +493,7 @@ export default function Conhecimento() {
               <Label htmlFor="tags">Tags (separadas por vírgula)</Label>
               <Input id="tags" value={formData.tags} onChange={(e) => setFormData({ ...formData, tags: e.target.value })} placeholder="servidor, produção, aws" className="bg-input border-border" />
             </div>
-          </div>
+          </DialogBody>
           <DialogFooter>
             <button onClick={() => setIsDialogOpen(false)} className="px-4 py-2 rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-colors">Cancelar</button>
             <button onClick={handleSave} disabled={isAdding || isUpdating} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Salvar</button>
@@ -510,7 +510,7 @@ export default function Conhecimento() {
           {viewingItem && (() => {
             const ViewIcon = categoryConfig[viewingItem.category].icon;
             return (
-              <div className="space-y-4 py-4">
+              <DialogBody className="space-y-4 py-4">
                 <div className="flex items-center gap-3">
                   <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center", categoryConfig[viewingItem.category].color)}>
                     <ViewIcon className="w-6 h-6" />
@@ -585,7 +585,7 @@ export default function Conhecimento() {
                   <p>Criado em: {viewingItem.createdAt}</p>
                   <p>Atualizado em: {viewingItem.updatedAt}</p>
                 </div>
-              </div>
+              </DialogBody>
             );
           })()}
           <DialogFooter>

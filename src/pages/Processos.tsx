@@ -4,7 +4,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogBody, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -419,7 +419,7 @@ export default function Processos() {
                 {editingProcess ? "Editar Processo" : "Novo Processo"}
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <DialogBody className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome *</Label>
                 <Input
@@ -625,7 +625,7 @@ export default function Processos() {
                   </div>
                 )}
               </div>
-            </div>
+            </DialogBody>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancelar
@@ -643,9 +643,11 @@ export default function Processos() {
             <DialogHeader>
               <DialogTitle>Confirmar Exclusão</DialogTitle>
             </DialogHeader>
-            <p className="text-sm text-muted-foreground">
-              Tem certeza que deseja excluir este processo? Esta ação não pode ser desfeita.
-            </p>
+            <DialogBody>
+              <p className="text-sm text-muted-foreground">
+                Tem certeza que deseja excluir este processo? Esta ação não pode ser desfeita.
+              </p>
+            </DialogBody>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
                 Cancelar

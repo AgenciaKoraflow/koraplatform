@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Plus, Search, MessageSquare, AlertCircle, CheckCircle, Clock, Eye, Edit, Trash2, LifeBuoy } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useState, useMemo, useCallback } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogBody, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -400,7 +400,7 @@ export default function Sustentacao() {
           <DialogHeader>
             <DialogTitle className="text-foreground">{editingTicket ? "Editar Ticket" : "Novo Ticket"}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <DialogBody className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="title">Título *</Label>
               <Input id="title" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="Título do ticket" className="bg-input border-border" />
@@ -480,7 +480,7 @@ export default function Sustentacao() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
+          </DialogBody>
           <DialogFooter>
             <button onClick={() => setIsDialogOpen(false)} className="px-4 py-2 rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-colors">Cancelar</button>
             <button onClick={handleSave} disabled={isAdding || isUpdating} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Salvar</button>
@@ -495,7 +495,7 @@ export default function Sustentacao() {
             <DialogTitle className="text-foreground">Detalhes do Ticket</DialogTitle>
           </DialogHeader>
           {viewingTicket && (
-            <div className="space-y-4 py-4">
+            <DialogBody className="space-y-4 py-4">
               <div className="flex items-center justify-between">
                 <span className="font-mono text-sm text-primary">{viewingTicket.id}</span>
                 <span className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border", statusConfig[viewingTicket.status].color)}>
@@ -535,7 +535,7 @@ export default function Sustentacao() {
                   <p className="font-medium">{viewingTicket.updatedAt}</p>
                 </div>
               </div>
-            </div>
+          </DialogBody>
           )}
           <DialogFooter>
             <button onClick={() => setIsViewDialogOpen(false)} className="px-4 py-2 rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-colors">Fechar</button>

@@ -3,7 +3,7 @@ import { useState, useMemo, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Calendar, Clock, Search, Eye, Edit, Trash2, AlertTriangle, CheckCircle, Timer, FolderKanban } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogBody, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -649,7 +649,7 @@ export default function Projetos() {
               {editingProject ? "Atualize as informações do projeto" : "Preencha os dados para criar um novo projeto"}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-2 overflow-y-auto max-h-[calc(90vh-14rem)] px-1">
+          <DialogBody className="space-y-4 py-2">
             <div className="space-y-2">
               <Label htmlFor="name">Nome do Projeto *</Label>
               <Input id="name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Nome do projeto" className="bg-input border-border" />
@@ -795,7 +795,7 @@ export default function Projetos() {
                 </Select>
               </div>
             </div>
-          </div>
+          </DialogBody>
           <DialogFooter>
             <button onClick={() => setIsDialogOpen(false)} className="px-4 py-2 rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-colors">Cancelar</button>
             <button onClick={handleSave} disabled={isAdding || isUpdating} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Salvar</button>
@@ -813,7 +813,7 @@ export default function Projetos() {
             </DialogDescription>
           </DialogHeader>
           {viewingProject && (
-            <div className="space-y-4 py-2 overflow-y-auto max-h-[calc(90vh-14rem)] px-1">
+            <DialogBody className="space-y-4 py-2">
               <div className="flex items-center justify-between">
                 <span className={cn("px-3 py-1.5 rounded-full text-sm font-medium", statusConfig[viewingProject.status].color)}>
                   {statusConfig[viewingProject.status].label}
@@ -860,7 +860,7 @@ export default function Projetos() {
                   </div>
                 </div>
               </div>
-            </div>
+            </DialogBody>
           )}
           <DialogFooter>
             <button onClick={() => setIsViewDialogOpen(false)} className="px-4 py-2 rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-colors">Fechar</button>

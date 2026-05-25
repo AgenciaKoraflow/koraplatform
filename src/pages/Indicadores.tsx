@@ -4,7 +4,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogBody, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   TrendingUp,
@@ -470,7 +470,7 @@ function BenchmarkDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
+      <DialogContent className="max-w-3xl" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <span className={getStatusColor(status)}>
@@ -479,8 +479,7 @@ function BenchmarkDetailDialog({
             {benchmark.name}
           </DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-6 pt-4">
+        <DialogBody className="space-y-6 pt-4">
           {/* Current Status */}
           <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
             <div>
@@ -634,7 +633,7 @@ function BenchmarkDetailDialog({
               </p>
             </div>
           )}
-        </div>
+        </DialogBody>
       </DialogContent>
     </Dialog>
   );

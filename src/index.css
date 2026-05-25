@@ -1,8 +1,18 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ─── Thin scrollbars (all scrollable surfaces) ─── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background-color: hsl(var(--border)); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background-color: hsl(var(--muted-foreground) / 0.5); }
 
 @layer base {
   :root {
@@ -55,7 +65,7 @@
     --gradient-sidebar: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(0 0% 99%) 100%);
     --shadow-soft: 0 1px 3px 0 rgb(0 0 0 / 0.08);
     --shadow-medium: 0 4px 12px -1px rgb(0 0 0 / 0.1), 0 2px 6px -2px rgb(0 0 0 / 0.08);
-    --shadow-glow: 0 0 0 1px rgb(0 0 0 / 0.06), 0 1px 2px 0 rgb(0 0 0 / 0.06);
+    --shadow-glow: none;
   }
 
   html.dark {
@@ -102,7 +112,7 @@
     /* Sombras para dark — mais suaves */
     --shadow-soft: 0 1px 3px 0 rgb(0 0 0 / 0.35);
     --shadow-medium: 0 4px 12px -1px rgb(0 0 0 / 0.45), 0 2px 6px -2px rgb(0 0 0 / 0.3);
-    --shadow-glow: 0 0 0 1px rgb(0 0 0 / 0.25), 0 1px 2px 0 rgb(0 0 0 / 0.2);
+    --shadow-glow: none;
   }
 }
 
@@ -222,6 +232,7 @@ html.dark .client-logo-bg {
 */
 main {
   font-size: 13px;
+  scrollbar-gutter: stable;
 }
 
 main .text-xs   { font-size: 11px;  line-height: 1.45; }

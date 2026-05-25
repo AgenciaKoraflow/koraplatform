@@ -8,7 +8,6 @@ import {
 } from "lucide-react";
 import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
 import { cn } from "@/lib/utils";
-import { KoraSystemLogoIcon } from "@/components/shared/KoraSystemLogo";
 import { useUser } from "@/hooks/useUser";
 import { useTheme } from "@/contexts/ThemeContext";
 
@@ -53,7 +52,7 @@ const BOTTOM_NAV = [
 
 export function AppLayout({ children }: AppLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const userName = useUser();
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
@@ -128,16 +127,11 @@ export function AppLayout({ children }: AppLayoutProps) {
 
             <NotificationDropdown />
 
-            <div className="hidden sm:flex items-center gap-3 pl-3 ml-1 border-l border-border">
-              <div className="w-10 h-10 flex items-center justify-center">
-                <KoraSystemLogoIcon className="text-foreground" size={36} />
-              </div>
-            </div>
           </div>
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 xl:p-10 overflow-auto pb-24 lg:pb-8">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 xl:p-10 overflow-y-auto pb-24 lg:pb-8" style={{ scrollbarGutter: 'stable' }}>
           <PageTransition>
             {children}
           </PageTransition>
