@@ -13,6 +13,7 @@ import {
   FileSignature,
   BookOpen,
   HeadphonesIcon,
+  LayoutDashboard,
   LogOut,
   Workflow,
   Target,
@@ -43,7 +44,8 @@ type NavItem = {
 };
 
 const navigation: NavItem[] = [
-  { name: "Funil", href: "/", icon: Filter, bu: "kora-agents", hiddenForObserver: true },
+  { name: "Dashboard", href: "/", icon: LayoutDashboard, bu: "kora-corp", hiddenForObserver: true },
+  { name: "Funil", href: "/funil", icon: Filter, bu: "kora-agents", hiddenForObserver: true },
   { name: "Clientes", href: "/clientes", icon: Heart, bu: "kora-agents", hiddenForObserver: true },
   { name: "Contratos", href: "/contratos", icon: FileSignature, bu: "kora-agents", hiddenForObserver: true },
   { name: "Projetos", href: "/projetos", icon: FolderKanban, bu: "kora-dev" },

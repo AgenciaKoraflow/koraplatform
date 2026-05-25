@@ -12,6 +12,7 @@ import { clearAllToasts } from "@/hooks/use-toast";
 import { ForcePasswordChangeModal } from "@/components/auth/ForcePasswordChangeModal";
 
 // Separate importers so we can preload them without re-creating the lazy component
+const importDashboard = () => import("./pages/Dashboard");
 const importFunil = () => import("./pages/Funil");
 const importClientesAtivos = () => import("./pages/ClientesAtivos");
 const importProjetos = () => import("./pages/Projetos");
@@ -32,6 +33,7 @@ const importLogin = () => import("./pages/Login");
 const importPerfilPessoal = () => import("./pages/PerfilPessoal");
 const importGerenciarUsuarios = () => import("./pages/GerenciarUsuarios");
 
+const Dashboard = lazy(importDashboard);
 const Funil = lazy(importFunil);
 const ClientesAtivos = lazy(importClientesAtivos);
 const Projetos = lazy(importProjetos);
@@ -86,6 +88,7 @@ const PageLoader = () => (
 function usePreloadAllPages() {
   useEffect(() => {
     const preload = () => {
+      importDashboard();
       importFunil();
       importClientesAtivos();
       importProjetos();
@@ -177,7 +180,7 @@ function AppRoutes() {
       <GlobalModals />
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          <Route path="/" element={<ProtectedRoute><Funil /></ProtectedRoute>} />
+          <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/funil" element={<ProtectedRoute><Funil /></ProtectedRoute>} />
           <Route path="/clientes" element={<ProtectedRoute><ClientesAtivos /></ProtectedRoute>} />
           <Route path="/projetos" element={<ProtectedRoute><Projetos /></ProtectedRoute>} />
