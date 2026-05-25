@@ -52,7 +52,18 @@ const BOTTOM_NAV = [
 
 export function AppLayout({ children }: AppLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    const saved = localStorage.getItem("sidebar-collapsed");
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+
+  const toggleSidebar = () => {
+    setSidebarCollapsed((prev: boolean) => {
+      const next = !prev;
+      localStorage.setItem("sidebar-collapsed", JSON.stringify(next));
+      return next;
+    });
+  };
   const userName = useUser();
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
@@ -95,7 +106,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             <button
               onClick={() => {
                 if (window.innerWidth >= 1024) {
-                  setSidebarCollapsed(!sidebarCollapsed);
+                  toggleSidebar();
                 } else {
                   setMobileMenuOpen(!mobileMenuOpen);
                 }

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogBody, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogBody, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { DatePicker } from "@/components/shared/DatePicker";
 import { ActionMenu } from "@/components/shared/ActionMenu";
@@ -368,7 +368,7 @@ export default function OKR() {
               <DialogDescription className={typographyClasses.description}>{editingObjective ? "Atualize as informacoes do seu objetivo" : "Defina um novo objetivo e metas para sua equipe"}</DialogDescription>
             </DialogHeader>
             <DialogBody>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form id="okr-form" onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4"><div className="space-y-2">
                   <Label className={typographyClasses.label}>Titulo</Label>
                   <Input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -403,11 +403,13 @@ export default function OKR() {
                   <DatePicker value={formData.startDate} onChange={(date) => setFormData({ ...formData, startDate: date })} /></div>
                 <div className="space-y-2"><Label className="text-foreground/90">Data de Termino</Label>
                   <DatePicker value={formData.endDate} onChange={(date) => setFormData({ ...formData, endDate: date })} /></div></div>
-              <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => { setIsDialogOpen(false); resetForm(); }}
-                  className="border-border/50 text-foreground hover:bg-muted/50">Cancelar</Button>
-                <Button type="submit" disabled={isSaving}>{isSaving ? "Salvando..." :(editingObjective ? "Atualizar" : "Criar")}</Button></div>
             </form>
             </DialogBody>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => { setIsDialogOpen(false); resetForm(); }}
+                  className="border-border/50 text-foreground hover:bg-muted/50">Cancelar</Button>
+              <Button form="okr-form" type="submit" disabled={isSaving}>{isSaving ? "Salvando..." : (editingObjective ? "Atualizar" : "Criar")}</Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
 
@@ -418,7 +420,7 @@ export default function OKR() {
             </DialogHeader>
             {selectedObjective && (
               <DialogBody>
-              <form onSubmit={handleAddUpdate} className="space-y-4">
+              <form id="update-form" onSubmit={handleAddUpdate} className="space-y-4">
                 <div className="bg-muted/30 p-4 rounded-lg border border-border/30">
                   <h4 className={cn(typographyClasses.cardTitle, "mb-2")}>{selectedObjective.title}</h4>
                   <div className={typographyClasses.statLabel}>Meta: {selectedObjective.current.toLocaleString()} / {selectedObjective.target.toLocaleString()} {selectedObjective.unit}</div>
@@ -429,12 +431,14 @@ export default function OKR() {
                 <div className="space-y-2"><Label className="text-foreground/90">Comentario</Label>
                   <Textarea value={updateFormData.comment} onChange={(e) => setUpdateFormData({ ...updateFormData, comment: e.target.value })}
                     placeholder="Descreva o que foi feito..." rows={3} className="bg-background border-border text-foreground" /></div>
-                <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => { setIsUpdateDialogOpen(false); setSelectedObjective(null); setUpdateFormData({ value: 0, comment: "" }); }}
-                    className="border-border/50 text-foreground hover:bg-muted/50">Cancelar</Button>
-                  <Button type="submit" disabled={isSaving}>{isSaving ? "Salvando..." :"Registrar Atualizacao"}</Button></div>
               </form>
               </DialogBody>
             )}
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => { setIsUpdateDialogOpen(false); setSelectedObjective(null); setUpdateFormData({ value: 0, comment: "" }); }}
+                  className="border-border/50 text-foreground hover:bg-muted/50">Cancelar</Button>
+              <Button form="update-form" type="submit" disabled={isSaving}>{isSaving ? "Salvando..." : "Registrar Atualizacao"}</Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
 
@@ -502,12 +506,12 @@ export default function OKR() {
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-4 border-t border-border">
-                  <Button variant="outline" onClick={() => setIsViewDialogOpen(false)} className="border-border/50">Fechar</Button>
-                  <Button onClick={() => { setIsViewDialogOpen(false); handleEdit(viewingObjective); }}>Editar</Button>
-                </div>
               </DialogBody>
             )}
+            <DialogFooter className="border-t border-border">
+              <Button variant="outline" onClick={() => setIsViewDialogOpen(false)} className="border-border/50">Fechar</Button>
+              <Button onClick={() => { setIsViewDialogOpen(false); handleEdit(viewingObjective); }}>Editar</Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
 

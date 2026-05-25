@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { UserPlus, Mail, User as UserIcon, Shield, Search } from 'lucide-react';
+import { UserPlus, User as UserIcon, Shield, Search, CheckCircle2, Copy, Check, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAllProfiles, useUpdateUserRole, type Profile } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogBody,
+  DialogFooter,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useQueryClient } from '@tanstack/react-query';
@@ -54,6 +55,25 @@ function InviteDialog({ open, onClose }: InviteDialogProps) {
   const [fullName, setFullName] = useState('');
   const [role, setRole] = useState<Profile['role']>('operador');
   const [submitting, setSubmitting] = useState(false);
+  const [created, setCreated] = useState<{ name: string; email: string; password: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const handleClose = () => {
+    setEmail('');
+    setFullName('');
+    setRole('operador');
+    setCreated(null);
+    setCopied(false);
+    onClose();
+  };
+
+  const handleCopy = () => {
+    if (!created) return;
+    navigator.clipboard.writeText(created.password).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,12 +96,8 @@ function InviteDialog({ open, onClose }: InviteDialogProps) {
       if (!res.ok) {
         toast.error(body.error ?? 'Não foi possível criar o usuário.');
       } else {
-        toast.success(`Convite enviado para ${email}!`);
         qc.invalidateQueries({ queryKey: ['profiles', 'all'] });
-        setEmail('');
-        setFullName('');
-        setRole('operador');
-        onClose();
+        setCreated({ name: fullName, email, password: body.temp_password });
       }
     } catch {
       toast.error('Erro inesperado. Tente novamente.');
@@ -91,77 +107,138 @@ function InviteDialog({ open, onClose }: InviteDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Convidar usuário</DialogTitle>
+          <DialogTitle>{created ? 'Usuário cadastrado' : 'Cadastrar usuário'}</DialogTitle>
         </DialogHeader>
 
         <DialogBody>
-        <form onSubmit={handleSubmit} noValidate className="space-y-4 pt-2">
-          <div>
-            <label htmlFor="invite-name" className="block text-sm font-medium text-foreground mb-1.5">Nome completo</label>
-            <input
-              id="invite-name"
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="Nome do usuário"
-              required
-              className="w-full h-10 px-3 border border-input rounded-xl text-sm bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-all"
-            />
-          </div>
+          {created ? (
+            <div className="space-y-5 pt-2">
+              <div className="flex flex-col items-center gap-2 text-center">
+                <CheckCircle2 className="w-10 h-10 text-green-500" />
+                <p className="text-sm text-foreground font-medium">{created.name}</p>
+                <p className="text-xs text-muted-foreground">{created.email}</p>
+              </div>
 
-          <div>
-            <label htmlFor="invite-email" className="block text-sm font-medium text-foreground mb-1.5">E-mail</label>
-            <input
-              id="invite-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="usuario@empresa.com"
-              required
-              className="w-full h-10 px-3 border border-input rounded-xl text-sm bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-all"
-            />
-          </div>
+              <div>
+                <p className="text-sm font-medium text-foreground mb-1.5">Senha temporária</p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 h-10 px-3 flex items-center border border-input rounded-xl text-sm font-mono bg-muted text-foreground tracking-wider select-all">
+                    {created.password}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={handleCopy}
+                    className="h-10 w-10 flex items-center justify-center border border-input rounded-xl hover:bg-muted transition-all flex-shrink-0"
+                    title="Copiar senha"
+                  >
+                    {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Entregue esta senha ao usuário. Ele será obrigado a alterá-la no primeiro acesso.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <form id="invite-form" onSubmit={handleSubmit} noValidate className="space-y-5 pt-1">
+              {/* Nome */}
+              <div className="space-y-1.5">
+                <label htmlFor="invite-name" className="block text-sm font-medium text-foreground">
+                  Nome completo
+                </label>
+                <div className="relative">
+                  <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                  <input
+                    id="invite-name"
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Nome do usuário"
+                    required
+                    className="w-full h-10 pl-9 pr-3 border border-input rounded-xl text-sm bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-all"
+                  />
+                </div>
+              </div>
 
-          <div>
-            <label htmlFor="invite-role" className="block text-sm font-medium text-foreground mb-1.5">Papel</label>
-            <select
-              id="invite-role"
-              value={role}
-              onChange={(e) => setRole(e.target.value as Profile['role'])}
-              className="w-full h-10 px-3 border border-input rounded-xl text-sm bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-all"
-            >
-              {ROLES.map((r) => (
-                <option key={r} value={r}>{roleMeta[r].label}</option>
-              ))}
-            </select>
-          </div>
+              {/* E-mail */}
+              <div className="space-y-1.5">
+                <label htmlFor="invite-email" className="block text-sm font-medium text-foreground">
+                  E-mail
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                  <input
+                    id="invite-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="usuario@empresa.com"
+                    required
+                    className="w-full h-10 pl-9 pr-3 border border-input rounded-xl text-sm bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-all"
+                  />
+                </div>
+              </div>
 
-          <div className="flex justify-end gap-2 pt-2">
+              {/* Papel */}
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-foreground">Papel</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {ROLES.map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setRole(r)}
+                      className={`h-9 rounded-xl text-sm font-medium transition-all border ${role === r
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'border-input text-foreground hover:bg-muted'
+                        }`}
+                    >
+                      {roleMeta[r].label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </form>
+          )}
+        </DialogBody>
+
+        <DialogFooter>
+          {created ? (
             <button
               type="button"
-              onClick={onClose}
-              className="h-9 px-4 border border-input rounded-xl text-sm text-foreground hover:bg-muted transition-all"
+              onClick={handleClose}
+              className="h-9 px-4 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 transition-all"
             >
-              Cancelar
+              Fechar
             </button>
-            <button
-              type="submit"
-              disabled={!email || !fullName || submitting}
-              className="h-9 px-4 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-2"
-            >
-              {submitting ? (
-                <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-              ) : (
-                <UserPlus className="w-4 h-4" />
-              )}
-              Enviar convite
-            </button>
-          </div>
-        </form>
-        </DialogBody>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="h-9 px-4 border border-input rounded-xl text-sm text-foreground hover:bg-muted transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                form="invite-form"
+                type="submit"
+                disabled={!email || !fullName || submitting}
+                className="h-9 px-4 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+              >
+                {submitting ? (
+                  <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                ) : (
+                  <UserPlus className="w-4 h-4" />
+                )}
+                Cadastrar usuário
+              </button>
+            </>
+          )}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
@@ -314,11 +391,8 @@ export default function GerenciarUsuarios() {
         </div>
 
         {/* Legend */}
-        <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-          <div className="flex items-center gap-1.5">
-            <Shield className="w-3.5 h-3.5" />
-            <span><strong>Admin</strong> — acesso total à plataforma</span>
-          </div>
+        <div className="flex flex-wrap gap-1 text-xs text-muted-foreground justify-center">
+          <div><span><strong>Admin</strong> — acesso total à plataforma</span></div>
           <span>·</span>
           <span><strong>Operador</strong> — cria tarefas e clientes, sem configurações</span>
           <span>·</span>

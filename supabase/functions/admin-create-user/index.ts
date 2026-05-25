@@ -2,8 +2,17 @@
 // Only callable by authenticated users with role = 'admin'.
 // Creates a new Supabase auth user + profile row with the specified role.
 // The on_auth_user_created trigger handles profile creation via raw_user_meta_data.
+// Returns a one-time temporary password; the user is forced to change it on first login.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// Avoids ambiguous characters (0/O, 1/l/I) so the password is easy to transcribe.
+function generateTempPassword(): string {
+  const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%";
+  const arr = new Uint8Array(14);
+  crypto.getRandomValues(arr);
+  return Array.from(arr, (b) => chars[b % chars.length]).join("");
+}
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -72,10 +81,14 @@ Deno.serve(async (req: Request) => {
   const validRoles = ["admin", "operador", "observador"];
   const targetRole = validRoles.includes(role ?? "") ? role : "observador";
 
-  // Create the auth user — Supabase sends an invite/magic link automatically
+  const tempPassword = generateTempPassword();
+
+  // Create the auth user with a known password — no invite email is sent.
+  // email_confirm: true marks the account as verified immediately.
   const { data: created, error: createError } = await adminClient.auth.admin.createUser({
     email,
-    email_confirm: false, // Supabase sends a confirmation/invite email
+    password: tempPassword,
+    email_confirm: true,
     user_metadata: {
       full_name,
       role: targetRole,
@@ -90,5 +103,5 @@ Deno.serve(async (req: Request) => {
     return err(createError.message ?? "Failed to create user", 400);
   }
 
-  return json({ user_id: created.user.id });
+  return json({ user_id: created.user.id, temp_password: tempPassword });
 });
