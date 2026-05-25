@@ -1,4 +1,4 @@
-import { Client, Project, Task, Contract, KnowledgeItem, SupportTicket } from "@/types/data";
+import { Client, Project, Task, Contract, KnowledgeItem, SupportTicket, TaskSubtask, TaskComment, TaskAttachment } from "@/types/data";
 import { parseCurrencyToNumber } from "@/lib/currency";
 import type { BU } from "@/types/bu";
 import type {
@@ -8,6 +8,9 @@ import type {
   DbContractRow,
   DbKnowledgeItemRow,
   DbSupportTicketRow,
+  DbTaskSubtaskRow,
+  DbTaskCommentRow,
+  DbTaskAttachmentRow,
 } from "@/types/db";
 
 const VALID_BUS = new Set(["kora-agents", "kora-dev", "kora-studio", "kora-corp"]);
@@ -112,6 +115,41 @@ export function mapDbTask(db: DbTaskRow): Task {
           .filter(Boolean)
       : [],
     bu: sanitizeBU(db.bu),
+    blockedReason: db.blocked_reason ?? undefined,
+    clientApproved: db.client_approved ?? false,
+  };
+}
+
+export function mapDbSubtask(db: DbTaskSubtaskRow): TaskSubtask {
+  return {
+    id: db.id,
+    taskId: db.task_id,
+    title: db.title,
+    done: db.done,
+    position: db.position,
+    createdAt: db.created_at,
+  };
+}
+
+export function mapDbComment(db: DbTaskCommentRow): TaskComment {
+  return {
+    id: db.id,
+    taskId: db.task_id,
+    author: db.author,
+    content: db.content,
+    createdAt: db.created_at,
+  };
+}
+
+export function mapDbAttachment(db: DbTaskAttachmentRow): TaskAttachment {
+  return {
+    id: db.id,
+    taskId: db.task_id,
+    fileName: db.file_name,
+    storagePath: db.storage_path,
+    mimeType: db.mime_type ?? undefined,
+    fileSize: db.file_size ?? undefined,
+    createdAt: db.created_at,
   };
 }
 

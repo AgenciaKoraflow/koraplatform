@@ -60,12 +60,41 @@ export interface Task {
   projectId?: string;
   title: string;
   description: string;
-  status: "todo" | "in_progress" | "review" | "done";
+  status: "todo" | "in_progress" | "review" | "done" | "blocked" | "client_review";
   priority: "low" | "medium" | "high";
   dueDate: string;
   createdAt?: string;
   assignees: string[];
   bu?: BU[];
+  blockedReason?: string;
+  clientApproved?: boolean;
+}
+
+export interface TaskSubtask {
+  id: string;
+  taskId: string;
+  title: string;
+  done: boolean;
+  position: number;
+  createdAt: string;
+}
+
+export interface TaskComment {
+  id: string;
+  taskId: string;
+  author: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface TaskAttachment {
+  id: string;
+  taskId: string;
+  fileName: string;
+  storagePath: string;
+  mimeType?: string;
+  fileSize?: number;
+  createdAt: string;
 }
 
 export interface Contract {

@@ -1,7 +1,8 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useState, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Plus, Calendar, Clock, Search, Eye, Edit, Trash2, AlertTriangle, CheckCircle, Timer, FolderKanban } from "lucide-react";
+import { Plus, Calendar, Clock, Search, Eye, Edit, Trash2, AlertTriangle, CheckCircle, Timer, FolderKanban, ListChecks, ExternalLink, Circle, Ban, UserCheck, CheckCircle2 } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Dialog, DialogContent, DialogHeader, DialogBody, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,7 @@ import { UserAvatar } from "@/components/shared/UserAvatar";
 import { useUserAvatar } from "@/hooks/useUserAvatar";
 import { differenceInDays, isValid } from "date-fns";
 import { useProjects } from "@/hooks/useProjects";
+import { useProjectTasks } from "@/hooks/useTasks";
 import { useAllClients } from "@/hooks/useClients";
 import { useDebounce } from "@/hooks/useDebounce";
 
@@ -48,11 +50,13 @@ const PAGE_SIZE = 50;
 export default function Projetos() {
   const { addProject, updateProject, deleteProject, isAdding, isUpdating } = useProjectMutations();
   const { getAvatarForName } = useUserAvatar();
+  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [searchInput, setSearchInput] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [selectedBU, setSelectedBU] = useState<BU | null>(null);
+  const [selectedType, setSelectedType] = useState<string | null>(null);
   const [page, setPage] = useState(0);
 
   const searchQuery = useDebounce(searchInput, 300);
@@ -77,11 +81,14 @@ export default function Projetos() {
 
   const getClient = (id: string) => allClients.find((c) => c.id === id);
   const clients = allClients;
+
+  // Tasks for viewing project (loaded on-demand when view dialog opens)
+  const [viewingProject, setViewingProject] = useState<Project | null>(null);
+  const { data: viewingProjectTasks = [] } = useProjectTasks(viewingProject?.id);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
-  const [viewingProject, setViewingProject] = useState<Project | null>(null);
   const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
@@ -99,7 +106,10 @@ export default function Projetos() {
     bu: [] as BU[],
   });
 
-  const filteredProjects = projects;
+  const filteredProjects = useMemo(() => {
+    if (!selectedType) return projects;
+    return projects.filter((p) => p.type === selectedType);
+  }, [projects, selectedType]);
 
   const handleSearchChange = useCallback((v: string) => { setSearchInput(v); setPage(0); }, []);
 
@@ -348,6 +358,21 @@ export default function Projetos() {
               <option value="kora-dev">Kora Dev</option>
               <option value="kora-studio">Kora Studio</option>
               <option value="kora-corp">Kora Corp</option>
+            </select>
+          </div>
+
+          {/* Tipo Filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-foreground">Tipo:</span>
+            <select
+              value={selectedType || ""}
+              onChange={(e) => setSelectedType(e.target.value || null)}
+              className="px-3 py-2 rounded-lg bg-input border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              <option value="">Todos</option>
+              {Object.entries(typeConfig).map(([key, cfg]) => (
+                <option key={key} value={key}>{cfg.label}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -838,17 +863,45 @@ export default function Projetos() {
                   <div className="h-full bg-primary rounded-full" style={{ width: `${viewingProject.progress}%` }} />
                 </div>
               </div>
-              {viewingProject.value && (
-                <div className="pt-2 border-t border-border">
-                  <p className="text-xs text-muted-foreground mb-1">Valor do Projeto</p>
-                  <p className="font-semibold text-lg text-foreground">{viewingProject.value}</p>
+              {/* Task breakdown */}
+              {viewingProjectTasks.length > 0 && (
+                <div className="pt-4 border-t border-border">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                      <ListChecks className="w-3.5 h-3.5" />
+                      Tarefas ({viewingProjectTasks.length})
+                    </p>
+                    <button
+                      onClick={() => { setIsViewDialogOpen(false); navigate(`/tarefas?project=${viewingProject.id}`); }}
+                      className="text-xs text-primary hover:underline flex items-center gap-1"
+                    >
+                      Ver todas <ExternalLink className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    {[
+                      { key: "todo",          label: "A Fazer",    icon: Circle,       color: "text-slate-400 bg-slate-500/10" },
+                      { key: "in_progress",   label: "Em Progresso", icon: Clock,       color: "text-primary bg-primary/10" },
+                      { key: "blocked",       label: "Impedimento", icon: Ban,          color: "text-red-400 bg-red-500/10" },
+                      { key: "review",        label: "Em Revisão",  icon: Eye,          color: "text-amber-400 bg-amber-500/10" },
+                      { key: "client_review", label: "Em Cliente",  icon: UserCheck,    color: "text-purple-400 bg-purple-500/10" },
+                      { key: "done",          label: "Concluído",   icon: CheckCircle2, color: "text-green-400 bg-green-500/10" },
+                    ].map(({ key, label, icon: Icon, color }) => {
+                      const count = viewingProjectTasks.filter((t) => t.status === key).length;
+                      if (count === 0) return null;
+                      return (
+                        <div key={key} className={cn("rounded-lg p-2", color)}>
+                          <Icon className="w-4 h-4 mx-auto mb-0.5" />
+                          <p className="text-lg font-bold">{count}</p>
+                          <p className="text-xs opacity-80">{label}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
+
               <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Tarefas</p>
-                  <p className="font-semibold">{viewingProject.completedTasks} / {viewingProject.tasks}</p>
-                </div>
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Equipe</p>
                   <div className="flex -space-x-2">
@@ -859,6 +912,12 @@ export default function Projetos() {
                     ))}
                   </div>
                 </div>
+                {viewingProject.value && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Valor</p>
+                    <p className="font-semibold text-foreground">{viewingProject.value}</p>
+                  </div>
+                )}
               </div>
             </DialogBody>
           )}

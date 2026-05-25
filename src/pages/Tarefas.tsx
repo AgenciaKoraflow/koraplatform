@@ -1,7 +1,8 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Plus, Search, Calendar, CheckCircle2, Circle, Clock, Eye, Edit, Trash2, AlertTriangle, User, ListChecks } from "lucide-react";
+import { Plus, Search, Calendar, CheckCircle2, Circle, Clock, Eye, Edit, Trash2, AlertTriangle, User, ListChecks, Ban, UserCheck, Flag, ThumbsUp, X as XIcon } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Dialog, DialogContent, DialogHeader, DialogBody, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { BUBadge } from "@/components/shared/BUBadge";
 import { ClientAvatar } from "@/components/shared/ClientAvatar";
 import { BUSelect } from "@/components/shared/BUSelect";
+import { TaskDetailSheet } from "@/components/tarefas/TaskDetailSheet";
 import { differenceInDays, parse, isValid } from "date-fns";
 
 // Configuração de fotos dos membros da equipe
@@ -133,20 +135,23 @@ function AssigneeAvatar({ name, size = "sm" }: { name: string; size?: "sm" | "md
 }
 
 const statusColumns = [
-  { id: "todo", label: "A Fazer", icon: Circle },
-  { id: "in_progress", label: "Em Progresso", icon: Clock },
-  { id: "review", label: "Em Revisão", icon: CheckCircle2 },
-  { id: "done", label: "Concluído", icon: CheckCircle2 },
+  { id: "todo",          label: "A Fazer",        icon: Circle,       dotColor: "bg-slate-500",   headerColor: "text-slate-400",   dropColor: "ring-slate-500/40" },
+  { id: "in_progress",   label: "Em Progresso",   icon: Clock,        dotColor: "bg-primary",     headerColor: "text-primary",     dropColor: "ring-primary/40" },
+  { id: "blocked",       label: "Em Impedimento", icon: Ban,          dotColor: "bg-red-500",     headerColor: "text-red-400",     dropColor: "ring-red-500/40" },
+  { id: "review",        label: "Em Revisão",     icon: Eye,          dotColor: "bg-amber-500",   headerColor: "text-amber-400",   dropColor: "ring-amber-500/40" },
+  { id: "client_review", label: "Em Cliente",     icon: UserCheck,    dotColor: "bg-purple-500",  headerColor: "text-purple-400",  dropColor: "ring-purple-500/40" },
+  { id: "done",          label: "Concluído",      icon: CheckCircle2, dotColor: "bg-green-500",   headerColor: "text-green-400",   dropColor: "ring-green-500/40" },
 ];
 
 const priorityConfig = {
-  low: { label: "Baixa", color: "bg-slate-500" },
-  medium: { label: "Média", color: "bg-primary" },
-  high: { label: "Alta", color: "bg-amber-500" },
+  low:    { label: "Baixa", color: "bg-slate-500", flagColor: "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" },
+  medium: { label: "Média", color: "bg-primary",   flagColor: "bg-amber-500/20 text-amber-400 border border-amber-500/30" },
+  high:   { label: "Alta",  color: "bg-red-500",   flagColor: "bg-red-500/20 text-red-400 border border-red-500/30" },
 };
 
 export default function Tarefas() {
   const { addTask, updateTask, deleteTask, isAdding, isUpdating } = useTaskMutations();
+  const [searchParams] = useSearchParams();
   const [searchInput, setSearchInput] = useState("");
   const searchQuery = useDebounce(searchInput, 300);
 
@@ -158,12 +163,28 @@ export default function Tarefas() {
   const getClient = (id: string) => clients.find((c) => c.id === id);
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [viewingTask, setViewingTask] = useState<Task | null>(null);
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
   const [_defaultStatus, setDefaultStatus] = useState<Task["status"]>("todo");
+
+  // Filtros
+  const [filterPriority, setFilterPriority] = useState<string[]>([]);
+  const [filterAssignees, setFilterAssignees] = useState<string[]>([]);
+  const [filterProjectId, setFilterProjectId] = useState<string>(() => searchParams.get("project") ?? "");
+
+  // Sync URL param on mount (from navigate from Projetos)
+  useEffect(() => {
+    const p = searchParams.get("project");
+    if (p) setFilterProjectId(p);
+  }, [searchParams]);
+
+  // Drag-and-drop
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -174,6 +195,7 @@ export default function Tarefas() {
     priority: "medium" as Task["priority"],
     dueDate: "",
     bu: "kora-dev" as BU,
+    blockedReason: "",
   });
 
   const tasksByStatus = useMemo(() => {
@@ -187,7 +209,13 @@ export default function Tarefas() {
     [tasksByStatus],
   );
 
-  const filteredTasks = tasks;
+  const filteredTasks = useMemo(() => {
+    let result = tasks;
+    if (filterPriority.length > 0) result = result.filter((t) => filterPriority.includes(t.priority));
+    if (filterAssignees.length > 0) result = result.filter((t) => t.assignees.some((a) => filterAssignees.includes(a)));
+    if (filterProjectId) result = result.filter((t) => t.projectId === filterProjectId);
+    return result;
+  }, [tasks, filterPriority, filterAssignees, filterProjectId]);
 
   const availableProjects = useMemo(
     () => formData.clientId ? projects.filter((p) => p.clientId === formData.clientId) : [],
@@ -197,7 +225,7 @@ export default function Tarefas() {
   const openNewDialog = useCallback((status: Task["status"] = "todo") => {
     setEditingTask(null);
     setDefaultStatus(status);
-    setFormData({ title: "", description: "", clientId: "", projectId: "", assignees: [], status, priority: "medium", dueDate: "", bu: "kora-dev" });
+    setFormData({ title: "", description: "", clientId: "", projectId: "", assignees: [], status, priority: "medium", dueDate: "", bu: "kora-dev", blockedReason: "" });
     setIsDialogOpen(true);
   }, []);
 
@@ -213,13 +241,58 @@ export default function Tarefas() {
       priority: task.priority,
       dueDate: task.dueDate,
       bu: (Array.isArray(task.bu) ? task.bu[0] : task.bu) || "kora-dev" as BU,
+      blockedReason: task.blockedReason || "",
     });
     setIsDialogOpen(true);
   }, []);
 
   const openViewDialog = useCallback((task: Task) => {
     setViewingTask(task);
-    setIsViewDialogOpen(true);
+    setIsDetailSheetOpen(true);
+  }, []);
+
+  const handleApproveClient = useCallback((taskId: string) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+    if (task.clientApproved && task.status === "client_review") {
+      updateTask(taskId, { status: "done", clientApproved: true });
+    } else {
+      updateTask(taskId, { clientApproved: true });
+    }
+  }, [tasks, updateTask]);
+
+  // DnD handlers
+  const handleDragStart = useCallback((e: React.DragEvent, taskId: string) => {
+    setDraggedTaskId(taskId);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", taskId);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent, columnId: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverColumn(columnId);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setDragOverColumn(null);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent, targetColumnId: string) => {
+    e.preventDefault();
+    setDragOverColumn(null);
+    if (draggedTaskId) {
+      const task = tasks.find((t) => t.id === draggedTaskId);
+      if (task && task.status !== targetColumnId) {
+        updateTask(draggedTaskId, { status: targetColumnId as Task["status"] });
+      }
+    }
+    setDraggedTaskId(null);
+  }, [draggedTaskId, tasks, updateTask]);
+
+  const handleDragEnd = useCallback(() => {
+    setDraggedTaskId(null);
+    setDragOverColumn(null);
   }, []);
 
   const handleSave = useCallback(() => {
@@ -238,6 +311,7 @@ export default function Tarefas() {
         priority: formData.priority,
         dueDate: formData.dueDate,
         bu: formData.bu ? [formData.bu] : undefined,
+        blockedReason: formData.status === "blocked" ? formData.blockedReason : undefined,
       });
     } else {
       addTask({
@@ -250,6 +324,8 @@ export default function Tarefas() {
         priority: formData.priority,
         dueDate: formData.dueDate || "A definir",
         bu: formData.bu ? [formData.bu] : undefined,
+        blockedReason: formData.status === "blocked" ? formData.blockedReason : undefined,
+        clientApproved: false,
       });
     }
     setIsDialogOpen(false);
@@ -322,11 +398,45 @@ export default function Tarefas() {
         />
 
         {/* Filters */}
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input type="text" placeholder="Buscar tarefas..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="w-full h-9 pl-10 pr-4 rounded-lg bg-input border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50" />
           </div>
+          {/* Priority chips */}
+          <div className="flex items-center gap-1.5">
+            {(Object.entries(priorityConfig) as [string, typeof priorityConfig.low][]).map(([key, cfg]) => (
+              <button
+                key={key}
+                onClick={() => setFilterPriority((prev) => prev.includes(key) ? prev.filter((p) => p !== key) : [...prev, key])}
+                className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all", filterPriority.includes(key) ? cfg.flagColor : "bg-muted/50 text-muted-foreground border-border hover:bg-muted")}
+              >
+                <Flag className="w-2.5 h-2.5" />
+                {cfg.label}
+              </button>
+            ))}
+          </div>
+          {/* Project filter */}
+          {projects.length > 0 && (
+            <select
+              value={filterProjectId}
+              onChange={(e) => setFilterProjectId(e.target.value)}
+              className="h-9 px-3 rounded-lg bg-input border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              <option value="">Todos os projetos</option>
+              {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          )}
+          {/* Clear filters */}
+          {(filterPriority.length > 0 || filterAssignees.length > 0 || filterProjectId) && (
+            <button
+              onClick={() => { setFilterPriority([]); setFilterAssignees([]); setFilterProjectId(""); }}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <XIcon className="w-3.5 h-3.5" />
+              Limpar filtros
+            </button>
+          )}
           <ViewModeToggle modes={["kanban", "list", "grid"]} currentMode={viewMode} onChange={setViewMode} />
         </div>
 
@@ -334,48 +444,85 @@ export default function Tarefas() {
         {viewMode === "kanban" && (
           <div className="flex-1 flex gap-4 overflow-x-auto pb-4">
             {statusColumns.map((column) => {
-              const columnTasks = getTasksByStatus(column.id);
+              const columnTasks = (filteredTasks.filter((t) => t.status === column.id));
               const Icon = column.icon;
+              const isDropTarget = dragOverColumn === column.id;
               return (
-                <div key={column.id} className="flex-shrink-0 w-80 flex flex-col">
-                  <div className="flex items-center gap-2 mb-4 px-1">
-                    <Icon className={cn("w-4 h-4", column.id === "done" ? "text-green-500" : "text-muted-foreground")} />
-                    <span className="font-semibold text-foreground">{column.label}</span>
+                <div
+                  key={column.id}
+                  className="flex-shrink-0 w-72 flex flex-col"
+                  onDragOver={(e) => handleDragOver(e, column.id)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, column.id)}
+                >
+                  <div className="flex items-center gap-2 mb-3 px-1">
+                    <Icon className={cn("w-4 h-4", column.headerColor)} />
+                    <span className="font-semibold text-foreground text-sm">{column.label}</span>
                     <span className="ml-auto px-2 py-0.5 rounded-full bg-muted text-xs text-muted-foreground">{columnTasks.length}</span>
                   </div>
-                  <div className="flex-1 space-y-3">
-                    {columnTasks.map((task, index) => (
-                      <div key={task.id} className="p-4 rounded-xl bg-card border border-border shadow-soft hover:shadow-medium transition-all duration-200 cursor-pointer animate-scale-in" style={{ animationDelay: `${index * 50}ms` }} onClick={() => openViewDialog(task)}>
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <div className={cn("w-2 h-2 rounded-full", priorityConfig[task.priority].color)} />
-                            <span className="text-xs text-muted-foreground">{priorityConfig[task.priority].label}</span>
-                            {task.bu?.[0] && <BUBadge bu={task.bu[0]} showLabel={false} />}
+                  <div className={cn("flex-1 space-y-3 rounded-xl p-2 transition-all min-h-24", isDropTarget && "ring-2 bg-card/50", isDropTarget && column.dropColor)}>
+                    {columnTasks.map((task, index) => {
+                      const pCfg = priorityConfig[task.priority] ?? priorityConfig.medium;
+                      return (
+                        <div
+                          key={task.id}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, task.id)}
+                          onDragEnd={handleDragEnd}
+                          className={cn("rounded-xl bg-card border border-border shadow-soft hover:shadow-medium transition-all duration-200 cursor-grab active:cursor-grabbing animate-scale-in overflow-hidden", draggedTaskId === task.id && "opacity-50")}
+                          style={{ animationDelay: `${index * 30}ms` }}
+                        >
+                          {/* Priority flag banner */}
+                          <div className={cn("flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium", pCfg.flagColor)}>
+                            <Flag className="w-3 h-3" />
+                            {pCfg.label}
+                            {task.bu?.[0] && <BUBadge bu={task.bu[0]} showLabel={false} className="ml-auto" />}
+                            <div className="ml-auto" onClick={(e) => e.stopPropagation()}>
+                              <ActionMenu items={[
+                                { label: "Visualizar", icon: Eye, onClick: () => openViewDialog(task) },
+                                { label: "Editar", icon: Edit, onClick: () => openEditDialog(task) },
+                                { label: "Excluir", icon: Trash2, onClick: () => { setDeletingTaskId(task.id); setIsDeleteDialogOpen(true); }, variant: "destructive" },
+                              ]} />
+                            </div>
                           </div>
-                          <ActionMenu items={[
-                            { label: "Visualizar", icon: Eye, onClick: () => openViewDialog(task) },
-                            { label: "Editar", icon: Edit, onClick: () => openEditDialog(task) },
-                            { label: "Excluir", icon: Trash2, onClick: () => { setDeletingTaskId(task.id); setIsDeleteDialogOpen(true); }, variant: "destructive" },
-                          ]} />
+                          {/* Card body */}
+                          <div className="p-3" onClick={() => openViewDialog(task)}>
+                            {/* Client approved indicator */}
+                            {task.clientApproved && task.status === "client_review" && (
+                              <div className="flex items-center gap-1 text-xs text-green-400 bg-green-500/10 border border-green-500/20 rounded-md px-2 py-1 mb-2">
+                                <ThumbsUp className="w-3 h-3" />
+                                Aprovado pelo cliente
+                              </div>
+                            )}
+                            {/* Blocked reason indicator */}
+                            {task.status === "blocked" && task.blockedReason && (
+                              <div className="flex items-center gap-1 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-2 py-1 mb-2 line-clamp-1">
+                                <Ban className="w-3 h-3 flex-shrink-0" />
+                                {task.blockedReason}
+                              </div>
+                            )}
+                            <h4 className="font-medium text-foreground text-sm mb-1 leading-snug">{task.title}</h4>
+                            {task.description && (
+                              <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{task.description}</p>
+                            )}
+                            <div className="flex flex-wrap gap-1 mb-2">
+                              <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-muted text-xs text-muted-foreground">
+                                <ClientAvatar client={getClient(task.clientId)} size="xs" />
+                                {getClientName(task.clientId)}
+                              </span>
+                              {getProjectName(task.projectId) && (
+                                <span className="px-1.5 py-0.5 rounded-md bg-primary/10 text-xs text-primary">{getProjectName(task.projectId)}</span>
+                              )}
+                            </div>
+                            <div className="flex items-center justify-between pt-2 border-t border-border">
+                              {renderDeadlineIndicator(task)}
+                              {renderAssignees(task.assignees)}
+                            </div>
+                          </div>
                         </div>
-                        <h4 className="font-medium text-foreground mb-1">{task.title}</h4>
-                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{task.description}</p>
-                        <div className="flex flex-wrap gap-1 mb-3">
-                          <span className="flex items-center gap-1 px-2 py-1 rounded-md bg-muted text-xs text-muted-foreground">
-                            <ClientAvatar client={getClient(task.clientId)} size="xs" />
-                            {getClientName(task.clientId)}
-                          </span>
-                          {getProjectName(task.projectId) && (
-                            <span className="px-2 py-1 rounded-md bg-primary/10 text-xs text-primary">{getProjectName(task.projectId)}</span>
-                          )}
-                        </div>
-                        <div className="flex items-center justify-between pt-3 border-t border-border">
-                          {renderDeadlineIndicator(task)}
-                          {renderAssignees(task.assignees)}
-                        </div>
-                      </div>
-                    ))}
-                    <button onClick={() => openNewDialog(column.id as Task["status"])} className="w-full p-3 rounded-xl border-2 border-dashed border-border text-sm text-muted-foreground hover:bg-input hover:border-primary/50 transition-all">
+                      );
+                    })}
+                    <button onClick={() => openNewDialog(column.id as Task["status"])} className="w-full p-2.5 rounded-xl border-2 border-dashed border-border text-sm text-muted-foreground hover:bg-input hover:border-primary/50 transition-all">
                       <Plus className="w-4 h-4 mx-auto" />
                     </button>
                   </div>
@@ -417,7 +564,14 @@ export default function Tarefas() {
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <span className={cn("px-2.5 py-1 rounded-full text-xs font-medium", task.status === "done" ? "bg-green-500/10 text-green-500" : task.status === "in_progress" ? "bg-primary/10 text-primary" : task.status === "review" ? "bg-amber-500/10 text-amber-500" : "bg-muted text-muted-foreground")}>
+                      <span className={cn("px-2.5 py-1 rounded-full text-xs font-medium",
+                        task.status === "done"          ? "bg-green-500/10 text-green-500" :
+                        task.status === "in_progress"   ? "bg-primary/10 text-primary" :
+                        task.status === "review"        ? "bg-amber-500/10 text-amber-500" :
+                        task.status === "blocked"       ? "bg-red-500/10 text-red-400" :
+                        task.status === "client_review" ? "bg-purple-500/10 text-purple-400" :
+                        "bg-muted text-muted-foreground"
+                      )}>
                         {statusColumns.find(s => s.id === task.status)?.label}
                       </span>
                     </td>
@@ -567,6 +721,12 @@ export default function Tarefas() {
               <Label htmlFor="bu">BU</Label>
               <BUSelect value={formData.bu} onChange={(bu) => setFormData({ ...formData, bu })} />
             </div>
+            {formData.status === "blocked" && (
+              <div className="space-y-2">
+                <Label htmlFor="blockedReason">Motivo do Impedimento</Label>
+                <Textarea id="blockedReason" value={formData.blockedReason} onChange={(e) => setFormData({ ...formData, blockedReason: e.target.value })} placeholder="Descreva o que está impedindo a continuidade desta tarefa" className="bg-input border-border" rows={3} />
+              </div>
+            )}
           </DialogBody>
           <DialogFooter>
             <button onClick={() => setIsDialogOpen(false)} className="px-4 py-2 rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-colors">Cancelar</button>
@@ -575,67 +735,16 @@ export default function Tarefas() {
         </DialogContent>
       </Dialog>
 
-      {/* View Dialog */}
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="bg-card border-border sm:max-w-lg" aria-describedby={undefined}>
-          <DialogHeader>
-            <DialogTitle className="text-foreground">Detalhes da Tarefa</DialogTitle>
-          </DialogHeader>
-          {viewingTask && (
-            <DialogBody className="space-y-4 py-4">
-              <div className="flex items-center gap-2">
-                <span className={cn("px-2.5 py-1 rounded-full text-xs font-medium", viewingTask.status === "done" ? "bg-green-500/10 text-green-500" : viewingTask.status === "in_progress" ? "bg-primary/10 text-primary" : viewingTask.status === "review" ? "bg-amber-500/10 text-amber-500" : "bg-muted text-muted-foreground")}>
-                  {statusColumns.find(s => s.id === viewingTask.status)?.label}
-                </span>
-                <div className="flex items-center gap-1">
-                  <div className={cn("w-2 h-2 rounded-full", priorityConfig[viewingTask.priority].color)} />
-                  <span className="text-xs text-muted-foreground">{priorityConfig[viewingTask.priority].label}</span>
-                </div>
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-foreground">{viewingTask.title}</h3>
-                <div className="flex gap-2 mt-2">
-                  <span className="px-2 py-1 rounded-md bg-muted text-xs text-muted-foreground">{getClientName(viewingTask.clientId)}</span>
-                  {getProjectName(viewingTask.projectId) && (
-                    <span className="px-2 py-1 rounded-md bg-primary/10 text-xs text-primary">{getProjectName(viewingTask.projectId)}</span>
-                  )}
-                </div>
-              </div>
-              {viewingTask.description && (
-                <p className="text-muted-foreground">{viewingTask.description}</p>
-              )}
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Prazo</p>
-                  {renderDeadlineIndicator(viewingTask)}
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Responsáveis</p>
-                  {viewingTask.assignees && viewingTask.assignees.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {viewingTask.assignees.map((name, i) => (
-                        <div key={i} className="flex items-center gap-2">
-                          <AssigneeAvatar name={name} size="md" />
-                          <span className="text-sm font-medium">{name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="font-medium flex items-center gap-2">
-                      <User className="w-4 h-4 text-muted-foreground" />
-                      Não atribuído
-                    </p>
-                  )}
-                </div>
-              </div>
-          </DialogBody>
-          )}
-          <DialogFooter>
-            <button onClick={() => setIsViewDialogOpen(false)} className="px-4 py-2 rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-colors">Fechar</button>
-            <button onClick={() => { setIsViewDialogOpen(false); if (viewingTask) openEditDialog(viewingTask); }} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Editar</button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Task Detail Sheet */}
+      <TaskDetailSheet
+        task={viewingTask}
+        open={isDetailSheetOpen}
+        onClose={() => setIsDetailSheetOpen(false)}
+        onEdit={(task) => { setIsDetailSheetOpen(false); openEditDialog(task); }}
+        onApproveClient={handleApproveClient}
+        clientName={viewingTask ? getClientName(viewingTask.clientId) : undefined}
+        projectName={viewingTask ? getProjectName(viewingTask.projectId) ?? undefined : undefined}
+      />
 
       {/* Delete Confirmation */}
       <ConfirmDialog

@@ -42,6 +42,8 @@ export function useTaskMutations() {
         priority: task.priority,
         due_date: toISODate(task.dueDate),
         assigned_to: task.assignees.join(", "),
+        blocked_reason: task.blockedReason ?? null,
+        client_approved: task.clientApproved ?? false,
       };
       if (task.bu) dbData.bu = task.bu;
       const { data: rows, error } = await supabase.from("tasks").insert(dbData).select();
@@ -69,6 +71,8 @@ export function useTaskMutations() {
       if (data.dueDate) dbData.due_date = toISODate(data.dueDate);
       if (data.assignees) dbData.assigned_to = data.assignees.join(", ");
       if (data.bu !== undefined) dbData.bu = data.bu;
+      if (data.blockedReason !== undefined) dbData.blocked_reason = data.blockedReason ?? null;
+      if (data.clientApproved !== undefined) dbData.client_approved = data.clientApproved;
       const { error } = await supabase.from("tasks").update(dbData).eq("id", id);
       if (error) throw new Error(error.message);
       return data.projectId;

@@ -52,8 +52,37 @@ export interface DbTaskRow {
   due_date: string | null;
   assigned_to: string | null;
   bu: string[] | null;
+  blocked_reason: string | null;
+  client_approved: boolean | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface DbTaskSubtaskRow {
+  id: string;
+  task_id: string;
+  title: string;
+  done: boolean;
+  position: number;
+  created_at: string;
+}
+
+export interface DbTaskCommentRow {
+  id: string;
+  task_id: string;
+  author: string;
+  content: string;
+  created_at: string;
+}
+
+export interface DbTaskAttachmentRow {
+  id: string;
+  task_id: string;
+  file_name: string;
+  storage_path: string;
+  mime_type: string | null;
+  file_size: number | null;
+  created_at: string;
 }
 
 export interface DbContractRow {
