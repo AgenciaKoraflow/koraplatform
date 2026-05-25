@@ -1,4 +1,4 @@
-import { Client, Project, Task, Contract, KnowledgeItem, SupportTicket, TaskSubtask, TaskComment, TaskAttachment, TaskTimeEntry } from "@/types/data";
+import { Client, Project, Task, Contract, KnowledgeItem, SupportTicket, Service, TaskSubtask, TaskComment, TaskAttachment, TaskTimeEntry } from "@/types/data";
 import { parseCurrencyToNumber } from "@/lib/currency";
 import type { BU } from "@/types/bu";
 import type {
@@ -8,6 +8,7 @@ import type {
   DbContractRow,
   DbKnowledgeItemRow,
   DbSupportTicketRow,
+  DbServiceRow,
   DbTaskSubtaskRow,
   DbTaskCommentRow,
   DbTaskAttachmentRow,
@@ -298,5 +299,27 @@ export function mapDbTicket(db: DbSupportTicketRow): SupportTicket {
     createdAt: db.created_at ? formatDate(db.created_at) : "",
     updatedAt: db.updated_at ? formatDate(db.updated_at) : "",
     assignee: undefined,
+  };
+}
+
+export function mapDbService(db: DbServiceRow): Service {
+  const validBU = (["kora-agents", "kora-dev", "kora-studio", "kora-corp"] as BU[]).includes(db.bu as BU)
+    ? (db.bu as BU)
+    : ("kora-corp" as BU);
+  return {
+    id: db.id,
+    name: db.name,
+    description: db.description ?? undefined,
+    category: db.category ?? undefined,
+    bu: validBU,
+    billingType: (db.billing_type as Service["billingType"]) ?? "projeto_unico",
+    priceInitial: db.price_initial != null ? formatValue(db.price_initial) : undefined,
+    priceBargain: db.price_bargain != null ? formatValue(db.price_bargain) : undefined,
+    recurrencePriceInitial: db.recurrence_price_initial != null ? formatValue(db.recurrence_price_initial) : undefined,
+    recurrencePriceBargain: db.recurrence_price_bargain != null ? formatValue(db.recurrence_price_bargain) : undefined,
+    installmentsMax: db.installments_max ?? undefined,
+    status: (db.status as Service["status"]) ?? "ativo",
+    createdAt: db.created_at ? formatDate(db.created_at) : "",
+    updatedAt: db.updated_at ? formatDate(db.updated_at) : "",
   };
 }

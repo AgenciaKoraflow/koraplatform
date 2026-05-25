@@ -96,11 +96,36 @@ Deno.serve(async (req: Request) => {
   });
 
   if (createError) {
-    // Surface duplicate email as a friendly message
-    if (createError.message?.includes("already been registered")) {
+    console.error("admin-create-user error:", JSON.stringify(createError));
+    const msg = createError.message ?? "";
+    if (msg.includes("already been registered") || msg.includes("already registered")) {
       return err("Este e-mail já está cadastrado na plataforma.", 409);
     }
-    return err(createError.message ?? "Failed to create user", 400);
+    if (msg.includes("Database error")) {
+      return err(
+        "Erro ao criar perfil no banco de dados. Verifique os logs da edge function para detalhes.",
+        500,
+      );
+    }
+    return err(msg || "Failed to create user", 400);
+  }
+
+  // Explicit upsert as safety net in case the trigger didn't run or failed silently.
+  const { error: profileUpsertError } = await adminClient
+    .from("profiles")
+    .upsert(
+      {
+        id: created.user.id,
+        full_name: full_name,
+        role: targetRole,
+        first_login: true,
+        password_changed_at: new Date().toISOString(),
+      },
+      { onConflict: "id", ignoreDuplicates: false },
+    );
+
+  if (profileUpsertError) {
+    console.error("admin-create-user profile upsert error:", JSON.stringify(profileUpsertError));
   }
 
   return json({ user_id: created.user.id, temp_password: tempPassword });

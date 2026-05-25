@@ -173,3 +173,21 @@ export interface DbSupportTicketRow {
   updated_at: string;
   assignee: string | null;
 }
+
+export interface DbServiceRow {
+  id: string;
+  org_id: string;
+  name: string;
+  description: string | null;
+  category: string | null;
+  bu: string;
+  billing_type: string;
+  price_initial: number | null;
+  price_bargain: number | null;
+  recurrence_price_initial: number | null;
+  recurrence_price_bargain: number | null;
+  installments_max: number | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}

@@ -356,3 +356,20 @@ export interface SupportTicket {
   updatedAt: string;
   assignee?: string;
 }
+
+export interface Service {
+  id: string;
+  name: string;
+  description?: string;
+  category?: string;
+  bu: BU;
+  billingType: "projeto_unico" | "recorrencia" | "hora" | "combo";
+  priceInitial?: string;
+  priceBargain?: string;
+  recurrencePriceInitial?: string;
+  recurrencePriceBargain?: string;
+  installmentsMax?: number;
+  status: "ativo" | "inativo";
+  createdAt: string;
+  updatedAt: string;
+}

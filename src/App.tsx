@@ -32,6 +32,7 @@ const importBuscar = () => import("./pages/Buscar");
 const importLogin = () => import("./pages/Login");
 const importPerfilPessoal = () => import("./pages/PerfilPessoal");
 const importGerenciarUsuarios = () => import("./pages/GerenciarUsuarios");
+const importServicos = () => import("./pages/Servicos");
 
 const Dashboard = lazy(importDashboard);
 const Funil = lazy(importFunil);
@@ -53,6 +54,7 @@ const Buscar = lazy(importBuscar);
 const Login = lazy(importLogin);
 const PerfilPessoal = lazy(importPerfilPessoal);
 const GerenciarUsuarios = lazy(importGerenciarUsuarios);
+const Servicos = lazy(importServicos);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -108,6 +110,7 @@ function usePreloadAllPages() {
       importLogin();
       importPerfilPessoal();
       importGerenciarUsuarios();
+      importServicos();
     };
 
     if ("requestIdleCallback" in window) {
@@ -190,6 +193,7 @@ function AppRoutes() {
           <Route path="/sustentacao" element={<ProtectedRoute><Sustentacao /></ProtectedRoute>} />
           <Route path="/observabilidade" element={<ProtectedRoute><Observabilidade /></ProtectedRoute>} />
           <Route path="/financeiro" element={<ProtectedRoute><Financeiro /></ProtectedRoute>} />
+          <Route path="/servicos" element={<ProtectedRoute><Servicos /></ProtectedRoute>} />
           <Route path="/indicadores" element={<ProtectedRoute><Indicadores /></ProtectedRoute>} />
           <Route path="/processos" element={<ProtectedRoute><Processos /></ProtectedRoute>} />
           <Route path="/okr" element={<ProtectedRoute><OKR /></ProtectedRoute>} />

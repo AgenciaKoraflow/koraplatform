@@ -123,9 +123,6 @@ export default function Login() {
                     />
                     <span className="text-sm text-gray-600">Lembrar-me</span>
                   </label>
-                  <a href="#" className="text-sm text-orange-500 hover:text-orange-600 hover:underline transition-colors">
-                    Esqueceu a senha?
-                  </a>
                 </div>
 
                 {/* Erro */}

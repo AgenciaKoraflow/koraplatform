@@ -94,3 +94,29 @@ export function useUpdateUserRole() {
     },
   });
 }
+
+export type AdminUserUpdate = {
+  full_name?: string;
+  cargo?: string;
+  role?: Profile['role'];
+};
+
+// Admin only — update name, cargo or role of any user
+export function useAdminUpdateUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ userId, updates }: { userId: string; updates: AdminUserUpdate }) => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', userId)
+        .select()
+        .single<Profile>();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ALL_PROFILES_QUERY_KEY });
+    },
+  });
+}

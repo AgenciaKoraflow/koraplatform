@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { UserPlus, User as UserIcon, Shield, Search, CheckCircle2, Copy, Check, Mail } from 'lucide-react';
+import { UserPlus, User as UserIcon, Shield, Search, CheckCircle2, Copy, Check, Mail, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAllProfiles, useUpdateUserRole, type Profile } from '@/hooks/useProfile';
+import { useAllProfiles, useUpdateUserRole, useAdminUpdateUser, type Profile, type AdminUserUpdate } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -49,7 +49,6 @@ interface InviteDialogProps {
 }
 
 function InviteDialog({ open, onClose }: InviteDialogProps) {
-  const { user } = useAuth();
   const qc = useQueryClient();
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
@@ -94,6 +93,7 @@ function InviteDialog({ open, onClose }: InviteDialogProps) {
 
       const body = await res.json();
       if (!res.ok) {
+        console.error('admin-create-user response:', res.status, body);
         toast.error(body.error ?? 'Não foi possível criar o usuário.');
       } else {
         qc.invalidateQueries({ queryKey: ['profiles', 'all'] });
@@ -244,35 +244,238 @@ function InviteDialog({ open, onClose }: InviteDialogProps) {
   );
 }
 
+// ── Edit dialog ───────────────────────────────────────────────────────────────
+
+interface EditDialogProps {
+  profile: Profile | null;
+  onClose: () => void;
+}
+
+function EditDialog({ profile, onClose }: EditDialogProps) {
+  const { mutateAsync: updateUser } = useAdminUpdateUser();
+  const [fullName, setFullName] = useState(profile?.full_name ?? '');
+  const [cargo, setCargo] = useState(profile?.cargo ?? '');
+  const [role, setRole] = useState<Profile['role']>(profile?.role ?? 'observador');
+  const [submitting, setSubmitting] = useState(false);
+
+  // Sync local state when profile changes (dialog re-opens with a different user)
+  const profileId = profile?.id;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profile) return;
+    setSubmitting(true);
+
+    const updates: AdminUserUpdate = {};
+    if (fullName !== profile.full_name) updates.full_name = fullName;
+    if (cargo !== (profile.cargo ?? '')) updates.cargo = cargo || undefined;
+    if (role !== profile.role) updates.role = role;
+
+    if (Object.keys(updates).length === 0) {
+      onClose();
+      return;
+    }
+
+    try {
+      await updateUser({ userId: profile.id, updates });
+      toast.success('Usuário atualizado!');
+      onClose();
+    } catch {
+      toast.error('Não foi possível atualizar o usuário.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={!!profile} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Editar usuário</DialogTitle>
+        </DialogHeader>
+
+        <DialogBody>
+          <form id="edit-user-form" onSubmit={handleSubmit} noValidate className="space-y-5 pt-1">
+            {/* Nome */}
+            <div className="space-y-1.5">
+              <label htmlFor="edit-name" className="block text-sm font-medium text-foreground">
+                Nome completo
+              </label>
+              <div className="relative">
+                <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                <input
+                  id="edit-name"
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Nome do usuário"
+                  required
+                  className="w-full h-10 pl-9 pr-3 border border-input rounded-xl text-sm bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Cargo */}
+            <div className="space-y-1.5">
+              <label htmlFor="edit-cargo" className="block text-sm font-medium text-foreground">
+                Cargo
+              </label>
+              <div className="relative">
+                <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                <input
+                  id="edit-cargo"
+                  type="text"
+                  value={cargo}
+                  onChange={(e) => setCargo(e.target.value)}
+                  placeholder="Ex: Analista, Gerente…"
+                  className="w-full h-10 pl-9 pr-3 border border-input rounded-xl text-sm bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Papel */}
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-foreground">Papel</label>
+              <div className="grid grid-cols-3 gap-2">
+                {ROLES.map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => setRole(r)}
+                    className={`h-9 rounded-xl text-sm font-medium transition-all border ${role === r
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'border-input text-foreground hover:bg-muted'
+                      }`}
+                  >
+                    {roleMeta[r].label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </form>
+        </DialogBody>
+
+        <DialogFooter>
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-9 px-4 border border-input rounded-xl text-sm text-foreground hover:bg-muted transition-all"
+          >
+            Cancelar
+          </button>
+          <button
+            form="edit-user-form"
+            type="submit"
+            disabled={!fullName || submitting}
+            className="h-9 px-4 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+          >
+            {submitting && (
+              <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+            )}
+            Salvar
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── Delete confirmation dialog ────────────────────────────────────────────────
+
+interface DeleteDialogProps {
+  profile: Profile | null;
+  onClose: () => void;
+}
+
+function DeleteDialog({ profile, onClose }: DeleteDialogProps) {
+  const qc = useQueryClient();
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!profile) return;
+    setSubmitting(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error('Sessão inválida');
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const res = await fetch(`${supabaseUrl}/functions/v1/admin-delete-user`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ user_id: profile.id }),
+      });
+
+      const body = await res.json();
+      if (!res.ok) {
+        toast.error(body.error ?? 'Não foi possível excluir o usuário.');
+      } else {
+        qc.invalidateQueries({ queryKey: ['profiles', 'all'] });
+        toast.success(`${profile.full_name ?? 'Usuário'} foi excluído.`);
+        onClose();
+      }
+    } catch {
+      toast.error('Erro inesperado. Tente novamente.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={!!profile} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Excluir usuário</DialogTitle>
+        </DialogHeader>
+
+        <DialogBody>
+          <p className="text-sm text-muted-foreground pt-1">
+            Tem certeza que deseja excluir{' '}
+            <span className="font-medium text-foreground">{profile?.full_name ?? 'este usuário'}</span>?
+            Esta ação não pode ser desfeita.
+          </p>
+        </DialogBody>
+
+        <DialogFooter>
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-9 px-4 border border-input rounded-xl text-sm text-foreground hover:bg-muted transition-all"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={submitting}
+            className="h-9 px-4 bg-destructive text-destructive-foreground rounded-xl text-sm font-medium hover:bg-destructive/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+          >
+            {submitting && (
+              <span className="w-4 h-4 border-2 border-destructive-foreground/30 border-t-destructive-foreground rounded-full animate-spin" />
+            )}
+            Excluir
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function GerenciarUsuarios() {
   const { user: currentUser } = useAuth();
   const { data: profiles = [], isLoading } = useAllProfiles();
-  const { mutateAsync: updateRole } = useUpdateUserRole();
   const [search, setSearch] = useState('');
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<Profile | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Profile | null>(null);
 
   const filtered = profiles.filter((p) => {
     const q = search.toLowerCase();
-    return (
-      p.full_name?.toLowerCase().includes(q) ||
-      false
-    );
+    return p.full_name?.toLowerCase().includes(q) || false;
   });
-
-  const handleRoleChange = async (userId: string, newRole: Profile['role']) => {
-    if (userId === currentUser?.id) {
-      toast.error('Não é possível alterar seu próprio papel.');
-      return;
-    }
-    try {
-      await updateRole({ userId, role: newRole });
-      toast.success('Papel atualizado!');
-    } catch {
-      toast.error('Não foi possível atualizar o papel.');
-    }
-  };
 
   return (
     <AppLayout>
@@ -320,10 +523,11 @@ export default function GerenciarUsuarios() {
           ) : (
             <div className="divide-y divide-border">
               {/* Header row */}
-              <div className="grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_180px_160px] gap-4 px-5 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              <div className="grid grid-cols-[1fr_auto_auto] sm:grid-cols-[1fr_160px_140px_72px] gap-4 px-5 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
                 <span>Usuário</span>
                 <span className="hidden sm:block">Papel</span>
                 <span className="hidden sm:block">Membro desde</span>
+                <span />
               </div>
 
               {filtered.map((profile) => {
@@ -331,7 +535,7 @@ export default function GerenciarUsuarios() {
                 return (
                   <div
                     key={profile.id}
-                    className="grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_180px_160px] gap-4 px-5 py-4 items-center hover:bg-muted/30 transition-colors"
+                    className="grid grid-cols-[1fr_auto_auto] sm:grid-cols-[1fr_160px_140px_72px] gap-4 px-5 py-4 items-center hover:bg-muted/30 transition-colors"
                   >
                     {/* User info */}
                     <div className="flex items-center gap-3 min-w-0">
@@ -353,21 +557,9 @@ export default function GerenciarUsuarios() {
                       </div>
                     </div>
 
-                    {/* Role selector */}
+                    {/* Role badge */}
                     <div className="hidden sm:block">
-                      {isMe ? (
-                        <RoleBadge role={profile.role} />
-                      ) : (
-                        <select
-                          value={profile.role}
-                          onChange={(e) => handleRoleChange(profile.id, e.target.value as Profile['role'])}
-                          className="h-8 px-2.5 border border-input rounded-lg text-xs bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-all cursor-pointer"
-                        >
-                          {ROLES.map((r) => (
-                            <option key={r} value={r}>{roleMeta[r].label}</option>
-                          ))}
-                        </select>
-                      )}
+                      <RoleBadge role={profile.role} />
                     </div>
 
                     {/* Created at */}
@@ -383,6 +575,28 @@ export default function GerenciarUsuarios() {
                     <div className="sm:hidden">
                       <RoleBadge role={profile.role} />
                     </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setEditTarget(profile)}
+                        title="Editar usuário"
+                        className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      {!isMe && (
+                        <button
+                          type="button"
+                          onClick={() => setDeleteTarget(profile)}
+                          title="Excluir usuário"
+                          className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -392,7 +606,7 @@ export default function GerenciarUsuarios() {
 
         {/* Legend */}
         <div className="flex flex-wrap gap-1 text-xs text-muted-foreground justify-center">
-          <div><span><strong>Admin</strong> — acesso total à plataforma</span></div>
+          <span><strong>Admin</strong> — acesso total à plataforma</span>
           <span>·</span>
           <span><strong>Operador</strong> — cria tarefas e clientes, sem configurações</span>
           <span>·</span>
@@ -401,6 +615,16 @@ export default function GerenciarUsuarios() {
       </div>
 
       <InviteDialog open={inviteOpen} onClose={() => setInviteOpen(false)} />
+
+      <EditDialog
+        profile={editTarget}
+        onClose={() => setEditTarget(null)}
+      />
+
+      <DeleteDialog
+        profile={deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+      />
     </AppLayout>
   );
 }

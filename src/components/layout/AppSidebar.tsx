@@ -20,6 +20,7 @@ import {
   Camera,
   Users,
   Settings,
+  Tag,
 } from "lucide-react";
 import { BU } from "@/types/bu";
 import {
@@ -55,6 +56,7 @@ const navigation: NavItem[] = [
   { name: "Conhecimento", href: "/conhecimento", icon: BookOpen, bu: "kora-studio", hiddenForObserver: true },
   { name: "Processos", href: "/processos", icon: Workflow, bu: "kora-corp", hiddenForObserver: true },
   { name: "Financeiro", href: "/financeiro", icon: DollarSign, bu: "kora-corp", hiddenForObserver: true },
+  { name: "Serviços", href: "/servicos", icon: Tag, bu: "kora-corp", hiddenForObserver: true },
   { name: "Indicadores", href: "/indicadores", icon: BarChart3, bu: "kora-corp", hiddenForObserver: true },
   { name: "OKR", href: "/okr", icon: Target, bu: "kora-corp", hiddenForObserver: true },
 ];
@@ -157,7 +159,7 @@ export function AppSidebar({ onNavigate, collapsed = false }: AppSidebarProps) {
         {/* Logo */}
         <div className={cn(
           "flex items-center border-b border-sidebar-border transition-all duration-300",
-          collapsed ? "justify-center px-2 h-14" : "px-5 h-16"
+          collapsed ? "justify-center px-2 h-14" : "px-5 h-14"
         )}>
           {!collapsed ? (
             <KoraSystemLogo size={48} className="text-foreground" />
