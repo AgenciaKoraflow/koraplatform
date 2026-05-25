@@ -1,4 +1,4 @@
-import { Client, Project, Task, Contract, KnowledgeItem, SupportTicket, TaskSubtask, TaskComment, TaskAttachment } from "@/types/data";
+import { Client, Project, Task, Contract, KnowledgeItem, SupportTicket, TaskSubtask, TaskComment, TaskAttachment, TaskTimeEntry } from "@/types/data";
 import { parseCurrencyToNumber } from "@/lib/currency";
 import type { BU } from "@/types/bu";
 import type {
@@ -11,6 +11,7 @@ import type {
   DbTaskSubtaskRow,
   DbTaskCommentRow,
   DbTaskAttachmentRow,
+  DbTaskTimeEntryRow,
 } from "@/types/db";
 
 const VALID_BUS = new Set(["kora-agents", "kora-dev", "kora-studio", "kora-corp"]);
@@ -117,6 +118,7 @@ export function mapDbTask(db: DbTaskRow): Task {
     bu: sanitizeBU(db.bu),
     blockedReason: db.blocked_reason ?? undefined,
     clientApproved: db.client_approved ?? false,
+    estimatedHours: db.estimated_hours ?? undefined,
   };
 }
 
@@ -137,6 +139,18 @@ export function mapDbComment(db: DbTaskCommentRow): TaskComment {
     taskId: db.task_id,
     author: db.author,
     content: db.content,
+    mentionedUsers: db.mentioned_users ?? [],
+    createdAt: db.created_at,
+  };
+}
+
+export function mapDbTimeEntry(db: DbTaskTimeEntryRow): TaskTimeEntry {
+  return {
+    id: db.id,
+    taskId: db.task_id,
+    description: db.description,
+    hours: db.hours,
+    author: db.author,
     createdAt: db.created_at,
   };
 }

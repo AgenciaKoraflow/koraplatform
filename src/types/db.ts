@@ -54,6 +54,7 @@ export interface DbTaskRow {
   bu: string[] | null;
   blocked_reason: string | null;
   client_approved: boolean | null;
+  estimated_hours: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -72,6 +73,16 @@ export interface DbTaskCommentRow {
   task_id: string;
   author: string;
   content: string;
+  mentioned_users: string[];
+  created_at: string;
+}
+
+export interface DbTaskTimeEntryRow {
+  id: string;
+  task_id: string;
+  description: string;
+  hours: number;
+  author: string;
   created_at: string;
 }
 

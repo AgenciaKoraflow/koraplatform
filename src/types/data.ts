@@ -68,6 +68,7 @@ export interface Task {
   bu?: BU[];
   blockedReason?: string;
   clientApproved?: boolean;
+  estimatedHours?: number;
 }
 
 export interface TaskSubtask {
@@ -84,6 +85,16 @@ export interface TaskComment {
   taskId: string;
   author: string;
   content: string;
+  mentionedUsers: string[];
+  createdAt: string;
+}
+
+export interface TaskTimeEntry {
+  id: string;
+  taskId: string;
+  description: string;
+  hours: number;
+  author: string;
   createdAt: string;
 }
 

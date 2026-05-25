@@ -14,10 +14,10 @@ export function useCommentMutations(taskId: string) {
   const qc = useQueryClient();
 
   const addMutation = useMutation({
-    mutationFn: async ({ author, content }: { author: string; content: string }): Promise<TaskComment> => {
+    mutationFn: async ({ author, content, mentionedUsers }: { author: string; content: string; mentionedUsers?: string[] }): Promise<TaskComment> => {
       const { data, error } = await supabase
         .from("task_comments")
-        .insert({ task_id: taskId, author, content })
+        .insert({ task_id: taskId, author, content, mentioned_users: mentionedUsers ?? [] })
         .select()
         .single();
       if (error) throw new Error(error.message);
@@ -37,7 +37,7 @@ export function useCommentMutations(taskId: string) {
   });
 
   return {
-    addComment: (author: string, content: string) => addMutation.mutate({ author, content }),
+    addComment: (author: string, content: string, mentionedUsers?: string[]) => addMutation.mutate({ author, content, mentionedUsers }),
     deleteComment: (id: string) => deleteMutation.mutate(id),
     isAdding: addMutation.isPending,
   };

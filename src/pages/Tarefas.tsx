@@ -196,6 +196,7 @@ export default function Tarefas() {
     dueDate: "",
     bu: "kora-dev" as BU,
     blockedReason: "",
+    estimatedHours: "",
   });
 
   const tasksByStatus = useMemo(() => {
@@ -225,7 +226,7 @@ export default function Tarefas() {
   const openNewDialog = useCallback((status: Task["status"] = "todo") => {
     setEditingTask(null);
     setDefaultStatus(status);
-    setFormData({ title: "", description: "", clientId: "", projectId: "", assignees: [], status, priority: "medium", dueDate: "", bu: "kora-dev", blockedReason: "" });
+    setFormData({ title: "", description: "", clientId: "", projectId: "", assignees: [], status, priority: "medium", dueDate: "", bu: "kora-dev", blockedReason: "", estimatedHours: "" });
     setIsDialogOpen(true);
   }, []);
 
@@ -242,6 +243,7 @@ export default function Tarefas() {
       dueDate: task.dueDate,
       bu: (Array.isArray(task.bu) ? task.bu[0] : task.bu) || "kora-dev" as BU,
       blockedReason: task.blockedReason || "",
+      estimatedHours: task.estimatedHours != null ? String(task.estimatedHours) : "",
     });
     setIsDialogOpen(true);
   }, []);
@@ -312,6 +314,7 @@ export default function Tarefas() {
         dueDate: formData.dueDate,
         bu: formData.bu ? [formData.bu] : undefined,
         blockedReason: formData.status === "blocked" ? formData.blockedReason : undefined,
+        estimatedHours: formData.estimatedHours ? parseFloat(formData.estimatedHours) : undefined,
       });
     } else {
       addTask({
@@ -326,6 +329,7 @@ export default function Tarefas() {
         bu: formData.bu ? [formData.bu] : undefined,
         blockedReason: formData.status === "blocked" ? formData.blockedReason : undefined,
         clientApproved: false,
+        estimatedHours: formData.estimatedHours ? parseFloat(formData.estimatedHours) : undefined,
       });
     }
     setIsDialogOpen(false);
@@ -707,6 +711,22 @@ export default function Tarefas() {
                 onChange={(value) => setFormData({ ...formData, dueDate: value })}
                 placeholder="Selecione o prazo"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="estimatedHours">Horas Estimadas</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="estimatedHours"
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  placeholder="Ex: 8"
+                  value={formData.estimatedHours}
+                  onChange={(e) => setFormData({ ...formData, estimatedHours: e.target.value })}
+                  className="bg-input border-border w-32"
+                />
+                <span className="text-sm text-muted-foreground">horas</span>
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Responsáveis</Label>
