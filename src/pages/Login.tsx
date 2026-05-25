@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Mail } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import logoImage from '@/logo/kora-logo.png';
+import logoImage from '@/logo/kora-logo-preto.png';
+import Silk from '@/components/Silk';
 
 function Logo() {
   return (
-    <div className="flex flex-col items-center gap-2">
-      <img src={logoImage} alt="KORA System" className="w-12 h-12 invert" />
+    <div className="flex items-start gap-1 flex-col">
+      <img src={logoImage} alt="KORA System" className="h-12 object-cover" />
       <div className="flex items-baseline gap-1">
-        <span className="text-base font-bold tracking-widest text-black">KORA</span>
+        <span className="text-lg font-bold tracking-widest text-black">KORA</span>
         <span className="text-xs font-light text-gray-400 tracking-widest">SYSTEM</span>
       </div>
+      <div></div>
     </div>
   );
 }
@@ -23,6 +25,7 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -41,32 +44,6 @@ export default function Login() {
     setSubmitting(false);
   };
 
-  const Spinner = () => (
-    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-  );
-
-  const ErrorBox = ({ msg }: { msg: string }) => (
-    <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl">
-      <p className="text-sm text-red-600">{msg}</p>
-    </div>
-  );
-
-  const PrimaryButton = ({
-    label,
-    loadingLabel,
-    disabled,
-  }: { label: string; loadingLabel: string; disabled?: boolean }) => (
-    <button
-      type="submit"
-      disabled={submitting || disabled}
-      className="w-full h-11 bg-black text-white rounded-xl text-sm font-medium hover:bg-gray-900 active:bg-gray-950 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-    >
-      {submitting
-        ? <span className="flex items-center justify-center gap-2"><Spinner />{loadingLabel}</span>
-        : label}
-    </button>
-  );
-
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -76,58 +53,109 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
-      <div className="mb-10"><Logo /></div>
+    <div className="min-h-screen flex relative">
+      {/* Background animado — tela inteira */}
+      <div className="absolute inset-0 z-0">
+        <Silk color="#ff8800" speed={5} scale={1} noiseIntensity={1.5} rotation={0} />
+      </div>
 
-      <div className="w-full max-w-[400px] border border-gray-200 rounded-2xl bg-white shadow-[0_2px_20px_rgba(0,0,0,0.07)] overflow-hidden">
-        <div className="p-8">
-          <div className="mb-8">
-            <h1 className="text-xl font-semibold text-black tracking-tight">Bem-vindo de volta</h1>
-            <p className="text-sm text-gray-500 mt-1">Acesse sua conta para continuar</p>
+      {/* Painel esquerdo — formulário (sobre o background) */}
+      <div className="relative z-10 w-full md:w-[45%] md:min-w-[420px] bg-white rounded-r-3xl flex items-center justify-center p-10">
+        <div className="w-full max-w-[460px]">
+          <Logo />
+
+          <div>
+            <div>
+              <div className="mb-7">
+                <p className="text-sm text-gray-500 mt-1">Acesse sua conta para continuar</p>
+              </div>
+
+              <form onSubmit={handleLogin} noValidate className="space-y-5">
+                {/* Email */}
+                <div>
+                  <div className="relative">
+                    <input
+                      id="email"
+                      type="email"
+                      autoComplete="email"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      placeholder="seu@email.com"
+                      required
+                      className="w-full h-11 px-4 pr-12 border border-gray-300 rounded-xl text-sm text-black placeholder-gray-400 bg-white focus:outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-400 transition-all"
+                    />
+                    <Mail className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  </div>
+                </div>
+
+                {/* Senha */}
+                <div>
+                  <div className="relative">
+                    <input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete="current-password"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      className="w-full h-11 px-4 pr-12 border border-gray-300 rounded-xl text-sm text-black placeholder-gray-400 bg-white focus:outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-400 transition-all"
+                    />
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Lembrar-me + Esqueceu a senha */}
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={e => setRememberMe(e.target.checked)}
+                      className="w-4 h-4 rounded border-gray-300 accent-orange-500 cursor-pointer"
+                    />
+                    <span className="text-sm text-gray-600">Lembrar-me</span>
+                  </label>
+                  <a href="#" className="text-sm text-orange-500 hover:text-orange-600 hover:underline transition-colors">
+                    Esqueceu a senha?
+                  </a>
+                </div>
+
+                {/* Erro */}
+                {error && (
+                  <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl">
+                    <p className="text-sm text-red-600">{error}</p>
+                  </div>
+                )}
+
+                {/* Botão */}
+                <button
+                  type="submit"
+                  disabled={submitting || !email || !password}
+                  className="w-full h-11 bg-[#ff8800] text-white rounded-xl text-sm font-medium hover:bg-orange-600 active:bg-orange-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                >
+                  {submitting ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Entrando...
+                    </span>
+                  ) : 'Entrar'}
+                </button>
+              </form>
+            </div>
           </div>
 
-          <form onSubmit={handleLogin} noValidate className="space-y-5">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-black mb-2">E-mail</label>
-              <input
-                id="email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="seu@email.com"
-                required
-                className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm text-black placeholder-gray-400 bg-white focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-black mb-2">Senha</label>
-              <div className="relative">
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  className="w-full h-11 px-4 pr-12 border border-gray-300 rounded-xl text-sm text-black placeholder-gray-400 bg-white focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
-                />
-                <button type="button" tabIndex={-1} onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black transition-colors">
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            {error && <ErrorBox msg={error} />}
-            <PrimaryButton label="Entrar" loadingLabel="Entrando..." disabled={!email || !password} />
-          </form>
+          <p className="mt-6 text-xs text-gray-400 text-center select-none">Acesso restrito · Kora Platform</p>
         </div>
       </div>
 
-      <p className="mt-8 text-xs text-gray-400 select-none">Acesso restrito · Kora Platform</p>
     </div>
   );
 }
