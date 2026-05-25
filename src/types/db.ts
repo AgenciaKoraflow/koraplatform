@@ -71,6 +71,7 @@ export interface DbTaskSubtaskRow {
 export interface DbTaskCommentRow {
   id: string;
   task_id: string;
+  subtask_id: string | null;
   author: string;
   content: string;
   mentioned_users: string[];
@@ -80,6 +81,7 @@ export interface DbTaskCommentRow {
 export interface DbTaskTimeEntryRow {
   id: string;
   task_id: string;
+  subtask_id: string | null;
   description: string;
   hours: number;
   author: string;
@@ -89,6 +91,7 @@ export interface DbTaskTimeEntryRow {
 export interface DbTaskAttachmentRow {
   id: string;
   task_id: string;
+  subtask_id: string | null;
   file_name: string;
   storage_path: string;
   mime_type: string | null;

@@ -83,6 +83,7 @@ export interface TaskSubtask {
 export interface TaskComment {
   id: string;
   taskId: string;
+  subtaskId?: string;
   author: string;
   content: string;
   mentionedUsers: string[];
@@ -92,6 +93,7 @@ export interface TaskComment {
 export interface TaskTimeEntry {
   id: string;
   taskId: string;
+  subtaskId?: string;
   description: string;
   hours: number;
   author: string;
@@ -101,6 +103,7 @@ export interface TaskTimeEntry {
 export interface TaskAttachment {
   id: string;
   taskId: string;
+  subtaskId?: string;
   fileName: string;
   storagePath: string;
   mimeType?: string;

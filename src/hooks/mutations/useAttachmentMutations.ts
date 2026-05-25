@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { mapDbAttachment } from "@/lib/mappers";
 import { attachmentKeys } from "@/hooks/useTaskAttachments";
+import { subtaskAttachmentKeys } from "@/hooks/useSubtaskAttachments";
 import type { DbTaskAttachmentRow } from "@/types/db";
 import type { TaskAttachment } from "@/types/data";
 import { toast } from "sonner";
@@ -12,19 +13,28 @@ function errMsg(e: unknown) {
   return e instanceof Error ? e.message : "Erro desconhecido";
 }
 
-export function useAttachmentMutations(taskId: string) {
+export function useAttachmentMutations(taskId: string, subtaskId?: string) {
   const qc = useQueryClient();
+
+  function invalidate() {
+    qc.invalidateQueries({ queryKey: attachmentKeys.byTask(taskId) });
+    if (subtaskId) {
+      qc.invalidateQueries({ queryKey: subtaskAttachmentKeys.bySubtask(subtaskId) });
+    }
+  }
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File): Promise<TaskAttachment> => {
       const ext = file.name.split(".").pop() ?? "";
-      const path = `${taskId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const folder = subtaskId ? `${taskId}/subtasks/${subtaskId}` : taskId;
+      const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
       const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, file);
       if (uploadError) throw new Error(uploadError.message);
       const { data, error } = await supabase
         .from("task_attachments")
         .insert({
           task_id: taskId,
+          subtask_id: subtaskId ?? null,
           file_name: file.name,
           storage_path: path,
           mime_type: file.type || null,
@@ -36,7 +46,7 @@ export function useAttachmentMutations(taskId: string) {
       return mapDbAttachment(data as DbTaskAttachmentRow);
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: attachmentKeys.byTask(taskId) });
+      invalidate();
       toast.success("Arquivo enviado com sucesso");
     },
     onError: (e) => toast.error(`Erro ao enviar arquivo: ${errMsg(e)}`),
@@ -49,7 +59,7 @@ export function useAttachmentMutations(taskId: string) {
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: attachmentKeys.byTask(taskId) });
+      invalidate();
       toast.success("Arquivo removido");
     },
     onError: (e) => toast.error(`Erro ao remover arquivo: ${errMsg(e)}`),

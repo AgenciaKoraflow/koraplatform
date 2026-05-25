@@ -137,6 +137,7 @@ export function mapDbComment(db: DbTaskCommentRow): TaskComment {
   return {
     id: db.id,
     taskId: db.task_id,
+    subtaskId: db.subtask_id ?? undefined,
     author: db.author,
     content: db.content,
     mentionedUsers: db.mentioned_users ?? [],
@@ -148,6 +149,7 @@ export function mapDbTimeEntry(db: DbTaskTimeEntryRow): TaskTimeEntry {
   return {
     id: db.id,
     taskId: db.task_id,
+    subtaskId: db.subtask_id ?? undefined,
     description: db.description,
     hours: db.hours,
     author: db.author,
@@ -159,6 +161,7 @@ export function mapDbAttachment(db: DbTaskAttachmentRow): TaskAttachment {
   return {
     id: db.id,
     taskId: db.task_id,
+    subtaskId: db.subtask_id ?? undefined,
     fileName: db.file_name,
     storagePath: db.storage_path,
     mimeType: db.mime_type ?? undefined,
