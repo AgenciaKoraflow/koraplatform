@@ -175,14 +175,14 @@ export function AppSidebar({ onNavigate, collapsed = false }: AppSidebarProps) {
                 to={item.href}
                 onClick={handleNavClick}
                 className={cn(
-                  "relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150",
+                  "relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 overflow-hidden",
                   collapsed ? "justify-center" : "",
                   isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground before:content-[''] before:absolute before:left-0 before:inset-y-1.5 before:w-[3px] before:bg-primary before:rounded-r-full"
                     : "text-sidebar-foreground hover:bg-sidebar-accent/50"
                 )}
               >
-                <item.icon className="w-5 h-5 flex-shrink-0" />
+                <item.icon className={cn("w-5 h-5 flex-shrink-0", isActive && "text-primary")} />
                 {!collapsed && <span>{item.name}</span>}
               </NavLink>
             );
@@ -204,53 +204,37 @@ export function AppSidebar({ onNavigate, collapsed = false }: AppSidebarProps) {
             <>
               <div className={cn("my-1 border-t border-sidebar-border", collapsed ? "mx-2" : "mx-1")} />
 
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <NavLink
-                    to="/usuarios"
-                    onClick={handleNavClick}
-                    className={cn(
-                      "relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150",
-                      collapsed ? "justify-center" : "",
-                      location.pathname === "/usuarios"
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+              {[
+                { href: "/usuarios", label: "Usuários", Icon: Users },
+                { href: "/configuracoes", label: "Configurações", Icon: Settings },
+              ].map(({ href, label, Icon }) => {
+                const isActive = location.pathname === href;
+                return (
+                  <Tooltip key={href}>
+                    <TooltipTrigger asChild>
+                      <NavLink
+                        to={href}
+                        onClick={handleNavClick}
+                        className={cn(
+                          "relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 overflow-hidden",
+                          collapsed ? "justify-center" : "",
+                          isActive
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground before:content-[''] before:absolute before:left-0 before:inset-y-1.5 before:w-[3px] before:bg-primary before:rounded-r-full"
+                            : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+                        )}
+                      >
+                        <Icon className={cn("w-5 h-5 flex-shrink-0", isActive && "text-primary")} />
+                        {!collapsed && <span>{label}</span>}
+                      </NavLink>
+                    </TooltipTrigger>
+                    {collapsed && (
+                      <TooltipContent side="right" className="bg-popover text-popover-foreground">
+                        <p>{label}</p>
+                      </TooltipContent>
                     )}
-                  >
-                    <Users className="w-5 h-5 flex-shrink-0" />
-                    {!collapsed && <span>Usuários</span>}
-                  </NavLink>
-                </TooltipTrigger>
-                {collapsed && (
-                  <TooltipContent side="right" className="bg-popover text-popover-foreground">
-                    <p>Usuários</p>
-                  </TooltipContent>
-                )}
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <NavLink
-                    to="/configuracoes"
-                    onClick={handleNavClick}
-                    className={cn(
-                      "relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150",
-                      collapsed ? "justify-center" : "",
-                      location.pathname === "/configuracoes"
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent/50"
-                    )}
-                  >
-                    <Settings className="w-5 h-5 flex-shrink-0" />
-                    {!collapsed && <span>Configurações</span>}
-                  </NavLink>
-                </TooltipTrigger>
-                {collapsed && (
-                  <TooltipContent side="right" className="bg-popover text-popover-foreground">
-                    <p>Configurações</p>
-                  </TooltipContent>
-                )}
-              </Tooltip>
+                  </Tooltip>
+                );
+              })}
             </>
           )}
         </nav>
