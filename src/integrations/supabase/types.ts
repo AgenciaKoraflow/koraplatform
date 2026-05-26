@@ -507,7 +507,6 @@ export type Database = {
           elements: Json | null
           id: string
           name: string
-          org_id: string
           thumbnail_url: string | null
           type: string
           updated_at: string | null
@@ -519,7 +518,6 @@ export type Database = {
           elements?: Json | null
           id?: string
           name: string
-          org_id: string
           thumbnail_url?: string | null
           type: string
           updated_at?: string | null
@@ -531,7 +529,6 @@ export type Database = {
           elements?: Json | null
           id?: string
           name?: string
-          org_id?: string
           thumbnail_url?: string | null
           type?: string
           updated_at?: string | null
