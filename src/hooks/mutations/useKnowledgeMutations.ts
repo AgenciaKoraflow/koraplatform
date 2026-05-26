@@ -27,20 +27,14 @@ export function useKnowledgeMutations() {
         category: item.category,
         content: item.content,
         username: item.username ?? null,
+        password: item.password || null,
         url: item.url ?? null,
         tags: item.tags,
       };
       const { data: rows, error } = await supabase.from("knowledge_items").insert(dbData).select();
       if (error) throw new Error(error.message);
       if (!rows?.[0]) throw new Error("Resposta vazia ao criar item");
-      const newItem = mapDbKnowledge(toDbRow(rows[0] as Record<string, unknown>));
-      // Encrypt and save password server-side if provided
-      if (item.password) {
-        await supabase.functions.invoke("get-password", {
-          body: { id: newItem.id, password: item.password },
-        });
-      }
-      return newItem;
+      return mapDbKnowledge(toDbRow(rows[0] as Record<string, unknown>));
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: knowledgeKeys.all });
@@ -66,15 +60,10 @@ export function useKnowledgeMutations() {
       if (data.username !== undefined) dbData.username = data.username;
       if (data.url !== undefined) dbData.url = data.url;
       if (data.tags) dbData.tags = data.tags;
+      if (data.password !== undefined) dbData.password = data.password || null;
       if (Object.keys(dbData).length > 0) {
         const { error } = await supabase.from("knowledge_items").update(dbData).eq("id", id);
         if (error) throw new Error(error.message);
-      }
-      // Encrypt and save password server-side if provided
-      if (data.password) {
-        await supabase.functions.invoke("get-password", {
-          body: { id, password: data.password },
-        });
       }
     },
     onSuccess: () => {
@@ -98,12 +87,13 @@ export function useKnowledgeMutations() {
 
   const getKnowledgePassword = async (id: string): Promise<string | null> => {
     try {
-      const { data: result, error } = await supabase.functions.invoke("get-password", {
-        body: { id },
-      });
+      const { data, error } = await supabase
+        .from("knowledge_items")
+        .select("password")
+        .eq("id", id)
+        .single();
       if (error) throw new Error(error.message);
-      const pw = (result as { data?: { password?: string } } | null)?.data?.password;
-      return typeof pw === "string" ? pw : null;
+      return (data as { password: string | null } | null)?.password ?? null;
     } catch (error) {
       toast.error(`Erro ao obter senha: ${errMsg(error)}`);
       return null;
