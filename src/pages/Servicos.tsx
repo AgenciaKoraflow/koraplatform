@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Tag, Plus, Search, Package } from "lucide-react";
+import { Tag, Plus, Search, Package, DollarSign, RefreshCw, CreditCard, Eye } from "lucide-react";
 import { Edit, Trash2 } from "@/components/shared/ActionMenu";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -28,6 +28,7 @@ import {
   DialogBody,
   DialogFooter,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -92,6 +93,8 @@ export default function Servicos() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [viewingService, setViewingService] = useState<Service | null>(null);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>(emptyForm());
@@ -109,6 +112,11 @@ export default function Servicos() {
 
   const services = data?.services ?? [];
   const total = data?.total ?? 0;
+
+  function openView(service: Service) {
+    setViewingService(service);
+    setIsViewOpen(true);
+  }
 
   function openCreate() {
     setEditingService(null);
@@ -268,7 +276,11 @@ export default function Servicos() {
                 </tr>
               ) : (
                 services.map((service) => (
-                  <tr key={service.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
+                  <tr
+                    key={service.id}
+                    className="border-b border-border/50 hover:bg-muted/20 transition-colors cursor-pointer"
+                    onClick={() => openView(service)}
+                  >
                     <td className="px-4 py-3">
                       <span className="font-medium text-foreground">{service.name}</span>
                       {service.description && (
@@ -304,7 +316,7 @@ export default function Servicos() {
                         {STATUS_LABELS[service.status]}
                       </Badge>
                     </td>
-                    <td className="px-2 py-3">
+                    <td className="px-2 py-3" onClick={(e) => e.stopPropagation()}>
                       <ActionMenu
                         items={[
                           {
@@ -328,6 +340,142 @@ export default function Servicos() {
           </table>
         </div>
       </div>
+
+      {/* Modal de visualização */}
+      <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+        <DialogContent className="max-w-lg bg-card border-border">
+          <DialogHeader>
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Package className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <DialogTitle className="text-foreground leading-tight">
+                  {viewingService?.name}
+                </DialogTitle>
+                {viewingService?.category && (
+                  <DialogDescription className="mt-0.5">
+                    {viewingService.category}
+                  </DialogDescription>
+                )}
+              </div>
+              {viewingService && (
+                <Badge
+                  variant="outline"
+                  className={
+                    viewingService.status === "ativo"
+                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-500 shrink-0"
+                      : "border-muted-foreground/30 bg-muted/30 text-muted-foreground shrink-0"
+                  }
+                >
+                  {STATUS_LABELS[viewingService.status]}
+                </Badge>
+              )}
+            </div>
+          </DialogHeader>
+
+          {viewingService && (
+            <DialogBody className="space-y-4">
+              {/* Vertente + Tipo */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg border border-border bg-muted/30 px-3 py-2.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">Vertente</p>
+                  <BUBadge bu={viewingService.bu} />
+                </div>
+                <div className="rounded-lg border border-border bg-muted/30 px-3 py-2.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">Tipo de Cobrança</p>
+                  <p className="text-sm font-medium text-foreground">{BILLING_TYPE_LABELS[viewingService.billingType]}</p>
+                </div>
+              </div>
+
+              {/* Descrição */}
+              {viewingService.description && (
+                <div className="rounded-lg border border-border bg-muted/30 px-3 py-2.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">Descrição</p>
+                  <p className="text-sm text-foreground leading-relaxed">{viewingService.description}</p>
+                </div>
+              )}
+
+              {/* Preços de Setup */}
+              {(viewingService.priceInitial || viewingService.priceBargain) && (
+                <div>
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <DollarSign className="w-3.5 h-3.5 text-muted-foreground" />
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {viewingService.billingType === "combo" ? "Setup / Valor Total" : "Precificação"}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {viewingService.priceInitial && (
+                      <div className="rounded-lg border border-border bg-muted/30 px-3 py-2.5">
+                        <p className="text-[10px] text-muted-foreground mb-0.5">Preço Inicial</p>
+                        <p className="text-sm font-mono font-semibold text-foreground">{viewingService.priceInitial}</p>
+                      </div>
+                    )}
+                    {viewingService.priceBargain && (
+                      <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2.5">
+                        <p className="text-[10px] text-amber-500/80 mb-0.5">Preço Barganha <span className="opacity-70">[Interno]</span></p>
+                        <p className="text-sm font-mono font-semibold text-amber-500">{viewingService.priceBargain}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Recorrência */}
+              {(viewingService.recurrencePriceInitial || viewingService.recurrencePriceBargain) && (
+                <div>
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Recorrência Mensal</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {viewingService.recurrencePriceInitial && (
+                      <div className="rounded-lg border border-border bg-muted/30 px-3 py-2.5">
+                        <p className="text-[10px] text-muted-foreground mb-0.5">Recorrência Inicial</p>
+                        <p className="text-sm font-mono font-semibold text-foreground">{viewingService.recurrencePriceInitial}<span className="text-xs font-normal text-muted-foreground">/mês</span></p>
+                      </div>
+                    )}
+                    {viewingService.recurrencePriceBargain && (
+                      <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2.5">
+                        <p className="text-[10px] text-amber-500/80 mb-0.5">Recorrência Barganha <span className="opacity-70">[Interno]</span></p>
+                        <p className="text-sm font-mono font-semibold text-amber-500">{viewingService.recurrencePriceBargain}<span className="text-xs font-normal text-amber-500/60">/mês</span></p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Parcelamento */}
+              {viewingService.installmentsMax && (
+                <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2.5">
+                  <CreditCard className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <div>
+                    <p className="text-[10px] text-muted-foreground">Parcelamento máximo</p>
+                    <p className="text-sm font-medium text-foreground">em até {viewingService.installmentsMax}x</p>
+                  </div>
+                </div>
+              )}
+            </DialogBody>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setIsViewOpen(false)}>
+              Fechar
+            </Button>
+            <Button
+              onClick={() => {
+                setIsViewOpen(false);
+                if (viewingService) openEdit(viewingService);
+              }}
+              className="gap-2"
+            >
+              <Eye className="w-4 h-4" />
+              Editar Serviço
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog de criação/edição */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
