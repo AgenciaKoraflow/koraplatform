@@ -4,7 +4,8 @@ import { cn } from "@/lib/utils";
 import {
   Plus, Search, Mail, Phone, Calendar, Edit,
   MessageSquare, FileText, Gift, Clock, CheckCircle2, Users,
-  Video, CalendarDays, StickyNote, Heart, CheckSquare, Circle, AlertCircle, HeartHandshake
+  Video, CalendarDays, StickyNote, Heart, CheckSquare, Circle, AlertCircle, HeartHandshake,
+  Pencil, Trash2, MoreVertical
 } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Dialog, DialogContent, DialogHeader, DialogBody, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -27,6 +28,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 // Type for interaction/activity
 interface ClientInteraction {
@@ -67,6 +69,7 @@ export default function ClientesAtivos() {
   const [ganttProject, setGanttProject] = useState<Project | null>(null);
   const [showAnniversaryDialog, setShowAnniversaryDialog] = useState(false);
   const [isInteractionDialogOpen, setIsInteractionDialogOpen] = useState(false);
+  const [editingInteraction, setEditingInteraction] = useState<ClientInteraction | null>(null);
   const [interactions, setInteractions] = useState<ClientInteraction[]>(mockInteractions);
   const [interactionForm, setInteractionForm] = useState({
     type: "meeting" as ClientInteraction["type"],
@@ -108,6 +111,45 @@ export default function ClientesAtivos() {
     setIsInteractionDialogOpen(false);
     setInteractionForm({ type: "meeting", title: "", description: "", date: "" });
     toast.success("Interação adicionada com sucesso!");
+  };
+
+  const handleOpenEditInteraction = (interaction: ClientInteraction) => {
+    setEditingInteraction(interaction);
+    setInteractionForm({
+      type: interaction.type,
+      title: interaction.title,
+      description: interaction.description,
+      date: interaction.date,
+    });
+    setIsInteractionDialogOpen(true);
+  };
+
+  const handleSaveInteraction = () => {
+    if (!interactionForm.title || !interactionForm.date) {
+      toast.error("Preencha os campos obrigatórios");
+      return;
+    }
+
+    if (editingInteraction) {
+      setInteractions(interactions.map(i =>
+        i.id === editingInteraction.id
+          ? { ...i, ...interactionForm }
+          : i
+      ));
+      toast.success("Interação atualizada com sucesso!");
+    } else {
+      handleAddInteraction();
+      return;
+    }
+
+    setIsInteractionDialogOpen(false);
+    setEditingInteraction(null);
+    setInteractionForm({ type: "meeting", title: "", description: "", date: "" });
+  };
+
+  const handleDeleteInteraction = (interactionId: string) => {
+    setInteractions(interactions.filter(i => i.id !== interactionId));
+    toast.success("Interação removida com sucesso!");
   };
 
   const calculateContractAnniversary = (clientId: string): string | null => {
@@ -434,9 +476,31 @@ export default function ClientesAtivos() {
                                           {config.label}
                                         </Badge>
                                       </div>
-                                      <span className="text-xs text-muted-foreground">
-                                        {new Date(interaction.date).toLocaleDateString('pt-BR')}
-                                      </span>
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xs text-muted-foreground">
+                                          {new Date(interaction.date).toLocaleDateString('pt-BR')}
+                                        </span>
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground">
+                                              <MoreVertical className="w-3.5 h-3.5" />
+                                            </Button>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={() => handleOpenEditInteraction(interaction)}>
+                                              <Pencil className="w-4 h-4 mr-2" />
+                                              Editar
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                              className="text-destructive focus:text-destructive"
+                                              onClick={() => handleDeleteInteraction(interaction.id)}
+                                            >
+                                              <Trash2 className="w-4 h-4 mr-2" />
+                                              Excluir
+                                            </DropdownMenuItem>
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
+                                      </div>
                                     </div>
                                     <p className="text-sm text-muted-foreground">{interaction.description}</p>
                                     {interaction.createdBy && (
@@ -663,11 +727,17 @@ export default function ClientesAtivos() {
         </div>
       </div>
 
-      {/* Add Interaction Dialog */}
-      <Dialog open={isInteractionDialogOpen} onOpenChange={setIsInteractionDialogOpen}>
+      {/* Add/Edit Interaction Dialog */}
+      <Dialog open={isInteractionDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setEditingInteraction(null);
+          setInteractionForm({ type: "meeting", title: "", description: "", date: "" });
+        }
+        setIsInteractionDialogOpen(open);
+      }}>
         <DialogContent className="bg-card border-border sm:max-w-lg" aria-describedby={undefined}>
           <DialogHeader>
-            <DialogTitle>Nova Interação</DialogTitle>
+            <DialogTitle>{editingInteraction ? "Editar Interação" : "Nova Interação"}</DialogTitle>
           </DialogHeader>
           <DialogBody className="space-y-4 py-4">
             <div className="space-y-2">
@@ -723,8 +793,8 @@ export default function ClientesAtivos() {
             <Button variant="outline" onClick={() => setIsInteractionDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleAddInteraction}>
-              Adicionar
+            <Button onClick={editingInteraction ? handleSaveInteraction : handleAddInteraction}>
+              {editingInteraction ? "Salvar" : "Adicionar"}
             </Button>
           </DialogFooter>
         </DialogContent>
