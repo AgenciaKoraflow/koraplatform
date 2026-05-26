@@ -539,6 +539,54 @@ export default function OKR() {
                   </div>
                 </div>
 
+                {(() => {
+                  const objectiveUpdates = updates
+                    .filter(u => u.objectiveId === viewingObjective.id)
+                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                  if (objectiveUpdates.length === 0) return null;
+                  return (
+                    <div>
+                      <Label className="text-foreground/80 flex items-center gap-1.5 mb-3">
+                        <History className="w-4 h-4" />Histórico de Atualizações ({objectiveUpdates.length})
+                      </Label>
+                      <div className="relative">
+                        <div className="absolute left-3 top-0 bottom-0 w-px bg-border/50" />
+                        <div className="space-y-3">
+                          {objectiveUpdates.map((update, idx) => {
+                            const prevUpdate = objectiveUpdates[idx + 1];
+                            const delta = prevUpdate ? update.value - prevUpdate.value : null;
+                            return (
+                              <div key={update.id} className="relative pl-8">
+                                <div className="absolute left-1.5 top-2 w-3 h-3 rounded-full border-2 border-primary bg-card" />
+                                <div className="bg-muted/30 border border-border/30 rounded-lg p-3 space-y-1">
+                                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-semibold text-foreground">{update.value.toLocaleString()} {viewingObjective.unit}</span>
+                                      {delta !== null && (
+                                        <span className={cn("text-xs font-medium px-1.5 py-0.5 rounded", delta > 0 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : delta < 0 ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" : "bg-muted text-muted-foreground")}>
+                                          {delta > 0 ? "+" : ""}{delta.toLocaleString()} {viewingObjective.unit}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                      <span>{update.updatedBy}</span>
+                                      <span>·</span>
+                                      <span>{formatDateSafely(update.date)}</span>
+                                    </div>
+                                  </div>
+                                  {update.comment && (
+                                    <p className="text-sm text-muted-foreground">{update.comment}</p>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
               </DialogBody>
             )}
             <DialogFooter className="border-t border-border">
