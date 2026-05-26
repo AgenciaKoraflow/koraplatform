@@ -114,6 +114,17 @@ export function TaskDetailSheet({
     [allTimeEntries]
   );
 
+  // Hours per subtask (live, derived from allTimeEntries)
+  const subtaskHoursMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const entry of allTimeEntries) {
+      if (entry.subtaskId) {
+        map[entry.subtaskId] = (map[entry.subtaskId] ?? 0) + entry.hours;
+      }
+    }
+    return map;
+  }, [allTimeEntries]);
+
   const { addSubtask, toggleSubtask, deleteSubtask, isAdding: isAddingSubtask } =
     useSubtaskMutations(task?.id ?? "");
   const { addComment, deleteComment, isAdding: isAddingComment } =
@@ -406,6 +417,12 @@ export function TaskDetailSheet({
                         >
                           {sub.title}
                         </button>
+                        {(subtaskHoursMap[sub.id] ?? 0) > 0 && (
+                          <span className="text-xs text-muted-foreground shrink-0 flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {subtaskHoursMap[sub.id]}h
+                          </span>
+                        )}
                         <ChevronRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-60 transition-opacity shrink-0" />
                         <button
                           onClick={() => deleteSubtask(sub.id)}

@@ -153,7 +153,7 @@ export function SubtaskDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-xl w-[calc(100%-2rem)] sm:w-full">
+      <DialogContent className="max-w-xl w-[calc(100%-2rem)] sm:w-full h-[80vh]">
         <Tabs defaultValue="detalhes" className="flex flex-col flex-1 min-h-0">
 
           {/* ── Header fixo ── */}
