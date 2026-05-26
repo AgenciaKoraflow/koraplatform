@@ -13,7 +13,7 @@ function errMsg(e: unknown) {
 // Columns to select after insert — same set as list queries, never includes
 // the password column so the value never reaches the browser.
 const KI_COLS =
-  "id, client_id, project_id, title, category, content, username, has_password, url, tags, created_at, updated_at";
+  "id, client_id, project_ids, project_id, title, category, content, username, has_password, url, tags, created_at, updated_at";
 
 async function savePassword(id: string, password: string): Promise<void> {
   const { error } = await supabase.functions.invoke("get-password", {
@@ -47,7 +47,7 @@ export function useKnowledgeMutations() {
         .select(KI_COLS);
       if (error) throw new Error(error.message);
       if (!rows?.[0]) throw new Error("Resposta vazia ao criar item");
-      const newItem = mapDbKnowledge(rows[0] as unknown as DbKnowledgeItemRow);
+      const newItem = mapDbKnowledge(rows[0] as DbKnowledgeItemRow);
       if (item.password) {
         await savePassword(newItem.id, item.password);
       }
