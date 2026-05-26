@@ -25,6 +25,12 @@
       "skillPath": "security-toolkit/skills/security-checklist/SKILL.md",
       "computedHash": "340213b93012d0860c8160232be8fb9ba8f30d167e775418d0135ea42e60ed61"
     },
+    "shadcn": {
+      "source": "shadcn/ui",
+      "sourceType": "github",
+      "skillPath": "skills/shadcn/SKILL.md",
+      "computedHash": "80a6226e78f6d1fe464214ae0ef449d49d8ffaa3e7704f011e9b418c678ad4d1"
+    },
     "supabase-postgres-best-practices": {
       "source": "supabase/agent-skills",
       "sourceType": "github",
