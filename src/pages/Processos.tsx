@@ -28,9 +28,10 @@ import {
   AlertCircle,
   Tag,
 } from "lucide-react";
-import { BU_LIST } from "@/types/bu";
+import { BU_LIST, BU_CONFIG } from "@/types/bu";
 import type { Process, ProcessCategory } from "@/types/data";
 import { supabase } from "@/integrations/supabase/client";
+import { useAllProfiles } from "@/hooks/useProfile";
 import { toast } from "sonner";
 
 // Categories now use BU values
@@ -48,6 +49,7 @@ const STATUS_CONFIG = {
 };
 
 export default function Processos() {
+  const { data: allProfiles = [] } = useAllProfiles();
   const [searchQuery, setSearchQuery] = useState("");
   const [processes, setProcesses] = useState<Process[]>([]);
   const [loading, setLoading] = useState(true);
@@ -486,12 +488,22 @@ export default function Processos() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="assigned_to">Responsável</Label>
-                <Input
-                  id="assigned_to"
-                  value={formData.assigned_to}
-                  onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
-                  placeholder="Nome do responsável"
-                />
+                <Select
+                  value={formData.assigned_to || "__none__"}
+                  onValueChange={(v) => setFormData({ ...formData, assigned_to: v === "__none__" ? "" : v })}
+                >
+                  <SelectTrigger id="assigned_to">
+                    <SelectValue placeholder="Selecionar responsável" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Nenhum</SelectItem>
+                    {allProfiles.map((p) => (
+                      <SelectItem key={p.id} value={p.full_name || p.id}>
+                        {p.full_name || p.id}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="due_date">Data de Vencimento</Label>
