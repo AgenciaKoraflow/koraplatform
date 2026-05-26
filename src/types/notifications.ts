@@ -7,7 +7,8 @@ export type NotificationType =
   | "client_anniversary"
   | "proposal_viewed"
   | "payment_received"
-  | "password_expiry";
+  | "password_expiry"
+  | "client_incomplete";
 
 export interface Notification {
   id: string;
@@ -31,4 +32,5 @@ export const notificationConfig: Record<NotificationType, { icon: string; color:
   proposal_viewed: { icon: "Eye", color: "text-muted-foreground" },
   payment_received: { icon: "DollarSign", color: "text-green-500" },
   password_expiry: { icon: "ShieldAlert", color: "text-amber-500" },
+  client_incomplete: { icon: "UserX", color: "text-orange-500" },
 };

@@ -6,6 +6,31 @@ import { useAllTickets } from "@/hooks/useTickets";
 import { useAllClients } from "@/hooks/useClients";
 import { useAuth } from "@/hooks/useAuth";
 import { parseISO, isPast, differenceInDays, isToday } from "date-fns";
+import { Client } from "@/types/data";
+
+type RequiredField = { field: keyof Client; label: string };
+
+const REQUIRED_FIELDS: Record<string, RequiredField[]> = {
+  cliente: [
+    { field: "email", label: "e-mail" },
+    { field: "phone", label: "telefone" },
+    { field: "head", label: "responsável" },
+    { field: "anniversary", label: "aniversário do contrato" },
+    { field: "bu", label: "unidade de negócio" },
+    { field: "value", label: "valor do contrato" },
+  ],
+  negociacao: [
+    { field: "email", label: "e-mail" },
+    { field: "briefing", label: "briefing" },
+    { field: "head", label: "responsável" },
+  ],
+  proposta: [
+    { field: "email", label: "e-mail" },
+    { field: "briefing", label: "briefing" },
+  ],
+};
+
+const HIGH_PRIORITY_FIELDS = new Set<keyof Client>(["email", "head"]);
 
 // Parse date helper
 const parseDate = (dateString: string): Date | null => {
@@ -182,6 +207,45 @@ export function useNotifications() {
             });
           }
         }
+      });
+
+    // Clientes com informações incompletas
+    clients
+      .filter((c) => c.stage in REQUIRED_FIELDS)
+      .forEach((client) => {
+        const required = REQUIRED_FIELDS[client.stage];
+        const missingFields = required.filter(({ field }) => {
+          const val = client[field];
+          if (Array.isArray(val)) return val.length === 0;
+          return !val;
+        });
+
+        if (missingFields.length === 0) return;
+
+        const hasHighPriority =
+          client.stage === "cliente" &&
+          missingFields.some(({ field }) => HIGH_PRIORITY_FIELDS.has(field));
+
+        const priority = hasHighPriority
+          ? "high"
+          : client.stage === "cliente" || missingFields.some(({ field }) => field === "email")
+          ? "medium"
+          : "low";
+
+        const fieldList = missingFields.map(({ label }) => label).join(", ");
+        const clientName = client.name || client.company || "Cliente sem nome";
+
+        notifs.push({
+          id: `client-incomplete-${client.id}`,
+          type: "client_incomplete",
+          title: "Informações incompletas",
+          message: `${clientName} — Faltam: ${fieldList}`,
+          timestamp: new Date(),
+          read: false,
+          actionUrl: "/clientes",
+          priority,
+          metadata: { clientId: client.id, missingFields: missingFields.map((f) => f.field) },
+        });
       });
 
     // Sort by timestamp (most recent first) - create a copy to avoid mutating
