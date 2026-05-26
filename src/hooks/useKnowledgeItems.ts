@@ -43,7 +43,7 @@ export function useKnowledgeItems(params: KnowledgeListParams = {}) {
       const { data, error, count } = await query;
       if (error) throw new Error(error.message);
       return {
-        items: (data ?? []).map((row) => mapDbKnowledge(row as DbKnowledgeItemRow)),
+        items: (data ?? []).map((row) => mapDbKnowledge(row as unknown as DbKnowledgeItemRow)),
         total: count ?? 0,
       };
     },
@@ -59,7 +59,7 @@ export function useAllKnowledgeItems() {
     queryFn: async () => {
       const { data, error } = await supabase.from("knowledge_items").select(KI_COLS);
       if (error) throw new Error(error.message);
-      return (data ?? []).map((row) => mapDbKnowledge(row as DbKnowledgeItemRow));
+      return (data ?? []).map((row) => mapDbKnowledge(row as unknown as DbKnowledgeItemRow));
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -75,7 +75,7 @@ export function useClientKnowledge(clientId: string | null | undefined) {
         .select(KI_COLS)
         .eq("client_id", clientId!);
       if (error) throw new Error(error.message);
-      return (data ?? []).map((row) => mapDbKnowledge(row as DbKnowledgeItemRow));
+      return (data ?? []).map((row) => mapDbKnowledge(row as unknown as DbKnowledgeItemRow));
     },
     enabled: !!clientId,
     staleTime: 5 * 60 * 1000,

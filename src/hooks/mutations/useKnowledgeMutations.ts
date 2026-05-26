@@ -15,24 +15,15 @@ function errMsg(e: unknown) {
 const KI_COLS =
   "id, client_id, project_id, title, category, content, username, has_password, url, tags, created_at, updated_at";
 
-/**
- * Try to save an encrypted password via the Edge Function.
- * Falls back to storing plaintext directly if the function is unavailable or
- * KNOWLEDGE_ENCRYPTION_KEY is not configured.
- * Returns true when encryption succeeded, false when plaintext fallback was used.
- */
-async function savePassword(id: string, password: string): Promise<boolean> {
+async function savePassword(id: string, password: string): Promise<void> {
   const { error } = await supabase.functions.invoke("get-password", {
     body: { id, password },
   });
-  if (!error) return true;
-
-  // Edge Function unavailable — store plaintext and warn the user.
-  await supabase.from("knowledge_items").update({ password }).eq("id", id);
-  toast.warning(
-    "Senha salva sem criptografia. Configure KNOWLEDGE_ENCRYPTION_KEY nos secrets do Supabase.",
-  );
-  return false;
+  if (error) {
+    throw new Error(
+      `Falha ao criptografar senha: ${error.message}. Verifique se KNOWLEDGE_ENCRYPTION_KEY está configurado nos secrets do Supabase.`,
+    );
+  }
 }
 
 export function useKnowledgeMutations() {
@@ -56,7 +47,7 @@ export function useKnowledgeMutations() {
         .select(KI_COLS);
       if (error) throw new Error(error.message);
       if (!rows?.[0]) throw new Error("Resposta vazia ao criar item");
-      const newItem = mapDbKnowledge(rows[0] as DbKnowledgeItemRow);
+      const newItem = mapDbKnowledge(rows[0] as unknown as DbKnowledgeItemRow);
       if (item.password) {
         await savePassword(newItem.id, item.password);
       }
