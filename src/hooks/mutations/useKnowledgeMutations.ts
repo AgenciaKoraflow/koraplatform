@@ -10,9 +10,29 @@ function errMsg(e: unknown) {
   return e instanceof Error ? e.message : "Erro desconhecido";
 }
 
-function toDbRow(raw: Record<string, unknown>): DbKnowledgeItemRow {
-  const { password, ...rest } = raw;
-  return { ...rest, has_password: password !== null && password !== undefined && password !== "" } as DbKnowledgeItemRow;
+// Columns to select after insert — same set as list queries, never includes
+// the password column so the value never reaches the browser.
+const KI_COLS =
+  "id, client_id, project_id, title, category, content, username, has_password, url, tags, created_at, updated_at";
+
+/**
+ * Try to save an encrypted password via the Edge Function.
+ * Falls back to storing plaintext directly if the function is unavailable or
+ * KNOWLEDGE_ENCRYPTION_KEY is not configured.
+ * Returns true when encryption succeeded, false when plaintext fallback was used.
+ */
+async function savePassword(id: string, password: string): Promise<boolean> {
+  const { error } = await supabase.functions.invoke("get-password", {
+    body: { id, password },
+  });
+  if (!error) return true;
+
+  // Edge Function unavailable — store plaintext and warn the user.
+  await supabase.from("knowledge_items").update({ password }).eq("id", id);
+  toast.warning(
+    "Senha salva sem criptografia. Configure KNOWLEDGE_ENCRYPTION_KEY nos secrets do Supabase.",
+  );
+  return false;
 }
 
 export function useKnowledgeMutations() {
@@ -27,14 +47,20 @@ export function useKnowledgeMutations() {
         category: item.category,
         content: item.content,
         username: item.username ?? null,
-        password: item.password || null,
         url: item.url ?? null,
         tags: item.tags,
       };
-      const { data: rows, error } = await supabase.from("knowledge_items").insert(dbData).select();
+      const { data: rows, error } = await supabase
+        .from("knowledge_items")
+        .insert(dbData)
+        .select(KI_COLS);
       if (error) throw new Error(error.message);
       if (!rows?.[0]) throw new Error("Resposta vazia ao criar item");
-      return mapDbKnowledge(toDbRow(rows[0] as Record<string, unknown>));
+      const newItem = mapDbKnowledge(rows[0] as DbKnowledgeItemRow);
+      if (item.password) {
+        await savePassword(newItem.id, item.password);
+      }
+      return newItem;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: knowledgeKeys.all });
@@ -60,10 +86,12 @@ export function useKnowledgeMutations() {
       if (data.username !== undefined) dbData.username = data.username;
       if (data.url !== undefined) dbData.url = data.url;
       if (data.tags) dbData.tags = data.tags;
-      if (data.password !== undefined) dbData.password = data.password || null;
       if (Object.keys(dbData).length > 0) {
         const { error } = await supabase.from("knowledge_items").update(dbData).eq("id", id);
         if (error) throw new Error(error.message);
+      }
+      if (data.password) {
+        await savePassword(id, data.password);
       }
     },
     onSuccess: () => {
@@ -85,15 +113,43 @@ export function useKnowledgeMutations() {
     onError: (error) => toast.error(`Erro ao excluir item: ${errMsg(error)}`),
   });
 
+  /**
+   * Returns the plaintext password for an item.
+   * Tries the Edge Function first (decrypts if encrypted with AES-256-GCM).
+   * Falls back to a direct DB read for plaintext-stored passwords.
+   * Shows a toast on any error.
+   */
   const getKnowledgePassword = async (id: string): Promise<string | null> => {
     try {
-      const { data, error } = await supabase
+      // Prefer Edge Function — it handles both encrypted (v1:...) and plaintext.
+      const { data: result, error } = await supabase.functions.invoke("get-password", {
+        body: { id },
+      });
+      if (!error) {
+        const pw = (result as { data?: { password?: string } | null } | null)?.data?.password;
+        if (typeof pw === "string") return pw;
+        // data: null means no password stored.
+        if ((result as { data?: unknown } | null)?.data === null) return null;
+      }
+
+      // Edge Function unavailable — fetch raw value directly.
+      const { data, error: dbError } = await supabase
         .from("knowledge_items")
         .select("password")
         .eq("id", id)
         .single();
-      if (error) throw new Error(error.message);
-      return (data as { password: string | null } | null)?.password ?? null;
+      if (dbError) throw new Error(dbError.message);
+      const raw = (data as { password: string | null } | null)?.password;
+      if (!raw) return null;
+      // If the value is encrypted but the Edge Function is unavailable we cannot
+      // decrypt it — inform the user rather than returning garbled ciphertext.
+      if (raw.startsWith("v1:")) {
+        toast.error(
+          "Senha criptografada mas Edge Function indisponível. Configure KNOWLEDGE_ENCRYPTION_KEY.",
+        );
+        return null;
+      }
+      return raw;
     } catch (error) {
       toast.error(`Erro ao obter senha: ${errMsg(error)}`);
       return null;
