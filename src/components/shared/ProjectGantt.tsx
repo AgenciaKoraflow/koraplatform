@@ -31,10 +31,12 @@ const MONTHS_PT = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set"
 // ─── status config ────────────────────────────────────────────────────────────
 
 const STATUS_CFG: Record<Task["status"], { label: string; bar: string; dot: string }> = {
-  todo:        { label: "A fazer",      bar: "bg-slate-400",  dot: "bg-slate-400" },
-  in_progress: { label: "Em andamento", bar: "bg-blue-500",   dot: "bg-blue-500" },
-  review:      { label: "Em revisão",   bar: "bg-amber-500",  dot: "bg-amber-500" },
-  done:        { label: "Concluído",    bar: "bg-emerald-500",dot: "bg-emerald-500" },
+  todo:          { label: "A fazer",      bar: "bg-slate-400",   dot: "bg-slate-400" },
+  in_progress:   { label: "Em andamento", bar: "bg-blue-500",    dot: "bg-blue-500" },
+  review:        { label: "Em revisão",   bar: "bg-amber-500",   dot: "bg-amber-500" },
+  done:          { label: "Concluído",    bar: "bg-emerald-500", dot: "bg-emerald-500" },
+  blocked:       { label: "Impedimento",  bar: "bg-red-500",     dot: "bg-red-500" },
+  client_review: { label: "Em cliente",   bar: "bg-purple-500",  dot: "bg-purple-500" },
 };
 
 const DAY_PX = 36; // px per day column
@@ -101,7 +103,7 @@ export function ProjectGantt({ project, tasks }: Props) {
 
   // Sort tasks: in_progress first, then by dueDate
   const sorted = useMemo(() => {
-    const order: Record<Task["status"], number> = { in_progress: 0, review: 1, todo: 2, done: 3 };
+    const order: Record<Task["status"], number> = { in_progress: 0, client_review: 1, review: 2, blocked: 3, todo: 4, done: 5 };
     return [...tasks].sort((a, b) => {
       const so = order[a.status] - order[b.status];
       if (so !== 0) return so;

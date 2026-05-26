@@ -28,6 +28,8 @@ import { useProjects } from "@/hooks/useProjects";
 import { useProjectTasks } from "@/hooks/useTasks";
 import { useAllClients } from "@/hooks/useClients";
 import { useDebounce } from "@/hooks/useDebounce";
+import { ProjectGantt } from "@/components/shared/ProjectGantt";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const typeConfig = {
   projeto: { label: "Projeto", color: "bg-primary/10 text-primary" },
@@ -115,6 +117,7 @@ export default function Projetos() {
   const { data: viewingProjectTasks = [] } = useProjectTasks(viewingProject?.id);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [viewDialogTab, setViewDialogTab] = useState<"resumo" | "gantt">("resumo");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
@@ -169,6 +172,7 @@ export default function Projetos() {
 
   const openViewDialog = useCallback((project: Project) => {
     setViewingProject(project);
+    setViewDialogTab("resumo");
     setIsViewDialogOpen(true);
   }, []);
 
@@ -858,7 +862,7 @@ export default function Projetos() {
 
       {/* View Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="bg-card border-border sm:max-w-2xl">
+        <DialogContent className="bg-card border-border sm:max-w-5xl">
           <DialogHeader>
             <DialogTitle className="text-foreground">Detalhes do Projeto</DialogTitle>
             <DialogDescription>
@@ -866,145 +870,162 @@ export default function Projetos() {
             </DialogDescription>
           </DialogHeader>
           {viewingProject && (
-            <DialogBody className="space-y-4 py-2">
-              <div className="flex items-center justify-between">
-                <span className={cn("px-3 py-1.5 rounded-full text-sm font-medium", statusConfig[viewingProject.status].color)}>
-                  {statusConfig[viewingProject.status].label}
-                </span>
-                <span className="text-sm text-muted-foreground">{viewingProject.dueDate}</span>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-foreground">{viewingProject.name}</h3>
-                <p className="text-muted-foreground">{getClientName(viewingProject.clientId)}</p>
-              </div>
-              {viewingProject.description && (
+            <DialogBody className="py-2 min-h-[65vh]">
+              {/* Header: status + name always visible above tabs */}
+              <div className="space-y-3 mb-4">
+                <div className="flex items-center justify-between">
+                  <span className={cn("px-3 py-1.5 rounded-full text-sm font-medium", statusConfig[viewingProject.status].color)}>
+                    {statusConfig[viewingProject.status].label}
+                  </span>
+                  <span className="text-sm text-muted-foreground">{viewingProject.dueDate}</span>
+                </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">{viewingProject.description}</p>
-                </div>
-              )}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Progresso</span>
-                  <span className="font-medium">{viewingProject.progress}%</span>
-                </div>
-                <div className="h-3 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-primary rounded-full" style={{ width: `${viewingProject.progress}%` }} />
+                  <h3 className="text-xl font-bold text-foreground">{viewingProject.name}</h3>
+                  <p className="text-muted-foreground">{getClientName(viewingProject.clientId)}</p>
                 </div>
               </div>
-              {/* Task breakdown */}
-              {viewingProjectTasks.length > 0 && (
-                <div className="pt-4 border-t border-border">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                      <ListChecks className="w-3.5 h-3.5" />
-                      Tarefas ({viewingProjectTasks.length})
-                    </p>
-                    <button
-                      onClick={() => { setIsViewDialogOpen(false); navigate(`/tarefas?project=${viewingProject.id}`); }}
-                      className="text-xs text-primary hover:underline flex items-center gap-1"
-                    >
-                      Ver todas <ExternalLink className="w-3 h-3" />
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 text-center">
-                    {[
-                      { key: "todo",          label: "A Fazer",    icon: Circle,       color: "text-slate-400 bg-slate-500/10" },
-                      { key: "in_progress",   label: "Em Progresso", icon: Clock,       color: "text-primary bg-primary/10" },
-                      { key: "blocked",       label: "Impedimento", icon: Ban,          color: "text-red-400 bg-red-500/10" },
-                      { key: "review",        label: "Em Revisão",  icon: Eye,          color: "text-amber-400 bg-amber-500/10" },
-                      { key: "client_review", label: "Em Cliente",  icon: UserCheck,    color: "text-purple-400 bg-purple-500/10" },
-                      { key: "done",          label: "Concluído",   icon: CheckCircle2, color: "text-green-400 bg-green-500/10" },
-                    ].map(({ key, label, icon: Icon, color }) => {
-                      const count = viewingProjectTasks.filter((t) => t.status === key).length;
-                      if (count === 0) return null;
-                      return (
-                        <div key={key} className={cn("rounded-lg p-2", color)}>
-                          <Icon className="w-4 h-4 mx-auto mb-0.5" />
-                          <p className="text-lg font-bold">{count}</p>
-                          <p className="text-xs opacity-80">{label}</p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
 
-              {/* Roadmap / Histórico de tarefas */}
-              {viewingProjectTasks.length > 0 && (() => {
-                const sorted = [...viewingProjectTasks].sort((a, b) => parseTaskDate(a.dueDate) - parseTaskDate(b.dueDate));
-                const grouped = sorted.reduce<Record<string, typeof sorted>>((acc, task) => {
-                  const key = getMonthKey(task.dueDate);
-                  (acc[key] ??= []).push(task);
-                  return acc;
-                }, {});
-                return (
-                  <div className="pt-4 border-t border-border">
-                    <p className="text-xs font-medium text-muted-foreground mb-4 flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5" />
-                      Roadmap
-                    </p>
-                    <div className="relative">
-                      <div className="absolute left-[6px] top-2 bottom-2 w-px bg-border" />
-                      {Object.entries(grouped).map(([month, tasks]) => (
-                        <div key={month} className="mb-4">
-                          <p className="text-xs font-semibold text-muted-foreground mb-2 ml-6">{month}</p>
-                          <div className="space-y-2.5">
-                            {tasks.map((task) => {
-                              const cfg = taskStatusConfig[task.status];
-                              return (
-                                <div key={task.id} className="flex items-start gap-3">
-                                  <div className={cn("w-3.5 h-3.5 rounded-full border-2 border-card mt-0.5 shrink-0 z-10", cfg.dot)} />
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <span className="text-sm font-medium text-foreground truncate">{task.title}</span>
-                                      <span className={cn("px-1.5 py-0.5 rounded text-xs font-medium", cfg.bg, cfg.color)}>
-                                        {cfg.label}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
-                                      {task.dueDate && task.dueDate !== "A definir" && (
-                                        <span className="flex items-center gap-1">
-                                          <Calendar className="w-3 h-3" />
-                                          {task.dueDate}
-                                        </span>
-                                      )}
-                                      {task.assignees.length > 0 && (
-                                        <span>
-                                          {task.assignees.slice(0, 2).join(", ")}
-                                          {task.assignees.length > 2 ? ` +${task.assignees.length - 2}` : ""}
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
+              <Tabs value={viewDialogTab} onValueChange={(v) => setViewDialogTab(v as "resumo" | "gantt")}>
+                <TabsList className="mb-4">
+                  <TabsTrigger value="resumo">Resumo</TabsTrigger>
+                  <TabsTrigger value="gantt">Gantt</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="resumo" className="space-y-4 mt-0">
+                  {viewingProject.description && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">{viewingProject.description}</p>
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Progresso</span>
+                      <span className="font-medium">{viewingProject.progress}%</span>
+                    </div>
+                    <div className="h-3 bg-muted rounded-full overflow-hidden">
+                      <div className="h-full bg-primary rounded-full" style={{ width: `${viewingProject.progress}%` }} />
                     </div>
                   </div>
-                );
-              })()}
-
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Equipe</p>
-                  <div className="flex -space-x-2">
-                    {viewingProject.team.map((member, i) => (
-                      <div key={i} className="w-8 h-8 rounded-full bg-primary/20 border-2 border-card flex items-center justify-center">
-                        <span className="text-xs font-medium text-primary">{member.substring(0, 2)}</span>
+                  {/* Task breakdown */}
+                  {viewingProjectTasks.length > 0 && (
+                    <div className="pt-4 border-t border-border">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                          <ListChecks className="w-3.5 h-3.5" />
+                          Tarefas ({viewingProjectTasks.length})
+                        </p>
+                        <button
+                          onClick={() => { setIsViewDialogOpen(false); navigate(`/tarefas?project=${viewingProject.id}`); }}
+                          className="text-xs text-primary hover:underline flex items-center gap-1"
+                        >
+                          Ver todas <ExternalLink className="w-3 h-3" />
+                        </button>
                       </div>
-                    ))}
+                      <div className="grid grid-cols-3 gap-2 text-center">
+                        {[
+                          { key: "todo",          label: "A Fazer",      icon: Circle,       color: "text-slate-400 bg-slate-500/10" },
+                          { key: "in_progress",   label: "Em Progresso", icon: Clock,        color: "text-primary bg-primary/10" },
+                          { key: "blocked",       label: "Impedimento",  icon: Ban,          color: "text-red-400 bg-red-500/10" },
+                          { key: "review",        label: "Em Revisão",   icon: Eye,          color: "text-amber-400 bg-amber-500/10" },
+                          { key: "client_review", label: "Em Cliente",   icon: UserCheck,    color: "text-purple-400 bg-purple-500/10" },
+                          { key: "done",          label: "Concluído",    icon: CheckCircle2, color: "text-green-400 bg-green-500/10" },
+                        ].map(({ key, label, icon: Icon, color }) => {
+                          const count = viewingProjectTasks.filter((t) => t.status === key).length;
+                          if (count === 0) return null;
+                          return (
+                            <div key={key} className={cn("rounded-lg p-2", color)}>
+                              <Icon className="w-4 h-4 mx-auto mb-0.5" />
+                              <p className="text-lg font-bold">{count}</p>
+                              <p className="text-xs opacity-80">{label}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Roadmap */}
+                  {viewingProjectTasks.length > 0 && (() => {
+                    const sorted = [...viewingProjectTasks].sort((a, b) => parseTaskDate(a.dueDate) - parseTaskDate(b.dueDate));
+                    const grouped = sorted.reduce<Record<string, typeof sorted>>((acc, task) => {
+                      const key = getMonthKey(task.dueDate);
+                      (acc[key] ??= []).push(task);
+                      return acc;
+                    }, {});
+                    return (
+                      <div className="pt-4 border-t border-border">
+                        <p className="text-xs font-medium text-muted-foreground mb-4 flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5" />
+                          Roadmap
+                        </p>
+                        <div className="relative">
+                          <div className="absolute left-[6px] top-2 bottom-2 w-px bg-border" />
+                          {Object.entries(grouped).map(([month, tasks]) => (
+                            <div key={month} className="mb-4">
+                              <p className="text-xs font-semibold text-muted-foreground mb-2 ml-6">{month}</p>
+                              <div className="space-y-2.5">
+                                {tasks.map((task) => {
+                                  const cfg = taskStatusConfig[task.status];
+                                  return (
+                                    <div key={task.id} className="flex items-start gap-3">
+                                      <div className={cn("w-3.5 h-3.5 rounded-full border-2 border-card mt-0.5 shrink-0 z-10", cfg.dot)} />
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <span className="text-sm font-medium text-foreground truncate">{task.title}</span>
+                                          <span className={cn("px-1.5 py-0.5 rounded text-xs font-medium", cfg.bg, cfg.color)}>
+                                            {cfg.label}
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
+                                          {task.dueDate && task.dueDate !== "A definir" && (
+                                            <span className="flex items-center gap-1">
+                                              <Calendar className="w-3 h-3" />
+                                              {task.dueDate}
+                                            </span>
+                                          )}
+                                          {task.assignees.length > 0 && (
+                                            <span>
+                                              {task.assignees.slice(0, 2).join(", ")}
+                                              {task.assignees.length > 2 ? ` +${task.assignees.length - 2}` : ""}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Equipe</p>
+                      <div className="flex -space-x-2">
+                        {viewingProject.team.map((member, i) => (
+                          <div key={i} className="w-8 h-8 rounded-full bg-primary/20 border-2 border-card flex items-center justify-center">
+                            <span className="text-xs font-medium text-primary">{member.substring(0, 2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    {viewingProject.value && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Valor</p>
+                        <p className="font-semibold text-foreground">{viewingProject.value}</p>
+                      </div>
+                    )}
                   </div>
-                </div>
-                {viewingProject.value && (
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Valor</p>
-                    <p className="font-semibold text-foreground">{viewingProject.value}</p>
-                  </div>
-                )}
-              </div>
+                </TabsContent>
+
+                <TabsContent value="gantt" className="mt-0">
+                  <ProjectGantt project={viewingProject} tasks={viewingProjectTasks} />
+                </TabsContent>
+              </Tabs>
             </DialogBody>
           )}
           <DialogFooter>
