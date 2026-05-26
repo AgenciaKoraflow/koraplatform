@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { UserPlus, User as UserIcon, Shield, Search, CheckCircle2, Copy, Check, Mail, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAllProfiles, useUpdateUserRole, useAdminUpdateUser, type Profile, type AdminUserUpdate } from '@/hooks/useProfile';
@@ -258,8 +258,13 @@ function EditDialog({ profile, onClose }: EditDialogProps) {
   const [role, setRole] = useState<Profile['role']>(profile?.role ?? 'observador');
   const [submitting, setSubmitting] = useState(false);
 
-  // Sync local state when profile changes (dialog re-opens with a different user)
-  const profileId = profile?.id;
+  useEffect(() => {
+    if (profile) {
+      setFullName(profile.full_name ?? '');
+      setCargo(profile.cargo ?? '');
+      setRole(profile.role ?? 'observador');
+    }
+  }, [profile?.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -474,7 +479,11 @@ export default function GerenciarUsuarios() {
 
   const filtered = profiles.filter((p) => {
     const q = search.toLowerCase();
-    return p.full_name?.toLowerCase().includes(q) || false;
+    return (
+      p.full_name?.toLowerCase().includes(q) ||
+      p.email?.toLowerCase().includes(q) ||
+      false
+    );
   });
 
   return (
@@ -551,6 +560,9 @@ export default function GerenciarUsuarios() {
                             <span className="text-xs text-muted-foreground">(você)</span>
                           )}
                         </div>
+                        {profile.email && (
+                          <p className="text-xs text-muted-foreground truncate">{profile.email}</p>
+                        )}
                         {profile.cargo && (
                           <p className="text-xs text-muted-foreground truncate">{profile.cargo}</p>
                         )}
