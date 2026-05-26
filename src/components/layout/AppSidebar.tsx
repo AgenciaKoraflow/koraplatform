@@ -1,6 +1,4 @@
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { useRef } from "react";
-import { toast } from "sonner";
+import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   DollarSign,
@@ -14,10 +12,8 @@ import {
   BookOpen,
   HeadphonesIcon,
   LayoutDashboard,
-  LogOut,
   Workflow,
   Target,
-  Camera,
   Users,
   Settings,
   Tag,
@@ -30,10 +26,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { KoraSystemLogo, KoraSystemLogoIcon } from "@/components/shared/KoraSystemLogo";
-import { useAuth } from "@/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
-import { useUserAvatar } from "@/hooks/useUserAvatar";
-import type { Profile } from "@/hooks/useProfile";
 
 type NavItem = {
   name: string;
@@ -61,12 +54,6 @@ const navigation: NavItem[] = [
   { name: "OKR", href: "/okr", icon: Target, bu: "kora-corp", hiddenForObserver: true },
 ];
 
-const roleMeta: Record<Profile['role'], { label: string; class: string }> = {
-  admin: { label: "Admin", class: "bg-violet-500/20 text-violet-400" },
-  operador: { label: "Operador", class: "bg-blue-500/20 text-blue-400" },
-  observador: { label: "Observador", class: "bg-gray-500/20 text-gray-400" },
-};
-
 interface AppSidebarProps {
   onNavigate?: () => void;
   collapsed?: boolean;
@@ -74,11 +61,7 @@ interface AppSidebarProps {
 
 export function AppSidebar({ onNavigate, collapsed = false }: AppSidebarProps) {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { signOut, user, profile } = useAuth();
   const { isAdmin, isObservador } = usePermissions();
-  const { avatarUrl, uploadAvatar, isUploading } = useUserAvatar();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const visibleNavItems = navigation.filter((item) => {
     if (isObservador && item.hiddenForObserver) return false;
@@ -88,64 +71,6 @@ export function AppSidebar({ onNavigate, collapsed = false }: AppSidebarProps) {
   const handleNavClick = () => {
     if (onNavigate) onNavigate();
   };
-
-  const handleLogout = async () => {
-    await signOut();
-  };
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Arquivo muito grande. Máximo 5 MB.");
-      e.target.value = "";
-      return;
-    }
-    try {
-      await uploadAvatar(file);
-      toast.success("Foto de perfil atualizada!");
-    } catch {
-      toast.error("Não foi possível atualizar a foto. Tente novamente.");
-    }
-    e.target.value = "";
-  };
-
-  const displayName = profile?.full_name ?? user?.email?.split("@")[0] ?? "login";
-  const roleInfo = profile?.role ? roleMeta[profile.role] : null;
-
-  const UserAvatarButton = () => (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isUploading}
-          className={cn(
-            "relative rounded-full overflow-hidden flex-shrink-0",
-            "bg-gradient-to-br from-violet-500 to-purple-600",
-            "flex items-center justify-center text-white font-medium",
-            "ring-2 ring-transparent hover:ring-primary transition-all",
-            collapsed ? "w-8 h-8 text-sm" : "w-9 h-9 text-sm"
-          )}
-        >
-          {avatarUrl ? (
-            <img src={avatarUrl} alt="Foto de perfil" className="w-full h-full object-cover" />
-          ) : (
-            <span>{user?.email?.charAt(0).toUpperCase() || "K"}</span>
-          )}
-          <span className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity">
-            {isUploading ? (
-              <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <Camera className="w-3.5 h-3.5 text-white" />
-            )}
-          </span>
-        </button>
-      </TooltipTrigger>
-      <TooltipContent side={collapsed ? "right" : "top"} className="bg-popover text-popover-foreground">
-        <p>Alterar foto de perfil</p>
-      </TooltipContent>
-    </Tooltip>
-  );
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -241,59 +166,6 @@ export function AppSidebar({ onNavigate, collapsed = false }: AppSidebarProps) {
           )}
         </nav>
 
-        {/* User Profile & Logout */}
-        <div className={cn(
-          "border-t border-sidebar-border p-3 transition-all duration-300",
-          collapsed ? "flex flex-col items-center gap-2" : "flex items-center justify-between"
-        )}>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileChange}
-          />
-
-          {!collapsed ? (
-            <button
-              onClick={() => navigate('/perfil')}
-              className="flex items-center gap-3 min-w-0 flex-1 rounded-xl p-1.5 hover:bg-sidebar-accent/50 transition-all text-left"
-            >
-              <UserAvatarButton />
-              <div className="flex flex-col min-w-0">
-                <span className="text-sm font-medium text-sidebar-foreground truncate">
-                  {displayName}
-                </span>
-                {roleInfo && (
-                  <span className={cn("text-xs font-medium px-1.5 py-0.5 rounded-md w-fit mt-0.5", roleInfo.class)}>
-                    {roleInfo.label}
-                  </span>
-                )}
-              </div>
-            </button>
-          ) : (
-            <button onClick={() => navigate('/perfil')}>
-              <UserAvatarButton />
-            </button>
-          )}
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={handleLogout}
-                className={cn(
-                  "p-2 rounded-xl text-sidebar-foreground/60 hover:text-red-400 hover:bg-red-400/10 transition-all duration-150 flex-shrink-0",
-                  collapsed && "mt-1"
-                )}
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="right" className="bg-popover text-popover-foreground">
-              <p>Sair</p>
-            </TooltipContent>
-          </Tooltip>
-        </div>
       </aside>
     </TooltipProvider>
   );

@@ -1,15 +1,26 @@
 import { ReactNode, useState, useEffect, useRef } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { AppSidebar } from "./AppSidebar";
 import {
   Menu, X, Sun, Moon,
   Filter, FolderKanban, CheckSquare, FileSignature,
-  MoreHorizontal,
+  MoreHorizontal, User, LogOut,
 } from "lucide-react";
 import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/useUser";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useAuth } from "@/hooks/useAuth";
+import { useUserAvatar } from "@/hooks/useUserAvatar";
+import { useProfile } from "@/hooks/useProfile";
 
 function PageTransition({ children }: { children: ReactNode }) {
   const location = useLocation();
@@ -67,6 +78,10 @@ export function AppLayout({ children }: AppLayoutProps) {
   const userName = useUser();
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { signOut, user } = useAuth();
+  const { avatarUrl } = useUserAvatar();
+  const { data: profile } = useProfile(user?.id);
 
   return (
     <div className="flex min-h-screen w-full bg-background">
@@ -138,6 +153,42 @@ export function AppLayout({ children }: AppLayoutProps) {
 
             <NotificationDropdown />
 
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="relative rounded-full overflow-hidden flex-shrink-0 bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-medium ring-2 ring-transparent hover:ring-primary transition-all w-8 h-8 text-sm touch-manipulation">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <span>{user?.email?.charAt(0).toUpperCase() ?? "K"}</span>
+                  )}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none truncate">
+                      {profile?.full_name ?? user?.email?.split("@")[0] ?? ""}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground truncate">
+                      {user?.email ?? ""}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/perfil")} className="cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  Editar perfil
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => signOut()}
+                  className="cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-500/10"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sair
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 
