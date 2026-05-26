@@ -58,7 +58,7 @@ DialogHeader.displayName = "DialogHeader";
 
 const DialogBody = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn("flex-1 overflow-y-auto px-5 sm:px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden", className)}
+    className={cn("flex-1 overflow-y-auto p-5 sm:px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden", className)}
     {...props}
   />
 );

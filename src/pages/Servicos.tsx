@@ -10,6 +10,7 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { CurrencyInput } from "@/components/shared/CurrencyInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -491,15 +492,13 @@ export default function Servicos() {
             {/* Parcelamento */}
             <div className="space-y-1.5 max-w-[200px]">
               <Label htmlFor="installments">Parcelamento máximo (x vezes)</Label>
-              <Input
+              <NumberInput
                 id="installments"
-                type="number"
                 min={1}
                 max={24}
                 value={formData.installmentsMax}
                 onChange={(e) => setFormData((p) => ({ ...p, installmentsMax: e.target.value }))}
                 placeholder="Ex: 5"
-                className="bg-input border-border"
               />
             </div>
           </DialogBody>

@@ -6,6 +6,7 @@ import { Plus, Search, Calendar, CheckCircle2, Circle, Clock, Eye, Edit, Trash2,
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Dialog, DialogContent, DialogHeader, DialogBody, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -715,15 +716,14 @@ export default function Tarefas() {
             <div className="space-y-2">
               <Label htmlFor="estimatedHours">Horas Estimadas</Label>
               <div className="flex items-center gap-2">
-                <Input
+                <NumberInput
                   id="estimatedHours"
-                  type="number"
                   min="0"
                   step="0.5"
                   placeholder="Ex: 8"
                   value={formData.estimatedHours}
                   onChange={(e) => setFormData({ ...formData, estimatedHours: e.target.value })}
-                  className="bg-input border-border w-32"
+                  className="w-32"
                 />
                 <span className="text-sm text-muted-foreground">horas</span>
               </div>

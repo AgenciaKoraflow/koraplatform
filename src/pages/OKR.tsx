@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,7 +15,7 @@ import { DatePicker } from "@/components/shared/DatePicker";
 import { ActionMenu } from "@/components/shared/ActionMenu";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Progress } from "@/components/ui/progress";
-import { Target, Plus, Search, TrendingUp, TrendingDown, CheckCircle2, AlertCircle, Clock, Flag, BarChart3, Edit, Trash2, History, Calendar, Filter } from "lucide-react";
+import { Target, Plus, Minus, Search, TrendingUp, TrendingDown, CheckCircle2, AlertCircle, Clock, Flag, BarChart3, Edit, Trash2, History, Calendar, Filter } from "lucide-react";
 import { format, parseISO, differenceInDays, isValid } from "date-fns";
 import { toast } from "sonner";
 import { OKRObjective, OKRUpdate, OKRFormData, OKRStatus, CATEGORY_LABELS, STATUS_LABELS, STATUS_COLORS, PRIORITY_LABELS, PRIORITY_COLORS } from "@/types/okr";
@@ -129,7 +130,8 @@ export default function OKR() {
         comment: updateFormData.comment,
         updatedBy: "",
       };
-      await addUpdate(selectedObjective.id, newUpdateData);
+      const saved = await addUpdate(selectedObjective.id, newUpdateData);
+      if (!saved) return;
 
       const progress = Math.max(0, Math.round((updateFormData.value / selectedObjective.target) * 100));
       const newStatus = getStatusFromProgress(progress, selectedObjective.endDate);
@@ -331,7 +333,7 @@ export default function OKR() {
                       </div>
                     </div>
                     <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                      <Button variant="outline" size="sm" onClick={() => { setSelectedObjective(objective); setIsUpdateDialogOpen(true); }}
+                      <Button variant="outline" size="sm" onClick={() => { setSelectedObjective(objective); setUpdateFormData({ value: objective.current, comment: "" }); setIsUpdateDialogOpen(true); }}
                         className="border-border/50 text-foreground hover:bg-muted/50"><History className="w-4 h-4 mr-1" />Atualizar</Button>
                       <ActionMenu items={[
                         { label: "Editar", icon: Edit, onClick: () => handleEdit(objective), variant: "default" },
@@ -383,8 +385,8 @@ export default function OKR() {
                   placeholder="Descreva o objetivo com mais detalhes..." rows={3} className="bg-background border-border text-foreground" /></div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="space-y-2"><Label className="text-foreground/90">Meta</Label>
-                  <Input type="number" value={formData.target} onChange={(e) => setFormData({ ...formData, target: Number(e.target.value) })}
-                    required className="bg-background border-border text-foreground" /></div>
+                  <NumberInput value={formData.target} onChange={(e) => setFormData({ ...formData, target: Number(e.target.value) })}
+                    required className="bg-background" /></div>
                 <div className="space-y-2"><Label className="text-foreground/90">Unidade</Label>
                   <Input value={formData.unit} onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                     placeholder="R$, %, dias..." className="bg-background border-border text-foreground" /></div>
@@ -425,9 +427,40 @@ export default function OKR() {
                   <h4 className={cn(typographyClasses.cardTitle, "mb-2")}>{selectedObjective.title}</h4>
                   <div className={typographyClasses.statLabel}>Meta: {selectedObjective.current.toLocaleString()} / {selectedObjective.target.toLocaleString()} {selectedObjective.unit}</div>
                   <Progress value={selectedObjective.progress} className="h-2 mt-2" /></div>
-                <div className="space-y-2"><Label className="text-foreground/90">Valor Atual</Label>
-                  <Input type="number" value={updateFormData.value} onChange={(e) => setUpdateFormData({ ...updateFormData, value: Number(e.target.value) })}
-                    placeholder={`Digite o valor atual em ${selectedObjective.unit}`} required className="bg-background border-border text-foreground" /></div>
+                <div className="space-y-3">
+                  <Label className="text-foreground/90">Novo Valor</Label>
+                  <div className="flex items-center justify-center gap-4">
+                    <Button type="button" variant="outline" size="icon"
+                      onClick={() => setUpdateFormData(d => ({ ...d, value: d.value - 1 }))}
+                      className="h-11 w-11 rounded-xl border-2 shrink-0">
+                      <Minus className="h-5 w-5" />
+                    </Button>
+                    <div className="flex flex-col items-center gap-0.5 min-w-[120px]">
+                      <input
+                        type="number"
+                        value={updateFormData.value}
+                        onChange={(e) => setUpdateFormData({ ...updateFormData, value: Number(e.target.value) })}
+                        className="w-full text-center text-3xl font-bold bg-transparent border-none focus:outline-none text-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <span className="text-xs text-muted-foreground">{selectedObjective.unit}</span>
+                    </div>
+                    <Button type="button" variant="outline" size="icon"
+                      onClick={() => setUpdateFormData(d => ({ ...d, value: d.value + 1 }))}
+                      className="h-11 w-11 rounded-xl border-2 shrink-0">
+                      <Plus className="h-5 w-5" />
+                    </Button>
+                  </div>
+                  <p className="text-center text-sm">
+                    {updateFormData.value !== selectedObjective.current ? (
+                      <span className={updateFormData.value > selectedObjective.current ? "text-green-600" : "text-red-500"}>
+                        {updateFormData.value > selectedObjective.current ? "+" : ""}{(updateFormData.value - selectedObjective.current).toLocaleString()} {selectedObjective.unit}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">Sem alteração</span>
+                    )}
+                    <span className="text-muted-foreground"> em relação ao atual ({selectedObjective.current.toLocaleString()})</span>
+                  </p>
+                </div>
                 <div className="space-y-2"><Label className="text-foreground/90">Comentario</Label>
                   <Textarea value={updateFormData.comment} onChange={(e) => setUpdateFormData({ ...updateFormData, comment: e.target.value })}
                     placeholder="Descreva o que foi feito..." rows={3} className="bg-background border-border text-foreground" /></div>

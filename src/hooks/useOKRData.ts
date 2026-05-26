@@ -47,7 +47,9 @@ function mapDbUpdate(db: OkrUpdateRow): OKRUpdate {
 }
 
 function errMsg(e: unknown): string {
-  return e instanceof Error ? e.message : 'Erro desconhecido';
+  if (e instanceof Error) return e.message;
+  if (e && typeof e === 'object' && 'message' in e) return String((e as { message: unknown }).message);
+  return 'Erro desconhecido';
 }
 
 export function useOKRData() {
@@ -195,8 +197,8 @@ export function useOKRData() {
       toast.success('Atualização adicionada com sucesso!');
       return mapped;
     } catch (e) {
-      logger.error('Erro ao adicionar atualização:', e instanceof Error ? e : undefined);
-      toast.error('Erro ao adicionar atualização');
+      logger.captureException(e);
+      toast.error(`Erro ao adicionar atualização: ${errMsg(e)}`);
       return null;
     }
   }, []);

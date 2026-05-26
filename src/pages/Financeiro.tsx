@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -390,8 +391,7 @@ export default function Financeiro() {
                       {!formData.isIndefinite && (
                         <div className="space-y-2">
                           <Label>Quantidade de Parcelas</Label>
-                          <Input
-                            type="number"
+                          <NumberInput
                             min="1"
                             value={formData.installmentCount || ""}
                             onChange={(e) => setFormData({
@@ -412,8 +412,7 @@ export default function Financeiro() {
                     <div className="space-y-2">
                       <Label>{formData.isRecurring ? "Dia do Vencimento" : "Vencimento"}</Label>
                       {formData.isRecurring ? (
-                        <Input
-                          type="number"
+                        <NumberInput
                           min="1"
                           max="31"
                           value={formData.dueDay || ""}

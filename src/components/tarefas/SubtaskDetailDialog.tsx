@@ -9,6 +9,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -360,10 +361,10 @@ export function SubtaskDetailDialog({
                   value={entryDescription} onChange={(e) => setEntryDescription(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleAddTimeEntry()}
                   className="h-9 text-sm flex-1 min-w-0" />
-                <Input type="number" min="0.5" step="0.5" placeholder="Horas"
+                <NumberInput min="0.5" step="0.5" placeholder="Horas"
                   value={entryHours} onChange={(e) => setEntryHours(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleAddTimeEntry()}
-                  className="h-9 text-sm w-20 shrink-0" />
+                  className="w-20 shrink-0" />
                 <Button size="sm" onClick={handleAddTimeEntry}
                   disabled={!entryDescription.trim() || !entryHours || isAddingEntry}
                   className="h-9 shrink-0">
