@@ -214,10 +214,10 @@ export default function Projetos() {
         clientId: formData.clientId,
         description: formData.description,
         status: formData.status,
-        dueDate: formData.dueDate || "A definir",
+        dueDate: formData.dueDate,
         team: teamArray,
         head: formData.head || undefined,
-        value: formData.value || undefined,
+        value: formData.value,
         billingType: formData.billingType,
         type: formData.type,
         recurrenceValue: formData.recurrenceValue || undefined,
@@ -231,12 +231,12 @@ export default function Projetos() {
         description: formData.description,
         status: formData.status,
         progress: 0,
-        dueDate: formData.dueDate || "A definir",
+        dueDate: formData.dueDate,
         team: teamArray,
         tasks: 0,
         completedTasks: 0,
         head: formData.head || undefined,
-        value: formData.value || undefined,
+        value: formData.value,
         billingType: formData.billingType,
         type: formData.type,
         recurrenceValue: formData.recurrenceValue || undefined,
@@ -793,7 +793,7 @@ export default function Projetos() {
             {formData.billingType === "implantacao_recorrencia" && (
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="recurrenceValue">Valor da Recorrência Mensal</Label>
+                  <Label htmlFor="recurrenceValue">Valor da Recorrência Mensal *</Label>
                   <CurrencyInput id="recurrenceValue" value={formData.recurrenceValue} onChange={(value) => setFormData({ ...formData, recurrenceValue: value })} placeholder="R$ 0,00" />
                 </div>
                 <div className="space-y-2">
@@ -807,7 +807,7 @@ export default function Projetos() {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="type">Tipo de Projeto</Label>
+              <Label htmlFor="type">Tipo de Projeto *</Label>
               <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value as typeof formData.type })}>
                 <SelectTrigger className="bg-input border-border">
                   <SelectValue />
@@ -838,7 +838,7 @@ export default function Projetos() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="dueDate">Prazo</Label>
+                <Label htmlFor="dueDate">Prazo *</Label>
                 <DatePicker
                   value={formData.dueDate}
                   onChange={(value) => setFormData({ ...formData, dueDate: value })}

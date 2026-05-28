@@ -146,6 +146,7 @@ export default function Tarefas() {
   const [filterAssignees, setFilterAssignees] = useState<string[]>([]);
   const [filterClientId, setFilterClientId] = useState<string>("");
   const [filterProjectId, setFilterProjectId] = useState<string>(() => searchParams.get("project") ?? "");
+  const [filterHead, setFilterHead] = useState<string>("");
 
   // Sync URL param on mount (from navigate from Projetos)
   useEffect(() => {
@@ -191,14 +192,26 @@ export default function Tarefas() {
     [tasksByStatus],
   );
 
+  const headOptions = useMemo(() => {
+    const heads = new Set<string>();
+    for (const p of projects) {
+      if (p.head) heads.add(p.head);
+    }
+    return Array.from(heads).sort();
+  }, [projects]);
+
   const filteredTasks = useMemo(() => {
     let result = tasks;
     if (filterPriority.length > 0) result = result.filter((t) => filterPriority.includes(t.priority));
     if (filterAssignees.length > 0) result = result.filter((t) => t.assignees.some((a) => filterAssignees.includes(a)));
     if (filterClientId) result = result.filter((t) => t.clientId === filterClientId);
     if (filterProjectId) result = result.filter((t) => t.projectId === filterProjectId);
+    if (filterHead) result = result.filter((t) => {
+      const project = projects.find((p) => p.id === t.projectId);
+      return project?.head === filterHead;
+    });
     return result;
-  }, [tasks, filterPriority, filterAssignees, filterClientId, filterProjectId]);
+  }, [tasks, filterPriority, filterAssignees, filterClientId, filterProjectId, filterHead, projects]);
 
   const filterableProjects = useMemo(
     () => filterClientId ? projects.filter((p) => p.clientId === filterClientId) : projects,
@@ -411,10 +424,21 @@ export default function Tarefas() {
               {filterableProjects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
           )}
+          {/* Head filter */}
+          {headOptions.length > 0 && (
+            <select
+              value={filterHead}
+              onChange={(e) => setFilterHead(e.target.value)}
+              className="h-9 px-3 rounded-lg bg-input border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              <option value="">Todos os heads</option>
+              {headOptions.map((h) => <option key={h} value={h}>{h}</option>)}
+            </select>
+          )}
           {/* Clear filters */}
-          {(filterPriority.length > 0 || filterAssignees.length > 0 || filterClientId || filterProjectId) && (
+          {(filterPriority.length > 0 || filterAssignees.length > 0 || filterClientId || filterProjectId || filterHead) && (
             <button
-              onClick={() => { setFilterPriority([]); setFilterAssignees([]); setFilterClientId(""); setFilterProjectId(""); }}
+              onClick={() => { setFilterPriority([]); setFilterAssignees([]); setFilterClientId(""); setFilterProjectId(""); setFilterHead(""); }}
               className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               <XIcon className="w-3.5 h-3.5" />
