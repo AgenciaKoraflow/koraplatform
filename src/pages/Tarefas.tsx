@@ -475,7 +475,7 @@ export default function Tarefas() {
                     <span className="font-semibold text-foreground text-sm">{column.label}</span>
                     <span className="ml-auto px-2 py-0.5 rounded-full bg-muted text-xs text-muted-foreground">{columnTasks.length}</span>
                   </div>
-                  <div className={cn("flex-1 space-y-3 rounded-xl p-2 transition-all min-h-24", isDropTarget && "ring-2 bg-card/50", isDropTarget && column.dropColor)}>
+                  <div className={cn("flex-1 space-y-3 rounded-xl p-2 transition-all min-h-24 max-h-[600px] overflow-y-auto", isDropTarget && "ring-2 bg-card/50", isDropTarget && column.dropColor)}>
                     {columnTasks.map((task, index) => {
                       const pCfg = priorityConfig[task.priority] ?? priorityConfig.medium;
                       return (

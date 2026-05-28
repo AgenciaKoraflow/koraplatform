@@ -252,7 +252,7 @@ export function EmpresaTarefas({ workspaceId }: Props) {
               {/* Drop zone */}
               <div
                 className={cn(
-                  "flex-1 space-y-3 rounded-xl p-2 transition-all min-h-24",
+                  "flex-1 space-y-3 rounded-xl p-2 transition-all min-h-24 max-h-[600px] overflow-y-auto",
                   isDropTarget && "ring-2 bg-card/50",
                   isDropTarget && column.dropColor,
                 )}
