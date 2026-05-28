@@ -26,7 +26,6 @@ const importObservabilidade = () => import("./pages/Observabilidade");
 const importIndicadores = () => import("./pages/Indicadores");
 const importSignContract = () => import("./pages/SignContract");
 const importNotFound = () => import("./pages/NotFound");
-const importOKR = () => import("./pages/OKR");
 const importBuscar = () => import("./pages/Buscar");
 const importLogin = () => import("./pages/Login");
 const importPerfilPessoal = () => import("./pages/PerfilPessoal");
@@ -45,7 +44,6 @@ const Observabilidade = lazy(importObservabilidade);
 const Indicadores = lazy(importIndicadores);
 const SignContract = lazy(importSignContract);
 const NotFound = lazy(importNotFound);
-const OKR = lazy(importOKR);
 const Buscar = lazy(importBuscar);
 const Login = lazy(importLogin);
 const PerfilPessoal = lazy(importPerfilPessoal);
@@ -106,7 +104,6 @@ function usePreloadAllPages() {
       importIndicadores();
       importSignContract();
       importNotFound();
-      importOKR();
       importBuscar();
       importLogin();
       importPerfilPessoal();
@@ -197,7 +194,7 @@ function AppRoutes() {
           <Route path="/servicos" element={<Navigate to="/empresa" replace />} />
           <Route path="/processos" element={<Navigate to="/empresa" replace />} />
           <Route path="/indicadores" element={<ProtectedRoute><Indicadores /></ProtectedRoute>} />
-          <Route path="/okr" element={<ProtectedRoute><OKR /></ProtectedRoute>} />
+          <Route path="/okr" element={<Navigate to="/empresa" replace />} />
           <Route path="/buscar" element={<ProtectedRoute><Buscar /></ProtectedRoute>} />
           <Route path="/perfil" element={<ProtectedRoute><PerfilPessoal /></ProtectedRoute>} />
           <Route path="/empresa" element={<ProtectedRoute><Empresa /></ProtectedRoute>} />

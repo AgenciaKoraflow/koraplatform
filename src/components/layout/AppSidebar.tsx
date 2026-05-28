@@ -11,7 +11,6 @@ import {
   BookOpen,
   HeadphonesIcon,
   LayoutDashboard,
-  Target,
   Users,
   Building2,
 } from "lucide-react";
@@ -45,7 +44,6 @@ const navigation: NavItem[] = [
   { name: "Observabilidade", href: "/observabilidade", icon: Activity, bu: "kora-dev", hiddenForObserver: true },
   { name: "Conhecimento", href: "/conhecimento", icon: BookOpen, bu: "kora-studio", hiddenForObserver: true },
   { name: "Indicadores", href: "/indicadores", icon: BarChart3, bu: "kora-corp", hiddenForObserver: true },
-  { name: "OKR", href: "/okr", icon: Target, bu: "kora-corp", hiddenForObserver: true },
   { name: "Empresa", href: "/empresa", icon: Building2, bu: "kora-corp", hiddenForObserver: true },
 ];
 
