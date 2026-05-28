@@ -59,7 +59,7 @@ export const CATEGORY_LABELS: Record<NonNullable<OKRObjective['category']>, stri
 
 export const STATUS_LABELS: Record<OKRStatus, string> = {
   not_started: "Não Iniciado",
-  in_progress: "Em Progresso",
+  in_progress: "Em Andamento",
   on_track: "No Prazo",
   at_risk: "Em Risco",
   completed: "Concluído",

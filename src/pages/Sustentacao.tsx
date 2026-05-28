@@ -2,7 +2,8 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { cn } from "@/lib/utils";
 import { Plus, Search, MessageSquare, AlertCircle, CheckCircle, Clock, Eye, Edit, Trash2, LifeBuoy } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogBody, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +18,8 @@ import { useTickets } from "@/hooks/useTickets";
 import { useAllClients } from "@/hooks/useClients";
 import { useAllProjects } from "@/hooks/useProjects";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useProfileAvatarMap, useTeamOptions } from "@/hooks/useProfile";
+import { UserAvatar } from "@/components/shared/UserAvatar";
 import { SupportTicket } from "@/types/data";
 
 const statusConfig = {
@@ -35,7 +38,10 @@ const priorityConfig = {
 };
 
 export default function Sustentacao() {
+  const [searchParams] = useSearchParams();
   const { addTicket, updateTicket, deleteTicket, isAdding, isUpdating } = useTicketMutations();
+  const getAvatarUrl = useProfileAvatarMap();
+  const teamOptions = useTeamOptions();
   const [searchInput, setSearchInput] = useState("");
   const searchQuery = useDebounce(searchInput, 300);
   const { data: ticketData } = useTickets({ search: searchQuery || undefined, pageSize: 500 });
@@ -101,6 +107,15 @@ export default function Sustentacao() {
     setViewingTicket(ticket);
     setIsViewDialogOpen(true);
   }, []);
+
+  // Open specific ticket from notification deep-link (?ticket=<id>)
+  useEffect(() => {
+    const ticketId = searchParams.get("ticket");
+    if (!ticketId || tickets.length === 0) return;
+    const ticket = tickets.find((t) => t.id === ticketId);
+    if (ticket) openViewDialog(ticket);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, tickets]);
 
   const handleSave = useCallback(() => {
     if (!formData.title || !formData.clientId) {
@@ -285,9 +300,7 @@ export default function Sustentacao() {
                       </td>
                       <td className="px-6 py-4">
                         {ticket.assignee ? (
-                          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                            <span className="text-xs font-medium text-primary">{ticket.assignee.substring(0, 2)}</span>
-                          </div>
+                          <UserAvatar name={ticket.assignee} src={getAvatarUrl(ticket.assignee)} size="md" />
                         ) : (
                           <span className="text-muted-foreground text-sm">-</span>
                         )}
@@ -339,9 +352,7 @@ export default function Sustentacao() {
                         <div className="flex items-center justify-between text-xs text-muted-foreground">
                           <span>{ticket.updatedAt}</span>
                           {ticket.assignee && (
-                            <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-                              <span className="text-xs font-medium text-primary">{ticket.assignee.substring(0, 2)}</span>
-                            </div>
+                            <UserAvatar name={ticket.assignee} src={getAvatarUrl(ticket.assignee)} size="xs" />
                           )}
                         </div>
                       </div>
@@ -382,9 +393,7 @@ export default function Sustentacao() {
                   <div className="flex items-center justify-between pt-3 border-t border-border">
                     <span className="text-xs text-muted-foreground">{ticket.updatedAt}</span>
                     {ticket.assignee && (
-                      <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-                        <span className="text-xs font-medium text-primary">{ticket.assignee.substring(0, 2)}</span>
-                      </div>
+                      <UserAvatar name={ticket.assignee} src={getAvatarUrl(ticket.assignee)} size="xs" />
                     )}
                   </div>
                 </div>
@@ -474,9 +483,9 @@ export default function Sustentacao() {
                 </SelectTrigger>
                 <SelectContent className="bg-card border-border">
                   <SelectItem value="none">Nenhum</SelectItem>
-                  <SelectItem value="James">James</SelectItem>
-                  <SelectItem value="João">João</SelectItem>
-                  <SelectItem value="Edson">Edson</SelectItem>
+                  {teamOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -524,7 +533,14 @@ export default function Sustentacao() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Responsável</p>
-                  <p className="font-medium">{viewingTicket.assignee || "Não atribuído"}</p>
+                  {viewingTicket.assignee ? (
+                    <div className="flex items-center gap-2 mt-1">
+                      <UserAvatar name={viewingTicket.assignee} src={getAvatarUrl(viewingTicket.assignee)} size="sm" />
+                      <span className="font-medium">{viewingTicket.assignee}</span>
+                    </div>
+                  ) : (
+                    <p className="font-medium">Não atribuído</p>
+                  )}
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Criado em</p>

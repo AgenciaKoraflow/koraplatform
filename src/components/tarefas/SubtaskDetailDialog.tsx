@@ -20,7 +20,8 @@ import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useAuth } from "@/hooks/useAuth";
-import { useAllProfiles, type Profile } from "@/hooks/useProfile";
+import { useAllProfiles, useProfileAvatarMap, type Profile } from "@/hooks/useProfile";
+import { UserAvatar } from "@/components/shared/UserAvatar";
 import { useSubtaskTimeEntries } from "@/hooks/useSubtaskTimeEntries";
 import { useSubtaskComments } from "@/hooks/useSubtaskComments";
 import { useSubtaskAttachments } from "@/hooks/useSubtaskAttachments";
@@ -61,6 +62,7 @@ export function SubtaskDetailDialog({
   const { user, profile } = useAuth();
   const authorName = profile?.full_name || user?.email || "Usuário";
   const { data: profiles = [] } = useAllProfiles();
+  const getAvatarUrl = useProfileAvatarMap();
 
   const { data: timeEntries = [] } = useSubtaskTimeEntries(subtask?.id);
   const { data: comments = [] } = useSubtaskComments(subtask?.id);
@@ -238,8 +240,8 @@ export function SubtaskDetailDialog({
                   )}
                   {comments.map((c) => (
                     <div key={c.id} className="group flex gap-3">
-                      <div className="w-7 h-7 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-medium shrink-0 mt-0.5">
-                        {c.author.substring(0, 2).toUpperCase()}
+                      <div className="shrink-0 mt-0.5">
+                        <UserAvatar name={c.author} src={getAvatarUrl(c.author)} size="sm" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -268,9 +270,7 @@ export function SubtaskDetailDialog({
                         <button key={p.id} type="button"
                           onMouseDown={(e) => { e.preventDefault(); handleSelectMention(p); }}
                           className="w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted transition-colors text-left">
-                          <div className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-medium shrink-0">
-                            {(p.full_name ?? "U").substring(0, 2).toUpperCase()}
-                          </div>
+                          <UserAvatar name={p.full_name ?? "Usuário"} src={getAvatarUrl(p.full_name ?? "")} size="xs" />
                           <div className="min-w-0">
                             <p className="font-medium leading-none truncate">{p.full_name ?? "Usuário"}</p>
                             {p.cargo && <p className="text-xs text-muted-foreground mt-0.5 truncate">{p.cargo}</p>}

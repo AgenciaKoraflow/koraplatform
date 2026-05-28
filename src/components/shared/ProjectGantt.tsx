@@ -31,12 +31,12 @@ const MONTHS_PT = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set"
 // ─── status config ────────────────────────────────────────────────────────────
 
 const STATUS_CFG: Record<Task["status"], { label: string; bar: string; dot: string }> = {
-  todo:          { label: "A fazer",      bar: "bg-slate-400",   dot: "bg-slate-400" },
-  in_progress:   { label: "Em andamento", bar: "bg-blue-500",    dot: "bg-blue-500" },
-  review:        { label: "Em revisão",   bar: "bg-amber-500",   dot: "bg-amber-500" },
-  done:          { label: "Concluído",    bar: "bg-emerald-500", dot: "bg-emerald-500" },
-  blocked:       { label: "Impedimento",  bar: "bg-red-500",     dot: "bg-red-500" },
-  client_review: { label: "Em cliente",   bar: "bg-purple-500",  dot: "bg-purple-500" },
+  todo: { label: "Backlog", bar: "bg-slate-400", dot: "bg-slate-400" },
+  in_progress: { label: "Em andamento", bar: "bg-blue-500", dot: "bg-blue-500" },
+  review: { label: "Em Validação Interna", bar: "bg-amber-500", dot: "bg-amber-500" },
+  done: { label: "Concluído", bar: "bg-emerald-500", dot: "bg-emerald-500" },
+  blocked: { label: "Impedimento", bar: "bg-red-500", dot: "bg-red-500" },
+  client_review: { label: "Em cliente", bar: "bg-purple-500", dot: "bg-purple-500" },
 };
 
 const DAY_PX = 36; // px per day column
@@ -54,7 +54,7 @@ export function ProjectGantt({ project, tasks }: Props) {
   // Compute timeline bounds
   const { rangeStart, totalDays } = useMemo(() => {
     const projectStart = parseDate(project.createdAt ?? "") || new Date();
-    const projectEnd   = parseDate(project.dueDate) || addDays(projectStart, 30);
+    const projectEnd = parseDate(project.dueDate) || addDays(projectStart, 30);
 
     const dates: Date[] = [projectStart, projectEnd];
     tasks.forEach(t => {
@@ -67,7 +67,7 @@ export function ProjectGantt({ project, tasks }: Props) {
     const min = startOfDay(new Date(Math.min(...dates.map(d => d.getTime()))));
     const max = startOfDay(new Date(Math.max(...dates.map(d => d.getTime()))));
     const start = addDays(min, -2);
-    const end   = addDays(max, 4);
+    const end = addDays(max, 4);
 
     return { rangeStart: start, rangeEnd: end, totalDays: Math.max(diffDays(start, end), 7) };
   }, [project, tasks]);
@@ -87,8 +87,8 @@ export function ProjectGantt({ project, tasks }: Props) {
     let current = new Date(rangeStart);
     while (day < totalDays) {
       const month = current.getMonth();
-      const year  = current.getFullYear();
-      let count   = 0;
+      const year = current.getFullYear();
+      let count = 0;
       while (day + count < totalDays) {
         const d = addDays(rangeStart, day + count);
         if (d.getMonth() !== month || d.getFullYear() !== year) break;
@@ -115,8 +115,8 @@ export function ProjectGantt({ project, tasks }: Props) {
 
   function barStyle(task: Task) {
     const start = parseDate(task.createdAt ?? "") ?? rangeStart;
-    const end   = parseDate(task.dueDate) ?? addDays(start, 3);
-    const left  = Math.max(0, diffDays(rangeStart, startOfDay(start)));
+    const end = parseDate(task.dueDate) ?? addDays(start, 3);
+    const left = Math.max(0, diffDays(rangeStart, startOfDay(start)));
     const width = Math.max(1, diffDays(startOfDay(start), startOfDay(end)));
     return { left: left * DAY_PX, width: width * DAY_PX };
   }

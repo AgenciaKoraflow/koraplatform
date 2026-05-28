@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,8 +21,8 @@ import { useAllClients } from "@/hooks/useClients";
 import { useAllProjects } from "@/hooks/useProjects";
 import { useAllContracts } from "@/hooks/useContracts";
 import { FinancialTransaction, EXPENSE_CATEGORIES, REVENUE_CATEGORIES } from "@/types/financial";
-import { 
-  Plus, 
+import {
+  Plus,
   Search,
   TrendingUp,
   TrendingDown,
@@ -34,17 +33,16 @@ import {
   RefreshCw,
   Landmark,
   Edit,
-  Trash2
+  Trash2,
 } from "lucide-react";
-import { PageHeader } from "@/components/shared/PageHeader";
 import { format } from "date-fns";
 
-export default function Financeiro() {
+export function EmpresaFinanceiro() {
   const { transactions, loading, addTransaction, updateTransaction, deleteTransaction } = useFinancial();
   const { data: clients = [] } = useAllClients();
   const { data: projects = [] } = useAllProjects();
   const { data: contracts = [] } = useAllContracts();
-  
+
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<"all" | "receita" | "despesa">("all");
   const [filterStatus, setFilterStatus] = useState<"all" | "pendente" | "pago" | "atrasado">("all");
@@ -53,7 +51,7 @@ export default function Financeiro() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<FinancialTransaction | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  
+
   const [formData, setFormData] = useState({
     type: "despesa" as "receita" | "despesa",
     category: "",
@@ -69,10 +67,9 @@ export default function Financeiro() {
     projectId: "",
     notes: "",
     otherCategoryNote: "",
-    // New installment fields
     installmentCount: null as number | null,
     firstPaymentDate: "",
-    isIndefinite: false
+    isIndefinite: false,
   });
 
   const resetForm = () => {
@@ -93,14 +90,14 @@ export default function Financeiro() {
       otherCategoryNote: "",
       installmentCount: null,
       firstPaymentDate: "",
-      isIndefinite: false
+      isIndefinite: false,
     });
     setEditingTransaction(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const transactionData = {
       type: formData.type,
       category: formData.category,
@@ -116,12 +113,11 @@ export default function Financeiro() {
       projectId: formData.projectId || undefined,
       notes: formData.notes || undefined,
       otherCategoryNote: formData.otherCategoryNote || undefined,
-      // New installment fields
       installmentCount: formData.installmentCount,
       firstPaymentDate: formData.firstPaymentDate || undefined,
       isIndefinite: formData.isIndefinite,
       createdAt: editingTransaction?.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
 
     if (editingTransaction) {
@@ -129,7 +125,7 @@ export default function Financeiro() {
     } else {
       await addTransaction(transactionData);
     }
-    
+
     setIsDialogOpen(false);
     resetForm();
   };
@@ -153,7 +149,7 @@ export default function Financeiro() {
       otherCategoryNote: transaction.otherCategoryNote || "",
       installmentCount: transaction.installmentCount ?? null,
       firstPaymentDate: transaction.firstPaymentDate || "",
-      isIndefinite: transaction.isIndefinite || false
+      isIndefinite: transaction.isIndefinite || false,
     });
     setIsDialogOpen(true);
   };
@@ -166,60 +162,49 @@ export default function Financeiro() {
   };
 
   const filteredTransactions = useMemo(() => {
-    return transactions.filter(t => {
-      const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           t.category.toLowerCase().includes(searchTerm.toLowerCase());
+    return transactions.filter((t) => {
+      const matchesSearch =
+        t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.category.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesType = filterType === "all" || t.type === filterType;
       const matchesStatus = filterStatus === "all" || t.status === filterStatus;
-      
-      // Filter by month/year based on dueDate
+
       let matchesMonth = true;
       let matchesYear = true;
-      
+
       if (filterMonth !== null || filterYear !== null) {
         if (!t.dueDate) {
-          // If no dueDate and filter active, exclude
           matchesMonth = false;
           matchesYear = false;
         } else {
           const date = new Date(t.dueDate);
-          if (filterMonth !== null) {
-            matchesMonth = date.getMonth() + 1 === filterMonth; // getMonth() is 0-indexed
-          }
-          if (filterYear !== null) {
-            matchesYear = date.getFullYear() === filterYear;
-          }
+          if (filterMonth !== null) matchesMonth = date.getMonth() + 1 === filterMonth;
+          if (filterYear !== null) matchesYear = date.getFullYear() === filterYear;
         }
       }
-      
+
       return matchesSearch && matchesType && matchesStatus && matchesMonth && matchesYear;
     });
   }, [transactions, searchTerm, filterType, filterStatus, filterMonth, filterYear]);
 
   const summary = useMemo(() => {
     const receitas = transactions
-      .filter(t => t.type === "receita" && t.status === "pago")
+      .filter((t) => t.type === "receita" && t.status === "pago")
       .reduce((sum, t) => sum + parseCurrencyToNumber(t.value), 0);
 
     const despesas = transactions
-      .filter(t => t.type === "despesa" && t.status === "pago")
+      .filter((t) => t.type === "despesa" && t.status === "pago")
       .reduce((sum, t) => sum + parseCurrencyToNumber(t.value), 0);
 
     const pendentes = transactions
-      .filter(t => t.status === "pendente" || t.status === "atrasado")
+      .filter((t) => t.status === "pendente" || t.status === "atrasado")
       .reduce((sum, t) => sum + parseCurrencyToNumber(t.value), 0);
-    
-    return {
-      receitas,
-      despesas,
-      saldo: receitas - despesas,
-      pendentes
-    };
+
+    return { receitas, despesas, saldo: receitas - despesas, pendentes };
   }, [transactions]);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-  };
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -234,26 +219,32 @@ export default function Financeiro() {
   const categories = formData.type === "receita" ? REVENUE_CATEGORIES : EXPENSE_CATEGORIES;
 
   return (
-    <AppLayout>
+    <>
       <div className="space-y-6 animate-fade-in">
-        {/* Header */}
-        <PageHeader
-          icon={Wallet}
-          title="Financeiro"
-          subtitle="Gestão de receitas e despesas"
-          actions={
-            <>
-              <Button variant="outline" className="gap-2" disabled>
-                <Landmark className="w-4 h-4" />
-                Conectar Banco Inter
-              </Button>
-              <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
-                <DialogTrigger asChild>
-                  <Button className="gap-2">
-                    <Plus className="w-4 h-4" />
-                    Nova Transação
-                  </Button>
-                </DialogTrigger>
+        {/* Actions header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">Financeiro</h2>
+            <p className="text-sm text-muted-foreground">Gestão de receitas e despesas</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" className="gap-2" disabled>
+              <Landmark className="w-4 h-4" />
+              Conectar Banco Inter
+            </Button>
+            <Dialog
+              open={isDialogOpen}
+              onOpenChange={(open) => {
+                setIsDialogOpen(open);
+                if (!open) resetForm();
+              }}
+            >
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  Nova Transação
+                </Button>
+              </DialogTrigger>
               <DialogContent className="max-w-3xl" aria-describedby={undefined}>
                 <DialogHeader>
                   <DialogTitle>
@@ -261,250 +252,275 @@ export default function Financeiro() {
                   </DialogTitle>
                 </DialogHeader>
                 <DialogBody>
-                <form id="financeiro-form" onSubmit={handleSubmit} className="space-y-4">
-                  {/* Tipo */}
-                  <div className="flex gap-4">
-                    <Button
-                      type="button"
-                      variant={formData.type === "receita" ? "default" : "outline"}
-                      className={`flex-1 gap-2 ${formData.type === "receita" ? "bg-green-600 hover:bg-green-700" : ""}`}
-                      onClick={() => setFormData({ ...formData, type: "receita", category: "" })}
-                    >
-                      <ArrowUpCircle className="w-4 h-4" />
-                      Receita
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={formData.type === "despesa" ? "default" : "outline"}
-                      className={`flex-1 gap-2 ${formData.type === "despesa" ? "bg-red-600 hover:bg-red-700" : ""}`}
-                      onClick={() => setFormData({ ...formData, type: "despesa", category: "" })}
-                    >
-                      <ArrowDownCircle className="w-4 h-4" />
-                      Despesa
-                    </Button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="category">Categoria *</Label>
-                      <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categories.map(cat => (
-                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                  <form id="financeiro-form" onSubmit={handleSubmit} className="space-y-4">
+                    <div className="flex gap-4">
+                      <Button
+                        type="button"
+                        variant={formData.type === "receita" ? "default" : "outline"}
+                        className={`flex-1 gap-2 ${formData.type === "receita" ? "bg-green-600 hover:bg-green-700" : ""}`}
+                        onClick={() => setFormData({ ...formData, type: "receita", category: "" })}
+                      >
+                        <ArrowUpCircle className="w-4 h-4" />
+                        Receita
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={formData.type === "despesa" ? "default" : "outline"}
+                        className={`flex-1 gap-2 ${formData.type === "despesa" ? "bg-red-600 hover:bg-red-700" : ""}`}
+                        onClick={() => setFormData({ ...formData, type: "despesa", category: "" })}
+                      >
+                        <ArrowDownCircle className="w-4 h-4" />
+                        Despesa
+                      </Button>
                     </div>
-                    {formData.category === "Outro" && (
+
+                    <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Especifique a categoria *</Label>
-                        <Input
-                          value={formData.otherCategoryNote}
-                          onChange={(e) => setFormData({ ...formData, otherCategoryNote: e.target.value })}
-                          placeholder="Ex: Despesa com assessoria jurídica"
-                          required
+                        <Label htmlFor="category">Categoria *</Label>
+                        <Select
+                          value={formData.category}
+                          onValueChange={(v) => setFormData({ ...formData, category: v })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categories.map((cat) => (
+                              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {formData.category === "Outro" && (
+                        <div className="space-y-2">
+                          <Label>Especifique a categoria *</Label>
+                          <Input
+                            value={formData.otherCategoryNote}
+                            onChange={(e) => setFormData({ ...formData, otherCategoryNote: e.target.value })}
+                            placeholder="Ex: Despesa com assessoria jurídica"
+                            required
+                          />
+                        </div>
+                      )}
+                      <div className="space-y-2">
+                        <Label htmlFor="value">Valor *</Label>
+                        <CurrencyInput
+                          value={formData.value}
+                          onChange={(v) => setFormData({ ...formData, value: v })}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="description">Descrição *</Label>
+                      <Input
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        placeholder="Ex: Assinatura mensal do ChatGPT"
+                        required
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-input">
+                      <div className="flex items-center gap-3">
+                        <RefreshCw className="w-5 h-5 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium">Transação Recorrente</p>
+                          <p className="text-sm text-muted-foreground">Cobrada automaticamente no período</p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={formData.isRecurring}
+                        onCheckedChange={(v) => setFormData({ ...formData, isRecurring: v })}
+                      />
+                    </div>
+
+                    {formData.isRecurring && (
+                      <div className="space-y-2">
+                        <Label>Frequência</Label>
+                        <Select
+                          value={formData.recurrenceType}
+                          onValueChange={(v) =>
+                            setFormData({ ...formData, recurrenceType: v as "" | "mensal" | "trimestral" | "semestral" | "anual" })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="mensal">Mensal</SelectItem>
+                            <SelectItem value="trimestral">Trimestral</SelectItem>
+                            <SelectItem value="semestral">Semestral</SelectItem>
+                            <SelectItem value="anual">Anual</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {formData.isRecurring && (
+                      <>
+                        <div className="space-y-2">
+                          <Label>Data do Primeiro Pagamento</Label>
+                          <DatePicker
+                            value={formData.firstPaymentDate}
+                            onChange={(v) => setFormData({ ...formData, firstPaymentDate: v })}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Primeira data de pagamento (pode ser no passado)
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-between p-4 rounded-lg bg-input">
+                          <div className="flex items-center gap-3">
+                            <RefreshCw className="w-5 h-5 text-muted-foreground" />
+                            <div>
+                              <p className="font-medium">Sem prazo definido (indefinido)</p>
+                              <p className="text-sm text-muted-foreground">Pagamento continuará indefinidamente</p>
+                            </div>
+                          </div>
+                          <Switch
+                            checked={formData.isIndefinite}
+                            onCheckedChange={(v) => setFormData({ ...formData, isIndefinite: v })}
+                          />
+                        </div>
+
+                        {!formData.isIndefinite && (
+                          <div className="space-y-2">
+                            <Label>Quantidade de Parcelas</Label>
+                            <NumberInput
+                              min="1"
+                              value={formData.installmentCount || ""}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  installmentCount: e.target.value ? parseInt(e.target.value) : null,
+                                })
+                              }
+                              placeholder="Ex: 12"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Deixe vazio para ilimitado ou marque "Sem prazo definido"
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>{formData.isRecurring ? "Dia do Vencimento" : "Vencimento"}</Label>
+                        {formData.isRecurring ? (
+                          <NumberInput
+                            min="1"
+                            max="31"
+                            value={formData.dueDay || ""}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                dueDay: e.target.value ? parseInt(e.target.value) : null,
+                              })
+                            }
+                            placeholder="Ex: 5"
+                          />
+                        ) : (
+                          <DatePicker
+                            value={formData.dueDate}
+                            onChange={(v) => setFormData({ ...formData, dueDate: v })}
+                          />
+                        )}
+                        {formData.isRecurring && (
+                          <p className="text-xs text-muted-foreground">Dia do mês de vencimento (1-31)</p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Status</Label>
+                        <Select
+                          value={formData.status}
+                          onValueChange={(v) =>
+                            setFormData({ ...formData, status: v as "pendente" | "pago" | "cancelado" | "atrasado" })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pendente">Pendente</SelectItem>
+                            <SelectItem value="pago">Pago</SelectItem>
+                            <SelectItem value="atrasado">Atrasado</SelectItem>
+                            <SelectItem value="cancelado">Cancelado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {formData.status === "pago" && (
+                      <div className="space-y-2">
+                        <Label>Data do Pagamento</Label>
+                        <DatePicker
+                          value={formData.paidDate}
+                          onChange={(v) => setFormData({ ...formData, paidDate: v })}
                         />
                       </div>
                     )}
-                    <div className="space-y-2">
-                      <Label htmlFor="value">Valor *</Label>
-                      <CurrencyInput
-                        value={formData.value}
-                        onChange={(v) => setFormData({ ...formData, value: v })}
-                      />
-                    </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Descrição *</Label>
-                    <Input
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      placeholder="Ex: Assinatura mensal do ChatGPT"
-                      required
-                    />
-                  </div>
-
-                  {/* Recorrência */}
-                  <div className="flex items-center justify-between p-4 rounded-lg bg-input">
-                    <div className="flex items-center gap-3">
-                      <RefreshCw className="w-5 h-5 text-muted-foreground" />
-                      <div>
-                        <p className="font-medium">Transação Recorrente</p>
-                        <p className="text-sm text-muted-foreground">Cobrada automaticamente no período</p>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={formData.isRecurring}
-                      onCheckedChange={(v) => setFormData({ ...formData, isRecurring: v })}
-                    />
-                  </div>
-
-                  {formData.isRecurring && (
-                    <div className="space-y-2">
-                      <Label>Frequência</Label>
-                      <Select value={formData.recurrenceType} onValueChange={(v) => setFormData({ ...formData, recurrenceType: v as "" | "mensal" | "trimestral" | "semestral" | "anual" })}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="mensal">Mensal</SelectItem>
-                          <SelectItem value="trimestral">Trimestral</SelectItem>
-                          <SelectItem value="semestral">Semestral</SelectItem>
-                          <SelectItem value="anual">Anual</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-
-                  {formData.isRecurring && (
-                    <>
+                    <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Data do Primeiro Pagamento</Label>
-                        <DatePicker
-                          value={formData.firstPaymentDate}
-                          onChange={(v) => setFormData({ ...formData, firstPaymentDate: v })}
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Primeira data de pagamento (pode ser no passado)
-                        </p>
+                        <Label>Cliente (opcional)</Label>
+                        <Select
+                          value={formData.clientId || "none"}
+                          onValueChange={(v) => setFormData({ ...formData, clientId: v === "none" ? "" : v })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Nenhum</SelectItem>
+                            {clients.map((client) => (
+                              <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-
-                      <div className="flex items-center justify-between p-4 rounded-lg bg-input">
-                        <div className="flex items-center gap-3">
-                          <RefreshCw className="w-5 h-5 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium">Sem prazo definido (indefinido)</p>
-                            <p className="text-sm text-muted-foreground">Pagamento continuará indefinidamente</p>
-                          </div>
-                        </div>
-                        <Switch
-                          checked={formData.isIndefinite}
-                          onCheckedChange={(v) => setFormData({ ...formData, isIndefinite: v })}
-                        />
+                      <div className="space-y-2">
+                        <Label>Projeto (opcional)</Label>
+                        <Select
+                          value={formData.projectId || "none"}
+                          onValueChange={(v) => setFormData({ ...formData, projectId: v === "none" ? "" : v })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Nenhum</SelectItem>
+                            {projects.map((project) => (
+                              <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-
-                      {!formData.isIndefinite && (
-                        <div className="space-y-2">
-                          <Label>Quantidade de Parcelas</Label>
-                          <NumberInput
-                            min="1"
-                            value={formData.installmentCount || ""}
-                            onChange={(e) => setFormData({
-                              ...formData,
-                              installmentCount: e.target.value ? parseInt(e.target.value) : null
-                            })}
-                            placeholder="Ex: 12"
-                          />
-                          <p className="text-xs text-muted-foreground">
-                            Deixe vazio para ilimitado ou marque "Sem prazo definido"
-                          </p>
-                        </div>
-                      )}
-                    </>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>{formData.isRecurring ? "Dia do Vencimento" : "Vencimento"}</Label>
-                      {formData.isRecurring ? (
-                        <NumberInput
-                          min="1"
-                          max="31"
-                          value={formData.dueDay || ""}
-                          onChange={(e) => setFormData({
-                            ...formData,
-                            dueDay: e.target.value ? parseInt(e.target.value) : null
-                          })}
-                          placeholder="Ex: 5"
-                        />
-                      ) : (
-                        <DatePicker
-                          value={formData.dueDate}
-                          onChange={(v) => setFormData({ ...formData, dueDate: v })}
-                        />
-                      )}
-                      {formData.isRecurring && (
-                        <p className="text-xs text-muted-foreground">
-                          Dia do mês de vencimento (1-31)
-                        </p>
-                      )}
                     </div>
-                    <div className="space-y-2">
-                      <Label>Status</Label>
-                      <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v as "pendente" | "pago" | "cancelado" | "atrasado" })}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pendente">Pendente</SelectItem>
-                          <SelectItem value="pago">Pago</SelectItem>
-                          <SelectItem value="atrasado">Atrasado</SelectItem>
-                          <SelectItem value="cancelado">Cancelado</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
 
-                  {formData.status === "pago" && (
                     <div className="space-y-2">
-                      <Label>Data do Pagamento</Label>
-                      <DatePicker
-                        value={formData.paidDate}
-                        onChange={(v) => setFormData({ ...formData, paidDate: v })}
+                      <Label>Observações</Label>
+                      <Textarea
+                        value={formData.notes}
+                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                        placeholder="Notas adicionais..."
+                        rows={3}
                       />
                     </div>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Cliente (opcional)</Label>
-                      <Select value={formData.clientId || "none"} onValueChange={(v) => setFormData({ ...formData, clientId: v === "none" ? "" : v })}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Nenhum</SelectItem>
-                          {clients.map(client => (
-                            <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Projeto (opcional)</Label>
-                      <Select value={formData.projectId || "none"} onValueChange={(v) => setFormData({ ...formData, projectId: v === "none" ? "" : v })}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Nenhum</SelectItem>
-                          {projects.map(project => (
-                            <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Observações</Label>
-                    <Textarea
-                      value={formData.notes}
-                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                      placeholder="Notas adicionais..."
-                      rows={3}
-                    />
-                  </div>
-
-                </form>
+                  </form>
                 </DialogBody>
                 <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => { setIsDialogOpen(false); resetForm(); }}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIsDialogOpen(false);
+                      resetForm();
+                    }}
+                  >
                     Cancelar
                   </Button>
                   <Button
@@ -522,9 +538,8 @@ export default function Financeiro() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-            </>
-          }
-        />
+          </div>
+        </div>
 
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-4">
@@ -611,7 +626,10 @@ export default function Financeiro() {
                   <SelectItem value="atrasado">Atrasado</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={filterMonth?.toString() || ""} onValueChange={(v) => setFilterMonth(v === "all" || v === "" ? null : parseInt(v))}>
+              <Select
+                value={filterMonth?.toString() || ""}
+                onValueChange={(v) => setFilterMonth(v === "all" || v === "" ? null : parseInt(v))}
+              >
                 <SelectTrigger className="w-[150px]">
                   <SelectValue placeholder="Mês" />
                 </SelectTrigger>
@@ -631,7 +649,10 @@ export default function Financeiro() {
                   <SelectItem value="12">Dezembro</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={filterYear?.toString() || ""} onValueChange={(v) => setFilterYear(v === "all" || v === "" ? null : parseInt(v))}>
+              <Select
+                value={filterYear?.toString() || ""}
+                onValueChange={(v) => setFilterYear(v === "all" || v === "" ? null : parseInt(v))}
+              >
                 <SelectTrigger className="w-[120px]">
                   <SelectValue placeholder="Ano" />
                 </SelectTrigger>
@@ -643,7 +664,7 @@ export default function Financeiro() {
                     for (let y = currentYear - 5; y <= currentYear + 2; y++) {
                       years.push(y);
                     }
-                    return years.map(year => (
+                    return years.map((year) => (
                       <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
                     ));
                   })()}
@@ -705,7 +726,9 @@ export default function Financeiro() {
                       </TableCell>
                       <TableCell className="font-medium">{transaction.description}</TableCell>
                       <TableCell>{transaction.category}</TableCell>
-                      <TableCell className={transaction.type === "receita" ? "text-green-500" : "text-red-500"}>
+                      <TableCell
+                        className={transaction.type === "receita" ? "text-green-500" : "text-red-500"}
+                      >
                         {transaction.value.startsWith("R$") ? transaction.value : `R$ ${transaction.value}`}
                       </TableCell>
                       <TableCell>
@@ -746,9 +769,7 @@ export default function Financeiro() {
                               </span>
                             )}
                             {transaction.isIndefinite && (
-                              <span className="text-xs text-muted-foreground italic">
-                                Sem prazo
-                              </span>
+                              <span className="text-xs text-muted-foreground italic">Sem prazo</span>
                             )}
                           </div>
                         ) : (
@@ -769,7 +790,12 @@ export default function Financeiro() {
                         <ActionMenu
                           items={[
                             { label: "Editar", icon: Edit, onClick: () => handleEdit(transaction) },
-                            { label: "Excluir", icon: Trash2, onClick: () => setDeleteId(transaction.id), variant: "destructive" }
+                            {
+                              label: "Excluir",
+                              icon: Trash2,
+                              onClick: () => setDeleteId(transaction.id),
+                              variant: "destructive",
+                            },
                           ]}
                         />
                       </TableCell>
@@ -790,6 +816,6 @@ export default function Financeiro() {
         onConfirm={handleDelete}
         variant="destructive"
       />
-    </AppLayout>
+    </>
   );
 }

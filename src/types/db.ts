@@ -156,6 +156,10 @@ export interface DbKnowledgeItemRow {
   has_password: boolean | null;
   url: string | null;
   tags: string[] | null;
+  storage_path: string | null;
+  file_name: string | null;
+  mime_type: string | null;
+  file_size: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -188,6 +192,70 @@ export interface DbServiceRow {
   recurrence_price_bargain: number | null;
   installments_max: number | null;
   status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbInternalWorkspaceRow {
+  id: string;
+  name: string;
+  slug: string | null;
+  logo_url: string | null;
+  description: string | null;
+  owner_user_id: string | null;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbInternalCredentialRow {
+  id: string;
+  workspace_id: string;
+  title: string | null;
+  username: string | null;
+  has_password: boolean | null;
+  url: string | null;
+  notes: string | null;
+  category: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbInternalInsightRow {
+  id: string;
+  workspace_id: string;
+  title: string | null;
+  content: string | null;
+  tags: string[] | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbInternalTaskRow {
+  id: string;
+  workspace_id: string;
+  title: string | null;
+  description: string | null;
+  status: string;
+  priority: string;
+  assigned_to: string | null;
+  due_date: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbInternalDocumentRow {
+  id: string;
+  workspace_id: string;
+  title: string | null;
+  content: string | null;
+  category: string | null;
+  doc_type: string | null;
+  storage_path: string | null;
+  file_name: string | null;
+  mime_type: string | null;
+  file_size: number | null;
+  url: string | null;
   created_at: string;
   updated_at: string;
 }

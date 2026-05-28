@@ -1,0 +1,1 @@
+ALTER TABLE internal_documents ADD COLUMN IF NOT EXISTS url TEXT;

@@ -945,9 +945,11 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
           cargo: string | null
           created_at: string
           description: string | null
+          email: string | null
           first_login: boolean
           full_name: string | null
           id: string
@@ -959,9 +961,11 @@ export type Database = {
           vertente: string | null
         }
         Insert: {
+          avatar_url?: string | null
           cargo?: string | null
           created_at?: string
           description?: string | null
+          email?: string | null
           first_login?: boolean
           full_name?: string | null
           id: string
@@ -973,9 +977,11 @@ export type Database = {
           vertente?: string | null
         }
         Update: {
+          avatar_url?: string | null
           cargo?: string | null
           created_at?: string
           description?: string | null
+          email?: string | null
           first_login?: boolean
           full_name?: string | null
           id?: string

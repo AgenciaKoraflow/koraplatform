@@ -92,7 +92,7 @@ export function useNotifications() {
             message: `${task.title} está ${daysOverdue} ${daysOverdue === 1 ? "dia" : "dias"} atrasada`,
             timestamp: dueDate,
             read: false,
-            actionUrl: "/tarefas",
+            actionUrl: `/tarefas?task=${task.id}`,
             priority: daysOverdue > 3 ? "critical" : "high",
             metadata: { taskId: task.id, title: task.title },
           });
@@ -112,7 +112,7 @@ export function useNotifications() {
             message: task.title,
             timestamp: dueDate,
             read: false,
-            actionUrl: "/tarefas",
+            actionUrl: `/tarefas?task=${task.id}`,
             priority: task.priority === "high" ? "high" : "medium",
             metadata: { taskId: task.id, title: task.title },
           });
@@ -133,7 +133,7 @@ export function useNotifications() {
             message: contract.title,
             timestamp: createdAt,
             read: false,
-            actionUrl: "/contratos",
+            actionUrl: `/contratos?contract=${contract.id}`,
             priority: "high",
             metadata: { contractId: contract.id, title: contract.title },
           });
@@ -155,7 +155,7 @@ export function useNotifications() {
               message: `${contract.title} expira em ${daysUntilExpiry} ${daysUntilExpiry === 1 ? "dia" : "dias"}`,
               timestamp: expiresAt,
               read: false,
-              actionUrl: "/contratos",
+              actionUrl: `/contratos?contract=${contract.id}`,
               priority: daysUntilExpiry <= 7 ? "high" : "medium",
               metadata: { contractId: contract.id, daysUntilExpiry, title: contract.title },
             });
@@ -178,7 +178,7 @@ export function useNotifications() {
               message: ticket.title,
               timestamp: createdAt,
               read: false,
-              actionUrl: "/sustentacao",
+              actionUrl: `/sustentacao?ticket=${ticket.id}`,
               priority: ticket.priority === "critical" ? "critical" : ticket.priority === "high" ? "high" : "medium",
               metadata: { ticketId: ticket.id, title: ticket.title },
             });
@@ -201,7 +201,7 @@ export function useNotifications() {
               message: `${client.name} completa 1 ano como cliente hoje! 🎉`,
               timestamp: anniversary,
               read: false,
-              actionUrl: "/clientes",
+              actionUrl: `/clientes?client=${client.id}`,
               priority: "low",
               metadata: { clientId: client.id, name: client.name },
             });
@@ -242,14 +242,19 @@ export function useNotifications() {
           message: `${clientName} — Faltam: ${fieldList}`,
           timestamp: new Date(),
           read: false,
-          actionUrl: "/clientes",
+          actionUrl: `/clientes?client=${client.id}`,
           priority,
           metadata: { clientId: client.id, missingFields: missingFields.map((f) => f.field) },
         });
       });
 
     // Sort by timestamp (most recent first) - create a copy to avoid mutating
-    return [...notifs].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    const sorted = [...notifs].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+    // Filter by user notification preferences (absent key = enabled by default)
+    const notifPrefs = profile?.preferences?.notifications;
+    if (!notifPrefs) return sorted;
+    return sorted.filter((n) => notifPrefs[n.type] !== false);
   }, [tasks, contracts, tickets, clients, profile]);
 
   useEffect(() => {

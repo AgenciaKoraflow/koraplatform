@@ -348,7 +348,7 @@ export default function Observabilidade() {
   );
 
   // Render client card
-  const renderClientCard = (clientId: string, clientName: string, isInternal = false) => {
+  const renderClientCard = (clientId: string, clientName: string) => {
     const clientIntegrations = getIntegrationsByClient(clientId);
     const activeCount = clientIntegrations.filter(i => i.status === 'active').length;
     const errorCount = clientIntegrations.filter(i => i.status === 'error').length;
@@ -358,15 +358,8 @@ export default function Observabilidade() {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className={cn(
-                "w-12 h-12 rounded-xl flex items-center justify-center",
-                isInternal ? "bg-primary/10" : "bg-primary/10"
-              )}>
-                {isInternal ? (
-                  <Building2 className="w-6 h-6 text-primary" />
-                ) : (
-                  <Globe className="w-6 h-6 text-primary" />
-                )}
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-primary/10">
+                <Globe className="w-6 h-6 text-primary" />
               </div>
               <div>
                 <CardTitle className="text-lg">{clientName}</CardTitle>
@@ -531,15 +524,6 @@ export default function Observabilidade() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 bg-input"
           />
-        </div>
-
-        {/* Koraflow Internal Panel */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-primary" />
-            Koraflow Interno
-          </h2>
-          {renderClientCard('koraflow_internal', 'Koraflow', true)}
         </div>
 
         {/* Clients Panels */}

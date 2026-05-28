@@ -4,7 +4,7 @@ import { InsightsBoard, InsightsBoardInsert, InsightsBoardUpdate, CanvasElement 
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
 
-export function useInsightsBoards() {
+export function useInsightsBoards(source: string) {
   const [boards, setBoards] = useState<InsightsBoard[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -13,6 +13,7 @@ export function useInsightsBoards() {
       const { data, error } = await supabase
         .from("insights_boards")
         .select("*")
+        .eq("source", source)
         .order("updated_at", { ascending: false });
 
       if (error) throw error;
@@ -21,6 +22,7 @@ export function useInsightsBoards() {
         id: board.id,
         name: board.name,
         type: board.type as "canvas" | "document",
+        source: board.source as string,
         description: board.description || undefined,
         thumbnailUrl: board.thumbnail_url || undefined,
         elements: (board.elements as unknown as CanvasElement[]) || [],
@@ -36,7 +38,7 @@ export function useInsightsBoards() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [source]);
 
   useEffect(() => {
     fetchBoards();
@@ -47,6 +49,7 @@ export function useInsightsBoards() {
       const insertData = {
         name: board.name,
         type: board.type,
+        source,
         description: board.description ?? null,
         thumbnail_url: board.thumbnailUrl ?? null,
         elements: JSON.parse(JSON.stringify(board.elements ?? [])),
@@ -65,6 +68,7 @@ export function useInsightsBoards() {
         id: data.id,
         name: data.name,
         type: data.type as "canvas" | "document",
+        source: data.source as string,
         description: data.description || undefined,
         thumbnailUrl: data.thumbnail_url || undefined,
         elements: (data.elements as unknown as CanvasElement[]) || [],

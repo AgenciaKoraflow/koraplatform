@@ -58,6 +58,7 @@ export default function Funil() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
+  const [selectedHead, setSelectedHead] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -155,15 +156,21 @@ export default function Funil() {
 
   const editingClient = editingClientId ? clients.find(c => c.id === editingClientId) : null;
 
+  const availableHeads = useMemo(() => {
+    const heads = clients.map((c) => c.head).filter((h): h is string => !!h);
+    return [...new Set(heads)].sort();
+  }, [clients]);
+
   const filteredClients = useMemo(() =>
     clients.filter((client) => {
       const q = searchQuery.toLowerCase();
       const matchesSearch = client.name.toLowerCase().includes(q) ||
         client.company.toLowerCase().includes(q);
       const matchesStage = !selectedStage || client.stage === selectedStage;
-      return matchesSearch && matchesStage;
+      const matchesHead = !selectedHead || client.head === selectedHead;
+      return matchesSearch && matchesStage && matchesHead;
     }),
-    [clients, searchQuery, selectedStage],
+    [clients, searchQuery, selectedStage, selectedHead],
   );
 
   const openNewDialog = useCallback(() => {
@@ -383,6 +390,21 @@ export default function Funil() {
             <input type="text" placeholder="Buscar leads..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-9 pl-10 pr-4 rounded-md bg-input border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1" />
           </div>
           <ViewModeToggle modes={["kanban", "table", "grid", "list"]} currentMode={viewMode} onChange={setViewMode} />
+          {availableHeads.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-foreground">Head:</span>
+              <select
+                value={selectedHead || ""}
+                onChange={(e) => setSelectedHead(e.target.value || null)}
+                className="px-3 py-2 rounded-lg bg-input border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+              >
+                <option value="">Todos</option>
+                {availableHeads.map((head) => (
+                  <option key={head} value={head}>{head}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             {Object.entries(stageConfig).map(([key, config]) => (
               <button key={key} onClick={() => setSelectedStage(selectedStage === key ? null : key)} className={cn("px-3 py-1.5 rounded-md text-xs font-medium border transition-all", selectedStage === key ? `${config.bgColor} ${config.textColor} ${config.borderColor}` : "bg-input text-muted-foreground border-border hover:bg-muted")}>

@@ -1,7 +1,8 @@
 import { logger } from "@/lib/logger";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import * as React from "react";
+import { useSearchParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Project, Contract } from "@/types/data";
 import { BU } from "@/types/bu";
@@ -186,6 +187,7 @@ function getContractTypeLabel(contract: Contract, allProjects: Project[]): strin
 export default function Contratos() {
   const { addContract, updateContract, deleteContract } = useContractMutations();
   const { upload: uploadDocument, getSignedUrl } = useContractDocument();
+  const [searchParams] = useSearchParams();
   const [searchInput, setSearchInput] = useState("");
   const searchQuery = useDebounce(searchInput, 300);
   const { data: contractData } = useContracts({ search: searchQuery || undefined, pageSize: 500 });
@@ -305,6 +307,15 @@ export default function Contratos() {
     setViewingContractId(contractId);
     setIsViewDialogOpen(true);
   };
+
+  // Open specific contract from notification deep-link (?contract=<id>)
+  useEffect(() => {
+    const contractId = searchParams.get("contract");
+    if (!contractId || contracts.length === 0) return;
+    const exists = contracts.find((c) => c.id === contractId);
+    if (exists) openViewDialog(contractId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, contracts]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

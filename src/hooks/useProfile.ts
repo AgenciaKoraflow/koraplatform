@@ -1,5 +1,13 @@
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { NotificationType } from '@/types/notifications';
+
+export interface UserPreferences {
+  task_view?: 'kanban' | 'list' | 'grid';
+  theme?: 'light' | 'dark';
+  notifications?: Partial<Record<NotificationType, boolean>>;
+}
 
 export interface Profile {
   id: string;
@@ -13,12 +21,13 @@ export interface Profile {
   role: 'admin' | 'operador' | 'observador';
   first_login: boolean;
   password_changed_at: string;
+  preferences: UserPreferences;
   created_at: string;
   updated_at: string;
 }
 
 export type ProfileUpdate = Partial<Pick<Profile,
-  'full_name' | 'description' | 'cargo' | 'vertente' | 'avatar_url' | 'phone'
+  'full_name' | 'description' | 'cargo' | 'vertente' | 'avatar_url' | 'phone' | 'preferences'
 >>;
 
 const PROFILE_QUERY_KEY = (userId: string) => ['profile', userId];
@@ -94,6 +103,49 @@ export function useUpdateUserRole() {
       qc.invalidateQueries({ queryKey: ALL_PROFILES_QUERY_KEY });
     },
   });
+}
+
+// Returns a function that resolves a display name to an avatar URL from the profiles table.
+// Works for all users, not just the logged-in one.
+// Matches by full name first, then by first name as fallback (handles cases where
+// tasks store "João" but the profile has "João Sousa").
+export function useProfileAvatarMap(): (name: string) => string | null {
+  const { data: profiles = [] } = useAllProfiles();
+  return useMemo(() => {
+    const byFullName = new Map<string, string | null>();
+    const byFirstName = new Map<string, string | null>();
+    for (const p of profiles) {
+      if (!p.full_name) continue;
+      const full = p.full_name.toLowerCase().trim();
+      byFullName.set(full, p.avatar_url);
+      const first = full.split(/\s+/)[0];
+      // Only store first-name entry if it's unambiguous (no two users with same first name)
+      if (!byFirstName.has(first)) {
+        byFirstName.set(first, p.avatar_url);
+      } else {
+        // Mark as ambiguous so we don't return a wrong photo
+        byFirstName.set(first, null);
+      }
+    }
+    return (name: string) => {
+      if (!name) return null;
+      const key = name.toLowerCase().trim();
+      if (byFullName.has(key)) return byFullName.get(key) ?? null;
+      return byFirstName.get(key) ?? null;
+    };
+  }, [profiles]);
+}
+
+// Returns team member options built from real profiles for use in MultiSelect.
+export function useTeamOptions(): { value: string; label: string }[] {
+  const { data: profiles = [] } = useAllProfiles();
+  return useMemo(
+    () =>
+      profiles
+        .filter((p) => p.full_name)
+        .map((p) => ({ value: p.full_name!, label: p.full_name! })),
+    [profiles],
+  );
 }
 
 export type AdminUserUpdate = {

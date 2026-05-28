@@ -1,7 +1,9 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { QueryClient, useQueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -21,10 +23,7 @@ const importContratos = () => import("./pages/Contratos");
 const importConhecimento = () => import("./pages/Conhecimento");
 const importSustentacao = () => import("./pages/Sustentacao");
 const importObservabilidade = () => import("./pages/Observabilidade");
-const importFinanceiro = () => import("./pages/Financeiro");
 const importIndicadores = () => import("./pages/Indicadores");
-const importProcessos = () => import("./pages/Processos");
-const importConfiguracoes = () => import("./pages/Configuracoes");
 const importSignContract = () => import("./pages/SignContract");
 const importNotFound = () => import("./pages/NotFound");
 const importOKR = () => import("./pages/OKR");
@@ -32,7 +31,7 @@ const importBuscar = () => import("./pages/Buscar");
 const importLogin = () => import("./pages/Login");
 const importPerfilPessoal = () => import("./pages/PerfilPessoal");
 const importGerenciarUsuarios = () => import("./pages/GerenciarUsuarios");
-const importServicos = () => import("./pages/Servicos");
+const importEmpresa = () => import("./pages/Empresa");
 
 const Dashboard = lazy(importDashboard);
 const Funil = lazy(importFunil);
@@ -43,10 +42,7 @@ const Contratos = lazy(importContratos);
 const Conhecimento = lazy(importConhecimento);
 const Sustentacao = lazy(importSustentacao);
 const Observabilidade = lazy(importObservabilidade);
-const Financeiro = lazy(importFinanceiro);
 const Indicadores = lazy(importIndicadores);
-const Processos = lazy(importProcessos);
-const Configuracoes = lazy(importConfiguracoes);
 const SignContract = lazy(importSignContract);
 const NotFound = lazy(importNotFound);
 const OKR = lazy(importOKR);
@@ -54,14 +50,21 @@ const Buscar = lazy(importBuscar);
 const Login = lazy(importLogin);
 const PerfilPessoal = lazy(importPerfilPessoal);
 const GerenciarUsuarios = lazy(importGerenciarUsuarios);
-const Servicos = lazy(importServicos);
+const Empresa = lazy(importEmpresa);
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000,
+      // gcTime must outlive the persist window so data survives until rehydration
+      gcTime: 24 * 60 * 60 * 1000,
     },
   },
+});
+
+const persister = createSyncStoragePersister({
+  storage: window.localStorage,
+  key: "kora-query-cache",
 });
 
 // Routes accessible by Observers (limited access)
@@ -73,6 +76,7 @@ function CacheManager() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_OUT") {
         qc.clear();
+        localStorage.removeItem("kora-query-cache");
         clearAllToasts();
       }
     });
@@ -99,10 +103,7 @@ function usePreloadAllPages() {
       importConhecimento();
       importSustentacao();
       importObservabilidade();
-      importFinanceiro();
       importIndicadores();
-      importProcessos();
-      importConfiguracoes();
       importSignContract();
       importNotFound();
       importOKR();
@@ -110,7 +111,7 @@ function usePreloadAllPages() {
       importLogin();
       importPerfilPessoal();
       importGerenciarUsuarios();
-      importServicos();
+      importEmpresa();
     };
 
     if ("requestIdleCallback" in window) {
@@ -192,14 +193,14 @@ function AppRoutes() {
           <Route path="/conhecimento" element={<ProtectedRoute><Conhecimento /></ProtectedRoute>} />
           <Route path="/sustentacao" element={<ProtectedRoute><Sustentacao /></ProtectedRoute>} />
           <Route path="/observabilidade" element={<ProtectedRoute><Observabilidade /></ProtectedRoute>} />
-          <Route path="/financeiro" element={<ProtectedRoute><Financeiro /></ProtectedRoute>} />
-          <Route path="/servicos" element={<ProtectedRoute><Servicos /></ProtectedRoute>} />
+          <Route path="/financeiro" element={<Navigate to="/empresa" replace />} />
+          <Route path="/servicos" element={<Navigate to="/empresa" replace />} />
+          <Route path="/processos" element={<Navigate to="/empresa" replace />} />
           <Route path="/indicadores" element={<ProtectedRoute><Indicadores /></ProtectedRoute>} />
-          <Route path="/processos" element={<ProtectedRoute><Processos /></ProtectedRoute>} />
           <Route path="/okr" element={<ProtectedRoute><OKR /></ProtectedRoute>} />
           <Route path="/buscar" element={<ProtectedRoute><Buscar /></ProtectedRoute>} />
           <Route path="/perfil" element={<ProtectedRoute><PerfilPessoal /></ProtectedRoute>} />
-          <Route path="/configuracoes" element={<AdminRoute><Configuracoes /></AdminRoute>} />
+          <Route path="/empresa" element={<ProtectedRoute><Empresa /></ProtectedRoute>} />
           <Route path="/usuarios" element={<AdminRoute><GerenciarUsuarios /></AdminRoute>} />
           <Route path="/login" element={<Login />} />
           <Route path="/sign/:token" element={<SignContract />} />
@@ -212,7 +213,10 @@ function AppRoutes() {
 
 const App = () => (
   <ThemeProvider>
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{ persister, maxAge: 24 * 60 * 60 * 1000 }}
+    >
       <CacheManager />
       <AuthProvider>
         <TooltipProvider>
@@ -223,7 +227,7 @@ const App = () => (
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   </ThemeProvider>
 );
 

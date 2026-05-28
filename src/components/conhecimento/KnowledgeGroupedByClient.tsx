@@ -33,18 +33,17 @@ export function KnowledgeGroupedByClient({
   const [expandedClients, setExpandedClients] = useState<Record<string, boolean>>({});
   const [cachedPasswords, setCachedPasswords] = useState<Record<string, string>>({});
 
-  // Group items by client
-  const groupedItems = items.reduce<Record<string, KnowledgeItem[]>>((acc, item) => {
-    const key = item.clientId ?? "internal";
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(item);
-    return acc;
-  }, {});
+  // Group items by client — items without a clientId are excluded (they belong in /empresa/senhas)
+  const groupedItems = items
+    .filter((item) => !!item.clientId)
+    .reduce<Record<string, KnowledgeItem[]>>((acc, item) => {
+      const key = item.clientId!;
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(item);
+      return acc;
+    }, {});
 
-  // Sort clients: internal first, then by client name
   const sortedClientIds = Object.keys(groupedItems).sort((a, b) => {
-    if (a === "internal") return -1;
-    if (b === "internal") return 1;
     const clientA = getClient(a);
     const clientB = getClient(b);
     return (clientA?.company ?? "").localeCompare(clientB?.company ?? "");
@@ -78,7 +77,6 @@ export function KnowledgeGroupedByClient({
   };
 
   const getClientName = (clientId: string) => {
-    if (clientId === "internal") return "Interno (Agência)";
     const client = getClient(clientId);
     return client?.company ?? "Cliente não encontrado";
   };
@@ -99,12 +97,7 @@ export function KnowledgeGroupedByClient({
               onClick={() => toggleClient(clientId)}
               className="w-full flex items-center gap-3 px-5 py-4 hover:bg-muted/30 transition-colors"
             >
-              <div className={cn(
-                "w-10 h-10 rounded-xl flex items-center justify-center",
-                clientId === "internal"
-                  ? "bg-primary/10 text-primary"
-                  : "bg-accent/10 text-accent"
-              )}>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-accent/10 text-accent">
                 <Building2 className="w-5 h-5" />
               </div>
               <div className="flex-1 text-left">

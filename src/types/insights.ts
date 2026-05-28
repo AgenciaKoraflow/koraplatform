@@ -20,6 +20,7 @@ export interface InsightsBoard {
   id: string;
   name: string;
   type: "canvas" | "document";
+  source: string;
   description?: string;
   thumbnailUrl?: string;
   elements: CanvasElement[];

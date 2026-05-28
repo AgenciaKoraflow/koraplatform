@@ -2,7 +2,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Plus, Calendar, Clock, Search, Eye, Edit, Trash2, AlertTriangle, CheckCircle, Timer, FolderKanban, ListChecks, ExternalLink, Circle, Ban, UserCheck, CheckCircle2 } from "lucide-react";
+import { Plus, Calendar, Clock, Search, Eye, Edit, Trash2, AlertTriangle, CheckCircle, Timer, FolderKanban, ListChecks, ExternalLink, Circle, Ban, UserCheck, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Dialog, DialogContent, DialogHeader, DialogBody, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -22,7 +22,7 @@ import { BUBadge } from "@/components/shared/BUBadge";
 import { BUMultiSelect } from "@/components/shared/BUMultiSelect";
 import { ClientAvatar } from "@/components/shared/ClientAvatar";
 import { UserAvatar } from "@/components/shared/UserAvatar";
-import { useUserAvatar } from "@/hooks/useUserAvatar";
+import { useProfileAvatarMap, useTeamOptions } from "@/hooks/useProfile";
 import { differenceInDays, isValid } from "date-fns";
 import { useProjects } from "@/hooks/useProjects";
 import { useProjectTasks } from "@/hooks/useTasks";
@@ -30,6 +30,7 @@ import { useAllClients } from "@/hooks/useClients";
 import { useDebounce } from "@/hooks/useDebounce";
 import { ProjectGantt } from "@/components/shared/ProjectGantt";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { CreateTaskDialog } from "@/components/tarefas/CreateTaskDialog";
 
 const typeConfig = {
   projeto: { label: "Projeto", color: "bg-primary/10 text-primary" },
@@ -40,7 +41,7 @@ const typeConfig = {
 const statusConfig = {
   planning: { label: "Planejamento", color: "bg-primary/10 text-primary", dot: "bg-primary" },
   in_progress: { label: "Em Andamento", color: "bg-primary/10 text-primary", dot: "bg-primary" },
-  review: { label: "Em Revisão", color: "bg-amber-500/10 text-amber-500", dot: "bg-amber-500" },
+  review: { label: "Em Validação Interna", color: "bg-amber-500/10 text-amber-500", dot: "bg-amber-500" },
   completed: { label: "Concluído", color: "bg-green-500/10 text-green-500", dot: "bg-green-500" },
   on_hold: { label: "Em Espera", color: "bg-slate-500/10 text-slate-500", dot: "bg-slate-500" },
 };
@@ -48,12 +49,12 @@ const statusConfig = {
 const statusOrder: (keyof typeof statusConfig)[] = ["planning", "in_progress", "review", "completed", "on_hold"];
 
 const taskStatusConfig = {
-  todo:          { label: "A Fazer",      color: "text-slate-400",  dot: "bg-slate-400",  bg: "bg-slate-500/10"  },
-  in_progress:   { label: "Em Progresso", color: "text-primary",    dot: "bg-primary",    bg: "bg-primary/10"    },
-  blocked:       { label: "Impedimento",  color: "text-red-400",    dot: "bg-red-400",    bg: "bg-red-500/10"    },
-  review:        { label: "Em Revisão",   color: "text-amber-400",  dot: "bg-amber-400",  bg: "bg-amber-500/10"  },
-  client_review: { label: "Em Cliente",   color: "text-purple-400", dot: "bg-purple-400", bg: "bg-purple-500/10" },
-  done:          { label: "Concluído",    color: "text-green-400",  dot: "bg-green-400",  bg: "bg-green-500/10"  },
+  todo: { label: "Backlog", color: "text-slate-400", dot: "bg-slate-400", bg: "bg-slate-500/10" },
+  in_progress: { label: "Em Andamento", color: "text-primary", dot: "bg-primary", bg: "bg-primary/10" },
+  blocked: { label: "Impedimento", color: "text-red-400", dot: "bg-red-400", bg: "bg-red-500/10" },
+  review: { label: "Em Validação Interna", color: "text-amber-400", dot: "bg-amber-400", bg: "bg-amber-500/10" },
+  client_review: { label: "Em Cliente", color: "text-purple-400", dot: "bg-purple-400", bg: "bg-purple-500/10" },
+  done: { label: "Concluído", color: "text-green-400", dot: "bg-green-400", bg: "bg-green-500/10" },
 };
 
 const MONTHS_PT = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -79,7 +80,8 @@ const PAGE_SIZE = 50;
 
 export default function Projetos() {
   const { addProject, updateProject, deleteProject, isAdding, isUpdating } = useProjectMutations();
-  const { getAvatarForName } = useUserAvatar();
+  const getAvatarForName = useProfileAvatarMap();
+  const teamOptions = useTeamOptions();
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [searchInput, setSearchInput] = useState("");
@@ -87,6 +89,7 @@ export default function Projetos() {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [selectedBU, setSelectedBU] = useState<BU | null>(null);
   const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [selectedHead, setSelectedHead] = useState<string | null>(null);
   const [page, setPage] = useState(0);
 
   const searchQuery = useDebounce(searchInput, 300);
@@ -105,8 +108,8 @@ export default function Projetos() {
   // BU filter applied client-side (not in server-side filter list yet)
   const projects = selectedBU
     ? rawProjects.filter((p) =>
-        Array.isArray(p.bu) ? p.bu.includes(selectedBU) : p.bu === selectedBU,
-      )
+      Array.isArray(p.bu) ? p.bu.includes(selectedBU) : p.bu === selectedBU,
+    )
     : rawProjects;
 
   const getClient = (id: string) => allClients.find((c) => c.id === id);
@@ -117,7 +120,9 @@ export default function Projetos() {
   const { data: viewingProjectTasks = [] } = useProjectTasks(viewingProject?.id);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isCreateTaskDialogOpen, setIsCreateTaskDialogOpen] = useState(false);
   const [viewDialogTab, setViewDialogTab] = useState<"resumo" | "gantt">("resumo");
+  const [showNoDueDateTasks, setShowNoDueDateTasks] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
@@ -137,10 +142,18 @@ export default function Projetos() {
     bu: [] as BU[],
   });
 
+  const availableHeads = useMemo(() => {
+    const heads = rawProjects.map((p) => p.head).filter((h): h is string => !!h);
+    return [...new Set(heads)].sort();
+  }, [rawProjects]);
+
   const filteredProjects = useMemo(() => {
-    if (!selectedType) return projects;
-    return projects.filter((p) => p.type === selectedType);
-  }, [projects, selectedType]);
+    return projects.filter((p) => {
+      if (selectedType && p.type !== selectedType) return false;
+      if (selectedHead && p.head !== selectedHead) return false;
+      return true;
+    });
+  }, [projects, selectedType, selectedHead]);
 
   const handleSearchChange = useCallback((v: string) => { setSearchInput(v); setPage(0); }, []);
 
@@ -173,6 +186,7 @@ export default function Projetos() {
   const openViewDialog = useCallback((project: Project) => {
     setViewingProject(project);
     setViewDialogTab("resumo");
+    setShowNoDueDateTasks(false);
     setIsViewDialogOpen(true);
   }, []);
 
@@ -261,33 +275,33 @@ export default function Projetos() {
     if (!dueDate || dueDate === "A definir") {
       return { daysRemaining: null, isOverdue: false, isAtRisk: false, isOnTrack: false, status: 'no_date' };
     }
-    
+
     // Parse date in DD/MM/YYYY format
     const ddmmyyyy = dueDate.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
     let deadline: Date;
-    
+
     if (ddmmyyyy) {
       deadline = new Date(parseInt(ddmmyyyy[3]), parseInt(ddmmyyyy[2]) - 1, parseInt(ddmmyyyy[1]));
     } else {
       deadline = new Date(dueDate);
     }
-    
+
     if (!isValid(deadline)) {
       return { daysRemaining: null, isOverdue: false, isAtRisk: false, isOnTrack: false, status: 'no_date' };
     }
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     deadline.setHours(0, 0, 0, 0);
-    
+
     const daysRemaining = differenceInDays(deadline, today);
-    
+
     // Calculate expected progress based on time elapsed (assuming project started 30 days ago or use creation date)
     // For simplicity, we'll use a basic heuristic
     const isOverdue = daysRemaining < 0;
     const isAtRisk = daysRemaining >= 0 && daysRemaining <= 7 && progress < 80;
     const isOnTrack = !isOverdue && !isAtRisk;
-    
+
     return {
       daysRemaining,
       isOverdue,
@@ -329,10 +343,10 @@ export default function Projetos() {
             />
           </div>
 
-          <ViewModeToggle 
-            modes={["grid", "kanban", "list"]} 
-            currentMode={viewMode} 
-            onChange={setViewMode} 
+          <ViewModeToggle
+            modes={["grid", "kanban", "list"]}
+            currentMode={viewMode}
+            onChange={setViewMode}
           />
 
           <div className="flex items-center gap-2 overflow-x-auto">
@@ -407,6 +421,23 @@ export default function Projetos() {
               ))}
             </select>
           </div>
+
+          {/* Head Filter */}
+          {availableHeads.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-foreground">Head:</span>
+              <select
+                value={selectedHead || ""}
+                onChange={(e) => setSelectedHead(e.target.value || null)}
+                className="px-3 py-2 rounded-lg bg-input border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+              >
+                <option value="">Todos</option>
+                {availableHeads.map((head) => (
+                  <option key={head} value={head}>{head}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {/* Grid View */}
@@ -414,113 +445,114 @@ export default function Projetos() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredProjects.map((project, index) => {
               const deadlineStatus = getDeadlineStatus(project.dueDate, project.progress, project.status);
-              
-              return (
-              <div
-                key={project.id}
-                onClick={() => openViewDialog(project)}
-                className="p-5 rounded-xl bg-card border border-border shadow-soft hover:shadow-medium transition-all duration-300 animate-slide-up cursor-pointer"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className={cn("px-2.5 py-1 rounded-full text-xs font-medium", statusConfig[project.status].color)}>
-                      {statusConfig[project.status].label}
-                    </span>
-                    {project.bu?.[0] && <BUBadge bu={project.bu[0]} />}
-                  </div>
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <ActionMenu
-                      items={[
-                        { label: "Visualizar", icon: Eye, onClick: () => openViewDialog(project) },
-                        { label: "Editar", icon: Edit, onClick: () => openEditDialog(project) },
-                        { label: "Excluir", icon: Trash2, onClick: () => { setDeletingProjectId(project.id); setIsDeleteDialogOpen(true); }, variant: "destructive" },
-                      ]}
-                    />
-                  </div>
-                </div>
-                <h3 className="text-lg font-semibold text-foreground mb-1">{project.name}</h3>
-                <div className="flex items-center gap-1.5 mb-3">
-                  <ClientAvatar client={getClient(project.clientId)} size="xs" />
-                  <p className="text-sm text-muted-foreground">{getClientName(project.clientId)}</p>
-                </div>
-                
-                {/* Head do projeto */}
-                {project.head && (
-                  <div className="flex items-center gap-2 mb-3">
-                    <UserAvatar name={project.head} src={getAvatarForName(project.head)} size="xs" />
-                    <span className="text-xs text-muted-foreground">Head: <span className="font-medium text-foreground">{project.head}</span></span>
-                  </div>
-                )}
 
-                {/* Deadline status indicator */}
-                {deadlineStatus.status !== 'no_date' && deadlineStatus.status !== 'completed' && (
-                  <div className={cn(
-                    "flex items-center gap-1.5 mb-3 px-2 py-1 rounded-md text-xs font-medium",
-                    deadlineStatus.isOverdue 
-                      ? "bg-red-500/10 text-red-500" 
-                      : deadlineStatus.isAtRisk 
-                        ? "bg-amber-500/10 text-amber-500"
-                        : "bg-green-500/10 text-green-500"
-                  )}>
-                    {deadlineStatus.isOverdue ? (
-                      <>
-                        <AlertTriangle className="w-3 h-3" />
-                        <span>Atrasado {Math.abs(deadlineStatus.daysRemaining || 0)} dias</span>
-                      </>
-                    ) : deadlineStatus.isAtRisk ? (
-                      <>
-                        <Timer className="w-3 h-3" />
-                        <span>{deadlineStatus.daysRemaining} dias restantes</span>
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="w-3 h-3" />
-                        <span>{deadlineStatus.daysRemaining} dias restantes</span>
-                      </>
-                    )}
-                  </div>
-                )}
-                
-                <div className="mb-4">
-                  <div className="flex items-center justify-between text-sm mb-2">
-                    <span className="text-muted-foreground">Progresso</span>
-                    <span className="font-medium text-foreground">{project.progress}%</span>
-                  </div>
-                  <div className="h-2 bg-muted rounded-full overflow-hidden">
-                    <div 
-                      className={cn(
-                        "h-full rounded-full transition-all duration-500",
-                        deadlineStatus.isOverdue ? "bg-red-500" : deadlineStatus.isAtRisk ? "bg-amber-500" : "bg-primary"
-                      )} 
-                      style={{ width: `${project.progress}%` }} 
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center justify-between pt-4 border-t border-border">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">{project.dueDate}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <Clock className="w-4 h-4" />
-                      <span>{project.completedTasks}/{project.tasks}</span>
+              return (
+                <div
+                  key={project.id}
+                  onClick={() => openViewDialog(project)}
+                  className="p-5 rounded-xl bg-card border border-border shadow-soft hover:shadow-medium transition-all duration-300 animate-slide-up cursor-pointer"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={cn("px-2.5 py-1 rounded-full text-xs font-medium", statusConfig[project.status].color)}>
+                        {statusConfig[project.status].label}
+                      </span>
+                      {project.bu?.[0] && <BUBadge bu={project.bu[0]} />}
                     </div>
-                    <div className="flex -space-x-2">
-                      {project.team.slice(0, 3).map((member, i) => (
-                        <UserAvatar key={i} name={member} src={getAvatarForName(member)} size="sm" />
-                      ))}
-                      {project.team.length > 3 && (
-                        <div className="w-7 h-7 rounded-full bg-muted border-2 border-card flex items-center justify-center">
-                          <span className="text-xs text-muted-foreground">+{project.team.length - 3}</span>
-                        </div>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <ActionMenu
+                        items={[
+                          { label: "Visualizar", icon: Eye, onClick: () => openViewDialog(project) },
+                          { label: "Editar", icon: Edit, onClick: () => openEditDialog(project) },
+                          { label: "Excluir", icon: Trash2, onClick: () => { setDeletingProjectId(project.id); setIsDeleteDialogOpen(true); }, variant: "destructive" },
+                        ]}
+                      />
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-1">{project.name}</h3>
+                  <div className="flex items-center gap-1.5 mb-3">
+                    <ClientAvatar client={getClient(project.clientId)} size="xs" />
+                    <p className="text-sm text-muted-foreground">{getClientName(project.clientId)}</p>
+                  </div>
+
+                  {/* Head do projeto */}
+                  {project.head && (
+                    <div className="flex items-center gap-2 mb-3">
+                      <UserAvatar name={project.head} src={getAvatarForName(project.head)} size="xs" />
+                      <span className="text-xs text-muted-foreground">Head: <span className="font-medium text-foreground">{project.head}</span></span>
+                    </div>
+                  )}
+
+                  {/* Deadline status indicator */}
+                  {deadlineStatus.status !== 'no_date' && deadlineStatus.status !== 'completed' && (
+                    <div className={cn(
+                      "flex items-center gap-1.5 mb-3 px-2 py-1 rounded-md text-xs font-medium",
+                      deadlineStatus.isOverdue
+                        ? "bg-red-500/10 text-red-500"
+                        : deadlineStatus.isAtRisk
+                          ? "bg-amber-500/10 text-amber-500"
+                          : "bg-green-500/10 text-green-500"
+                    )}>
+                      {deadlineStatus.isOverdue ? (
+                        <>
+                          <AlertTriangle className="w-3 h-3" />
+                          <span>Atrasado {Math.abs(deadlineStatus.daysRemaining || 0)} dias</span>
+                        </>
+                      ) : deadlineStatus.isAtRisk ? (
+                        <>
+                          <Timer className="w-3 h-3" />
+                          <span>{deadlineStatus.daysRemaining} dias restantes</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-3 h-3" />
+                          <span>{deadlineStatus.daysRemaining} dias restantes</span>
+                        </>
                       )}
                     </div>
+                  )}
+
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between text-sm mb-2">
+                      <span className="text-muted-foreground">Progresso</span>
+                      <span className="font-medium text-foreground">{project.progress}%</span>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className={cn(
+                          "h-full rounded-full transition-all duration-500",
+                          deadlineStatus.isOverdue ? "bg-red-500" : deadlineStatus.isAtRisk ? "bg-amber-500" : "bg-primary"
+                        )}
+                        style={{ width: `${project.progress}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between pt-4 border-t border-border">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">{project.dueDate}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <Clock className="w-4 h-4" />
+                        <span>{project.completedTasks}/{project.tasks}</span>
+                      </div>
+                      <div className="flex -space-x-2">
+                        {project.team.slice(0, 3).map((member, i) => (
+                          <UserAvatar key={i} name={member} src={getAvatarForName(member)} size="sm" />
+                        ))}
+                        {project.team.length > 3 && (
+                          <div className="w-7 h-7 rounded-full bg-muted border-2 border-card flex items-center justify-center">
+                            <span className="text-xs text-muted-foreground">+{project.team.length - 3}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )})}
+              )
+            })}
           </div>
         )}
 
@@ -539,62 +571,63 @@ export default function Projetos() {
                 <div className="space-y-3">
                   {getProjectsByStatus(status).map((project) => {
                     const deadlineStatus = getDeadlineStatus(project.dueDate, project.progress, project.status);
-                    
+
                     return (
-                    <div
-                      key={project.id}
-                      onClick={() => openViewDialog(project)}
-                      className="p-4 rounded-xl bg-card border border-border shadow-soft hover:shadow-medium transition-all cursor-pointer"
-                    >
-                      <h4 className="font-medium text-foreground mb-1">{project.name}</h4>
-                      <div className="flex items-center gap-1.5 mb-2">
-                        <ClientAvatar client={getClient(project.clientId)} size="xs" />
-                        <p className="text-sm text-muted-foreground">{getClientName(project.clientId)}</p>
-                      </div>
-                      
-                      {/* Head do projeto */}
-                      {project.head && (
+                      <div
+                        key={project.id}
+                        onClick={() => openViewDialog(project)}
+                        className="p-4 rounded-xl bg-card border border-border shadow-soft hover:shadow-medium transition-all cursor-pointer"
+                      >
+                        <h4 className="font-medium text-foreground mb-1">{project.name}</h4>
                         <div className="flex items-center gap-1.5 mb-2">
-                          <UserAvatar name={project.head} src={getAvatarForName(project.head)} size="xs" />
-                          <span className="text-xs text-muted-foreground">{project.head}</span>
+                          <ClientAvatar client={getClient(project.clientId)} size="xs" />
+                          <p className="text-sm text-muted-foreground">{getClientName(project.clientId)}</p>
                         </div>
-                      )}
-                      
-                      {/* Deadline status */}
-                      {deadlineStatus.status !== 'no_date' && deadlineStatus.status !== 'completed' && (
-                        <div className={cn(
-                          "flex items-center gap-1 mb-2 text-xs font-medium",
-                          deadlineStatus.isOverdue ? "text-red-500" : deadlineStatus.isAtRisk ? "text-amber-500" : "text-green-500"
-                        )}>
-                          {deadlineStatus.isOverdue ? (
-                            <>
-                              <AlertTriangle className="w-3 h-3" />
-                              <span>Atrasado {Math.abs(deadlineStatus.daysRemaining || 0)}d</span>
-                            </>
-                          ) : (
-                            <>
-                              <Clock className="w-3 h-3" />
-                              <span>{deadlineStatus.daysRemaining}d</span>
-                            </>
-                          )}
+
+                        {/* Head do projeto */}
+                        {project.head && (
+                          <div className="flex items-center gap-1.5 mb-2">
+                            <UserAvatar name={project.head} src={getAvatarForName(project.head)} size="xs" />
+                            <span className="text-xs text-muted-foreground">{project.head}</span>
+                          </div>
+                        )}
+
+                        {/* Deadline status */}
+                        {deadlineStatus.status !== 'no_date' && deadlineStatus.status !== 'completed' && (
+                          <div className={cn(
+                            "flex items-center gap-1 mb-2 text-xs font-medium",
+                            deadlineStatus.isOverdue ? "text-red-500" : deadlineStatus.isAtRisk ? "text-amber-500" : "text-green-500"
+                          )}>
+                            {deadlineStatus.isOverdue ? (
+                              <>
+                                <AlertTriangle className="w-3 h-3" />
+                                <span>Atrasado {Math.abs(deadlineStatus.daysRemaining || 0)}d</span>
+                              </>
+                            ) : (
+                              <>
+                                <Clock className="w-3 h-3" />
+                                <span>{deadlineStatus.daysRemaining}d</span>
+                              </>
+                            )}
+                          </div>
+                        )}
+
+                        <div className="h-1.5 bg-muted rounded-full overflow-hidden mb-3">
+                          <div
+                            className={cn(
+                              "h-full rounded-full",
+                              deadlineStatus.isOverdue ? "bg-red-500" : deadlineStatus.isAtRisk ? "bg-amber-500" : "bg-primary"
+                            )}
+                            style={{ width: `${project.progress}%` }}
+                          />
                         </div>
-                      )}
-                      
-                      <div className="h-1.5 bg-muted rounded-full overflow-hidden mb-3">
-                        <div 
-                          className={cn(
-                            "h-full rounded-full",
-                            deadlineStatus.isOverdue ? "bg-red-500" : deadlineStatus.isAtRisk ? "bg-amber-500" : "bg-primary"
-                          )} 
-                          style={{ width: `${project.progress}%` }} 
-                        />
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>{project.dueDate}</span>
+                          <span>{project.completedTasks}/{project.tasks} tarefas</span>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>{project.dueDate}</span>
-                        <span>{project.completedTasks}/{project.tasks} tarefas</span>
-                      </div>
-                    </div>
-                  )})}
+                    )
+                  })}
                   <button onClick={openNewDialog} className="w-full p-3 rounded-xl border-2 border-dashed border-border text-sm text-muted-foreground hover:bg-input hover:border-primary/50 transition-all">
                     <Plus className="w-4 h-4 mx-auto" />
                   </button>
@@ -622,75 +655,76 @@ export default function Projetos() {
               <tbody className="divide-y divide-border">
                 {filteredProjects.map((project) => {
                   const deadlineStatus = getDeadlineStatus(project.dueDate, project.progress, project.status);
-                  
+
                   return (
-                  <tr
-                    key={project.id}
-                    className="hover:bg-muted/20 transition-colors cursor-pointer"
-                    onClick={() => openViewDialog(project)}
-                  >
-                    <td className="px-6 py-4 font-medium text-foreground">{project.name}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <ClientAvatar client={getClient(project.clientId)} size="xs" />
-                        <span className="text-muted-foreground text-sm">{getClientName(project.clientId)}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {project.head ? (
+                    <tr
+                      key={project.id}
+                      className="hover:bg-muted/20 transition-colors cursor-pointer"
+                      onClick={() => openViewDialog(project)}
+                    >
+                      <td className="px-6 py-4 font-medium text-foreground">{project.name}</td>
+                      <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          <UserAvatar name={project.head} src={getAvatarForName(project.head)} size="sm" />
-                          <span className="text-sm text-foreground">{project.head}</span>
+                          <ClientAvatar client={getClient(project.clientId)} size="xs" />
+                          <span className="text-muted-foreground text-sm">{getClientName(project.clientId)}</span>
                         </div>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">—</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={cn("px-2.5 py-1 rounded-full text-xs font-medium", statusConfig[project.status].color)}>
-                        {statusConfig[project.status].label}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                          <div 
-                            className={cn(
-                              "h-full rounded-full",
-                              deadlineStatus.isOverdue ? "bg-red-500" : deadlineStatus.isAtRisk ? "bg-amber-500" : "bg-primary"
-                            )} 
-                            style={{ width: `${project.progress}%` }} 
-                          />
-                        </div>
-                        <span className="text-sm text-muted-foreground">{project.progress}%</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col gap-1">
-                        <span className="text-muted-foreground">{project.dueDate}</span>
-                        {deadlineStatus.status !== 'no_date' && deadlineStatus.status !== 'completed' && (
-                          <span className={cn(
-                            "text-xs font-medium",
-                            deadlineStatus.isOverdue ? "text-red-500" : deadlineStatus.isAtRisk ? "text-amber-500" : "text-green-500"
-                          )}>
-                            {deadlineStatus.isOverdue 
-                              ? `Atrasado ${Math.abs(deadlineStatus.daysRemaining || 0)} dias`
-                              : `${deadlineStatus.daysRemaining} dias restantes`}
-                          </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        {project.head ? (
+                          <div className="flex items-center gap-2">
+                            <UserAvatar name={project.head} src={getAvatarForName(project.head)} size="sm" />
+                            <span className="text-sm text-foreground">{project.head}</span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">—</span>
                         )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
-                      <ActionMenu
-                        items={[
-                          { label: "Visualizar", icon: Eye, onClick: () => openViewDialog(project) },
-                          { label: "Editar", icon: Edit, onClick: () => openEditDialog(project) },
-                          { label: "Excluir", icon: Trash2, onClick: () => { setDeletingProjectId(project.id); setIsDeleteDialogOpen(true); }, variant: "destructive" },
-                        ]}
-                      />
-                    </td>
-                  </tr>
-                )})}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={cn("px-2.5 py-1 rounded-full text-xs font-medium", statusConfig[project.status].color)}>
+                          {statusConfig[project.status].label}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className={cn(
+                                "h-full rounded-full",
+                                deadlineStatus.isOverdue ? "bg-red-500" : deadlineStatus.isAtRisk ? "bg-amber-500" : "bg-primary"
+                              )}
+                              style={{ width: `${project.progress}%` }}
+                            />
+                          </div>
+                          <span className="text-sm text-muted-foreground">{project.progress}%</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-muted-foreground">{project.dueDate}</span>
+                          {deadlineStatus.status !== 'no_date' && deadlineStatus.status !== 'completed' && (
+                            <span className={cn(
+                              "text-xs font-medium",
+                              deadlineStatus.isOverdue ? "text-red-500" : deadlineStatus.isAtRisk ? "text-amber-500" : "text-green-500"
+                            )}>
+                              {deadlineStatus.isOverdue
+                                ? `Atrasado ${Math.abs(deadlineStatus.daysRemaining || 0)} dias`
+                                : `${deadlineStatus.daysRemaining} dias restantes`}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                        <ActionMenu
+                          items={[
+                            { label: "Visualizar", icon: Eye, onClick: () => openViewDialog(project) },
+                            { label: "Editar", icon: Edit, onClick: () => openEditDialog(project) },
+                            { label: "Excluir", icon: Trash2, onClick: () => { setDeletingProjectId(project.id); setIsDeleteDialogOpen(true); }, variant: "destructive" },
+                          ]}
+                        />
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -798,6 +832,15 @@ export default function Projetos() {
                   onChange={(value) => setFormData({ ...formData, dueDate: value })}
                   placeholder="Selecione o prazo"
                 />
+                {formData.dueDate && (() => {
+                  const ds = getDeadlineStatus(formData.dueDate, editingProject?.progress || 0, formData.status);
+                  if (ds.status === "no_date" || ds.status === "completed") return null;
+                  const label = ds.isOverdue
+                    ? `Atrasado ${Math.abs(ds.daysRemaining || 0)} dias`
+                    : `${ds.daysRemaining} dias restantes`;
+                  const color = ds.isOverdue ? "text-red-500" : ds.isAtRisk ? "text-amber-500" : "text-green-500";
+                  return <p className={cn("text-xs", color)}>{label}</p>;
+                })()}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -816,10 +859,9 @@ export default function Projetos() {
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border">
                     <SelectItem value="none">Selecione para adicionar</SelectItem>
-                    <SelectItem value="James">James</SelectItem>
-                    <SelectItem value="João">João</SelectItem>
-                    <SelectItem value="Edson">Edson</SelectItem>
-                    <SelectItem value="Ryan">Ryan</SelectItem>
+                    {teamOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 {formData.team && (
@@ -844,10 +886,9 @@ export default function Projetos() {
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border">
                     <SelectItem value="none">Nenhum</SelectItem>
-                    <SelectItem value="James">James</SelectItem>
-                    <SelectItem value="João">João</SelectItem>
-                    <SelectItem value="Edson">Edson</SelectItem>
-                    <SelectItem value="Ryan">Ryan</SelectItem>
+                    {teamOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -914,21 +955,29 @@ export default function Projetos() {
                           <ListChecks className="w-3.5 h-3.5" />
                           Tarefas ({viewingProjectTasks.length})
                         </p>
-                        <button
-                          onClick={() => { setIsViewDialogOpen(false); navigate(`/tarefas?project=${viewingProject.id}`); }}
-                          className="text-xs text-primary hover:underline flex items-center gap-1"
-                        >
-                          Ver todas <ExternalLink className="w-3 h-3" />
-                        </button>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => setIsCreateTaskDialogOpen(true)}
+                            className="text-xs text-primary hover:underline flex items-center gap-1"
+                          >
+                            <Plus className="w-3 h-3" /> Nova Tarefa
+                          </button>
+                          <button
+                            onClick={() => { setIsViewDialogOpen(false); navigate(`/tarefas?project=${viewingProject.id}`); }}
+                            className="text-xs text-primary hover:underline flex items-center gap-1"
+                          >
+                            Ver todas <ExternalLink className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>
                       <div className="grid grid-cols-3 gap-2 text-center">
                         {[
-                          { key: "todo",          label: "A Fazer",      icon: Circle,       color: "text-slate-400 bg-slate-500/10" },
-                          { key: "in_progress",   label: "Em Progresso", icon: Clock,        color: "text-primary bg-primary/10" },
-                          { key: "blocked",       label: "Impedimento",  icon: Ban,          color: "text-red-400 bg-red-500/10" },
-                          { key: "review",        label: "Em Revisão",   icon: Eye,          color: "text-amber-400 bg-amber-500/10" },
-                          { key: "client_review", label: "Em Cliente",   icon: UserCheck,    color: "text-purple-400 bg-purple-500/10" },
-                          { key: "done",          label: "Concluído",    icon: CheckCircle2, color: "text-green-400 bg-green-500/10" },
+                          { key: "todo", label: "Backlog", icon: Circle, color: "text-slate-400 bg-slate-500/10" },
+                          { key: "in_progress", label: "Em Andamento", icon: Clock, color: "text-primary bg-primary/10" },
+                          { key: "blocked", label: "Impedimento", icon: Ban, color: "text-red-400 bg-red-500/10" },
+                          { key: "review", label: "Em Validação Interna", icon: Eye, color: "text-amber-400 bg-amber-500/10" },
+                          { key: "client_review", label: "Em Cliente", icon: UserCheck, color: "text-purple-400 bg-purple-500/10" },
+                          { key: "done", label: "Concluído", icon: CheckCircle2, color: "text-green-400 bg-green-500/10" },
                         ].map(({ key, label, icon: Icon, color }) => {
                           const count = viewingProjectTasks.filter((t) => t.status === key).length;
                           if (count === 0) return null;
@@ -952,48 +1001,72 @@ export default function Projetos() {
                       (acc[key] ??= []).push(task);
                       return acc;
                     }, {});
+                    const noDueDateTasks = grouped["Sem data"] ?? [];
+                    const monthEntries = Object.entries(grouped).filter(([month]) => month !== "Sem data");
+
+                    const renderTaskRow = (task: (typeof sorted)[0]) => {
+                      const cfg = taskStatusConfig[task.status];
+                      return (
+                        <div key={task.id} className="flex items-start gap-3">
+                          <div className={cn("w-3.5 h-3.5 rounded-full border-2 border-card mt-0.5 shrink-0 z-10", cfg.dot)} />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-medium text-foreground truncate">{task.title}</span>
+                              <span className={cn("px-1.5 py-0.5 rounded text-xs font-medium", cfg.bg, cfg.color)}>
+                                {cfg.label}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
+                              {task.dueDate && task.dueDate !== "A definir" && (
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" />
+                                  {task.dueDate}
+                                </span>
+                              )}
+                              {task.assignees.length > 0 && (
+                                <span>
+                                  {task.assignees.slice(0, 2).join(", ")}
+                                  {task.assignees.length > 2 ? ` +${task.assignees.length - 2}` : ""}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    };
+
                     return (
                       <div className="pt-4 border-t border-border">
                         <p className="text-xs font-medium text-muted-foreground mb-4 flex items-center gap-1.5">
                           <Clock className="w-3.5 h-3.5" />
                           Roadmap
                         </p>
+
+                        {noDueDateTasks.length > 0 && (
+                          <div className="mb-4">
+                            <button
+                              onClick={() => setShowNoDueDateTasks(v => !v)}
+                              className="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg bg-amber-500/10 text-amber-500 text-xs font-medium hover:bg-amber-500/20 transition-colors"
+                            >
+                              <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                              <span>{noDueDateTasks.length} tarefa{noDueDateTasks.length > 1 ? "s" : ""} sem prazo definido</span>
+                              {showNoDueDateTasks ? <ChevronUp className="w-3.5 h-3.5 ml-auto" /> : <ChevronDown className="w-3.5 h-3.5 ml-auto" />}
+                            </button>
+                            {showNoDueDateTasks && (
+                              <div className="mt-2.5 ml-2 pl-3 border-l-2 border-amber-500/30 space-y-2.5">
+                                {noDueDateTasks.map(renderTaskRow)}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
                         <div className="relative">
                           <div className="absolute left-[6px] top-2 bottom-2 w-px bg-border" />
-                          {Object.entries(grouped).map(([month, tasks]) => (
+                          {monthEntries.map(([month, tasks]) => (
                             <div key={month} className="mb-4">
                               <p className="text-xs font-semibold text-muted-foreground mb-2 ml-6">{month}</p>
                               <div className="space-y-2.5">
-                                {tasks.map((task) => {
-                                  const cfg = taskStatusConfig[task.status];
-                                  return (
-                                    <div key={task.id} className="flex items-start gap-3">
-                                      <div className={cn("w-3.5 h-3.5 rounded-full border-2 border-card mt-0.5 shrink-0 z-10", cfg.dot)} />
-                                      <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                          <span className="text-sm font-medium text-foreground truncate">{task.title}</span>
-                                          <span className={cn("px-1.5 py-0.5 rounded text-xs font-medium", cfg.bg, cfg.color)}>
-                                            {cfg.label}
-                                          </span>
-                                        </div>
-                                        <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
-                                          {task.dueDate && task.dueDate !== "A definir" && (
-                                            <span className="flex items-center gap-1">
-                                              <Calendar className="w-3 h-3" />
-                                              {task.dueDate}
-                                            </span>
-                                          )}
-                                          {task.assignees.length > 0 && (
-                                            <span>
-                                              {task.assignees.slice(0, 2).join(", ")}
-                                              {task.assignees.length > 2 ? ` +${task.assignees.length - 2}` : ""}
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
+                                {tasks.map(renderTaskRow)}
                               </div>
                             </div>
                           ))}
@@ -1007,9 +1080,7 @@ export default function Projetos() {
                       <p className="text-xs text-muted-foreground mb-1">Equipe</p>
                       <div className="flex -space-x-2">
                         {viewingProject.team.map((member, i) => (
-                          <div key={i} className="w-8 h-8 rounded-full bg-primary/20 border-2 border-card flex items-center justify-center">
-                            <span className="text-xs font-medium text-primary">{member.substring(0, 2)}</span>
-                          </div>
+                          <UserAvatar key={i} name={member} src={getAvatarForName(member)} size="md" />
                         ))}
                       </div>
                     </div>
@@ -1029,11 +1100,27 @@ export default function Projetos() {
             </DialogBody>
           )}
           <DialogFooter>
+            <button
+              onClick={() => setIsCreateTaskDialogOpen(true)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-colors mr-auto"
+            >
+              <Plus className="w-4 h-4" /> Nova Tarefa
+            </button>
             <button onClick={() => setIsViewDialogOpen(false)} className="px-4 py-2 rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-colors">Fechar</button>
             <button onClick={() => { setIsViewDialogOpen(false); if (viewingProject) openEditDialog(viewingProject); }} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Editar</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create Task Dialog (pre-linked to current project) */}
+      {viewingProject && (
+        <CreateTaskDialog
+          open={isCreateTaskDialogOpen}
+          onOpenChange={setIsCreateTaskDialogOpen}
+          defaultClientId={viewingProject.clientId}
+          defaultProjectId={viewingProject.id}
+        />
+      )}
 
       {/* Delete Confirmation */}
       <ConfirmDialog

@@ -19,10 +19,11 @@ import {
   AlertTriangle, User, Folder, ThumbsUp, Timer, X, Plus, ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, differenceInDays, parse, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useAuth } from "@/hooks/useAuth";
-import { useAllProfiles, type Profile } from "@/hooks/useProfile";
+import { useAllProfiles, useProfileAvatarMap, type Profile } from "@/hooks/useProfile";
+import { UserAvatar } from "@/components/shared/UserAvatar";
 import { useTaskSubtasks } from "@/hooks/useTaskSubtasks";
 import { useTaskComments } from "@/hooks/useTaskComments";
 import { useTaskAttachments } from "@/hooks/useTaskAttachments";
@@ -39,18 +40,18 @@ import { SubtaskDetailDialog } from "./SubtaskDetailDialog";
 const BUCKET = "task-attachments";
 
 const statusConfig: Record<string, { label: string; icon: React.ElementType; color: string }> = {
-  todo:          { label: "A Fazer",        icon: Circle,       color: "text-slate-400" },
-  in_progress:   { label: "Em Progresso",   icon: Clock,        color: "text-primary" },
-  blocked:       { label: "Em Impedimento", icon: Ban,          color: "text-red-400" },
-  review:        { label: "Em Revisão",     icon: Eye,          color: "text-amber-400" },
-  client_review: { label: "Em Cliente",     icon: UserCheck,    color: "text-purple-400" },
-  done:          { label: "Concluído",      icon: CheckCircle2, color: "text-green-400" },
+  todo: { label: "Backlog", icon: Circle, color: "text-slate-400" },
+  in_progress: { label: "Em Andamento", icon: Clock, color: "text-primary" },
+  blocked: { label: "Em Impedimento", icon: Ban, color: "text-red-400" },
+  review: { label: "Em Validação Interna", icon: Eye, color: "text-amber-400" },
+  client_review: { label: "Em Cliente", icon: UserCheck, color: "text-purple-400" },
+  done: { label: "Concluído", icon: CheckCircle2, color: "text-green-400" },
 };
 
 const priorityConfig: Record<string, { label: string; color: string }> = {
-  low:    { label: "Baixa",  color: "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" },
-  medium: { label: "Média",  color: "bg-amber-500/20 text-amber-400 border border-amber-500/30" },
-  high:   { label: "Alta",   color: "bg-red-500/20 text-red-400 border border-red-500/30" },
+  low: { label: "Baixa", color: "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" },
+  medium: { label: "Média", color: "bg-amber-500/20 text-amber-400 border border-amber-500/30" },
+  high: { label: "Alta", color: "bg-red-500/20 text-red-400 border border-red-500/30" },
 };
 
 function formatDisplayDate(isoOrFormatted: string): string {
@@ -62,6 +63,25 @@ function formatDisplayDate(isoOrFormatted: string): string {
     if (!isNaN(d.getTime())) return format(d, "dd/MM/yyyy");
   }
   return isoOrFormatted;
+}
+
+function getDeadlineStatus(dueDate: string, status: string): { label: string; color: string } | null {
+  if (!dueDate || dueDate === "A definir" || status === "done") return null;
+
+  let parsed: Date | null = null;
+  const dd = parse(dueDate, "dd/MM/yyyy", new Date());
+  if (isValid(dd)) parsed = dd;
+  if (!parsed) { const iso = parse(dueDate, "yyyy-MM-dd", new Date()); if (isValid(iso)) parsed = iso; }
+  if (!parsed) { const isoFull = dueDate.match(/^(\d{4})-(\d{2})-(\d{2})/); if (isoFull) { const d = new Date(parseInt(isoFull[1]), parseInt(isoFull[2]) - 1, parseInt(isoFull[3])); if (!isNaN(d.getTime())) parsed = d; } }
+  if (!parsed) return null;
+
+  const today = new Date(); today.setHours(0, 0, 0, 0); parsed.setHours(0, 0, 0, 0);
+  const days = differenceInDays(parsed, today);
+
+  if (days < 0) return { label: `${Math.abs(days)} dia${Math.abs(days) !== 1 ? "s" : ""} atrasado`, color: "text-red-500" };
+  if (days === 0) return { label: "Vence hoje", color: "text-amber-500" };
+  if (days <= 3) return { label: `${days} dia${days !== 1 ? "s" : ""} restante${days !== 1 ? "s" : ""}`, color: "text-amber-500" };
+  return { label: `${days} dias restantes`, color: "text-green-500" };
 }
 
 function formatFileSize(bytes: number | undefined): string {
@@ -98,6 +118,7 @@ export function TaskDetailSheet({
   const { user, profile } = useAuth();
   const authorName = profile?.full_name || user?.email || "Usuário";
   const { data: profiles = [] } = useAllProfiles();
+  const getAvatarUrl = useProfileAvatarMap();
 
   const { data: subtasks = [] } = useTaskSubtasks(task?.id);
   // All comments/attachments/timeEntries include subtask-linked rows (same task_id)
@@ -325,11 +346,23 @@ export function TaskDetailSheet({
                       <Calendar className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                       {formatDisplayDate(task.dueDate) || "Não definido"}
                     </span>
+                    {task.dueDate && (() => {
+                      const ds = getDeadlineStatus(task.dueDate, task.status);
+                      if (!ds) return null;
+                      return <p className={cn("text-xs mt-0.5", ds.color)}>{ds.label}</p>;
+                    })()}
                   </div>
                   {task.assignees && task.assignees.length > 0 && (
                     <div>
                       <p className="text-xs text-muted-foreground mb-0.5">Responsáveis</p>
-                      <p className="text-sm truncate">{task.assignees.join(", ")}</p>
+                      <div className="flex flex-wrap items-center gap-2 mt-1">
+                        {task.assignees.map((name, i) => (
+                          <div key={i} className="flex items-center gap-1.5">
+                            <UserAvatar name={name} src={getAvatarUrl(name)} size="sm" />
+                            <span className="text-sm">{name}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                   {task.bu && task.bu.length > 0 && (
@@ -470,8 +503,8 @@ export function TaskDetailSheet({
                     )}
                     {comments.map((c) => (
                       <div key={c.id} className="group flex gap-3">
-                        <div className="w-7 h-7 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-medium shrink-0 mt-0.5">
-                          {c.author.substring(0, 2).toUpperCase()}
+                        <div className="shrink-0 mt-0.5">
+                          <UserAvatar name={c.author} src={getAvatarUrl(c.author)} size="sm" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -502,9 +535,7 @@ export function TaskDetailSheet({
                           <button key={p.id} type="button"
                             onMouseDown={(e) => { e.preventDefault(); handleSelectMention(p); }}
                             className="w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted transition-colors text-left">
-                            <div className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-medium shrink-0">
-                              {(p.full_name ?? "U").substring(0, 2).toUpperCase()}
-                            </div>
+                            <UserAvatar name={p.full_name ?? "Usuário"} src={getAvatarUrl(p.full_name ?? "")} size="xs" />
                             <div className="min-w-0">
                               <p className="font-medium leading-none truncate">{p.full_name ?? "Usuário"}</p>
                               {p.cargo && <p className="text-xs text-muted-foreground mt-0.5 truncate">{p.cargo}</p>}
@@ -573,7 +604,7 @@ export function TaskDetailSheet({
                             "h-full rounded-full transition-all",
                             isOverBudget ? "bg-red-500"
                               : progressPct >= 80 ? "bg-amber-500"
-                              : "bg-primary"
+                                : "bg-primary"
                           )}
                           style={{ width: `${Math.min(progressPct, 100)}%` }}
                         />

@@ -4,7 +4,7 @@ import { AppSidebar } from "./AppSidebar";
 import {
   Menu, X, Sun, Moon,
   Filter, FolderKanban, CheckSquare, FileSignature,
-  MoreHorizontal, User, LogOut,
+  MoreHorizontal, User, LogOut, Settings, Bell, Lock,
 } from "lucide-react";
 import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
 import {
@@ -163,7 +163,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   )}
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none truncate">
@@ -175,9 +175,21 @@ export function AppLayout({ children }: AppLayoutProps) {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate("/perfil")} className="cursor-pointer">
+                <DropdownMenuItem onClick={() => navigate("/perfil?tab=perfil")} className="cursor-pointer">
                   <User className="mr-2 h-4 w-4" />
-                  Editar perfil
+                  Meu perfil
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/perfil?tab=preferencias")} className="cursor-pointer">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Preferências
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/perfil?tab=notificacoes")} className="cursor-pointer">
+                  <Bell className="mr-2 h-4 w-4" />
+                  Notificações
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/perfil?tab=seguranca")} className="cursor-pointer">
+                  <Lock className="mr-2 h-4 w-4" />
+                  Segurança
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem

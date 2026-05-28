@@ -14,7 +14,7 @@ import { ActionMenu } from "@/components/shared/ActionMenu";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
 import { DatePicker } from "@/components/shared/DatePicker";
-import { MultiSelect, TEAM_OPTIONS } from "@/components/shared/MultiSelect";
+import { MultiSelect } from "@/components/shared/MultiSelect";
 import { toast } from "sonner";
 import { useTaskMutations } from "@/hooks/mutations/useTaskMutations";
 import { Task } from "@/types/data";
@@ -22,26 +22,16 @@ import { BU } from "@/types/bu";
 import { useTasks } from "@/hooks/useTasks";
 import { useAllClients } from "@/hooks/useClients";
 import { useAllProjects } from "@/hooks/useProjects";
+import { useAuth } from "@/hooks/useAuth";
+import { useUpdateProfile, useProfileAvatarMap, useTeamOptions } from "@/hooks/useProfile";
 import { useDebounce } from "@/hooks/useDebounce";
 import { BUBadge } from "@/components/shared/BUBadge";
 import { ClientAvatar } from "@/components/shared/ClientAvatar";
+import { UserAvatar } from "@/components/shared/UserAvatar";
 import { BUSelect } from "@/components/shared/BUSelect";
 import { TaskDetailSheet } from "@/components/tarefas/TaskDetailSheet";
+import { CreateTaskDialog } from "@/components/tarefas/CreateTaskDialog";
 import { differenceInDays, parse, isValid } from "date-fns";
-
-// Configuração de fotos dos membros da equipe
-const TEAM_PHOTOS: Record<string, string> = {
-  James: "https://avatars.githubusercontent.com/u/583231?v=4",
-  João: "https://avatars.githubusercontent.com/u/583232?v=4",
-  Edson: "https://avatars.githubusercontent.com/u/583233?v=4",
-};
-
-// Cores para avatares sem foto
-const AVATAR_COLORS: Record<string, string> = {
-  James: "bg-primary",
-  João: "bg-green-500",
-  Edson: "bg-muted",
-};
 
 // Função para calcular status do prazo
 function getDeadlineStatus(dueDate: string, status: Task["status"]): {
@@ -59,13 +49,13 @@ function getDeadlineStatus(dueDate: string, status: Task["status"]): {
   }
 
   let parsedDate: Date | null = null;
-  
+
   // Tenta parse no formato DD/MM/YYYY
   const ddmmyyyy = parse(dueDate, "dd/MM/yyyy", new Date());
   if (isValid(ddmmyyyy)) {
     parsedDate = ddmmyyyy;
   }
-  
+
   // Tenta parse no formato ISO (YYYY-MM-DD)
   if (!parsedDate) {
     const iso = parse(dueDate, "yyyy-MM-dd", new Date());
@@ -81,77 +71,54 @@ function getDeadlineStatus(dueDate: string, status: Task["status"]): {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   parsedDate.setHours(0, 0, 0, 0);
-  
+
   const daysRemaining = differenceInDays(parsedDate, today);
 
   if (daysRemaining < 0) {
-    return { 
-      status: "overdue", 
-      daysRemaining, 
-      label: `${Math.abs(daysRemaining)} dia${Math.abs(daysRemaining) !== 1 ? 's' : ''} atrasado`, 
-      color: "text-red-500" 
+    return {
+      status: "overdue",
+      daysRemaining,
+      label: `${Math.abs(daysRemaining)} dia${Math.abs(daysRemaining) !== 1 ? 's' : ''} atrasado`,
+      color: "text-red-500"
     };
   } else if (daysRemaining <= 3) {
-    return { 
-      status: "at_risk", 
-      daysRemaining, 
-      label: daysRemaining === 0 ? "Vence hoje" : `${daysRemaining} dia${daysRemaining !== 1 ? 's' : ''} restante${daysRemaining !== 1 ? 's' : ''}`, 
-      color: "text-amber-500" 
+    return {
+      status: "at_risk",
+      daysRemaining,
+      label: daysRemaining === 0 ? "Vence hoje" : `${daysRemaining} dia${daysRemaining !== 1 ? 's' : ''} restante${daysRemaining !== 1 ? 's' : ''}`,
+      color: "text-amber-500"
     };
   } else {
-    return { 
-      status: "on_track", 
-      daysRemaining, 
-      label: `${daysRemaining} dias restantes`, 
-      color: "text-green-500" 
+    return {
+      status: "on_track",
+      daysRemaining,
+      label: `${daysRemaining} dias restantes`,
+      color: "text-green-500"
     };
   }
-}
-
-// Componente de avatar do responsável
-function AssigneeAvatar({ name, size = "sm" }: { name: string; size?: "sm" | "md" }) {
-  const photoUrl = TEAM_PHOTOS[name];
-  const bgColor = AVATAR_COLORS[name] || "bg-gray-500";
-  const sizeClasses = size === "sm" ? "w-6 h-6 text-xs" : "w-8 h-8 text-sm";
-
-  if (photoUrl) {
-    return (
-      <img 
-        src={photoUrl} 
-        alt={name} 
-        className={cn("rounded-full border-2 border-card object-cover", sizeClasses)}
-        title={name}
-      />
-    );
-  }
-
-  return (
-    <div 
-      className={cn("rounded-full border-2 border-card flex items-center justify-center text-white font-medium", sizeClasses, bgColor)}
-      title={name}
-    >
-      {name.substring(0, 2).toUpperCase()}
-    </div>
-  );
 }
 
 const statusColumns = [
-  { id: "todo",          label: "A Fazer",        icon: Circle,       dotColor: "bg-slate-500",   headerColor: "text-slate-400",   dropColor: "ring-slate-500/40" },
-  { id: "in_progress",   label: "Em Progresso",   icon: Clock,        dotColor: "bg-primary",     headerColor: "text-primary",     dropColor: "ring-primary/40" },
-  { id: "blocked",       label: "Em Impedimento", icon: Ban,          dotColor: "bg-red-500",     headerColor: "text-red-400",     dropColor: "ring-red-500/40" },
-  { id: "review",        label: "Em Revisão",     icon: Eye,          dotColor: "bg-amber-500",   headerColor: "text-amber-400",   dropColor: "ring-amber-500/40" },
-  { id: "client_review", label: "Em Cliente",     icon: UserCheck,    dotColor: "bg-purple-500",  headerColor: "text-purple-400",  dropColor: "ring-purple-500/40" },
-  { id: "done",          label: "Concluído",      icon: CheckCircle2, dotColor: "bg-green-500",   headerColor: "text-green-400",   dropColor: "ring-green-500/40" },
+  { id: "todo", label: "Backlog", icon: Circle, dotColor: "bg-slate-500", headerColor: "text-slate-400", dropColor: "ring-slate-500/40" },
+  { id: "in_progress", label: "Em Andamento", icon: Clock, dotColor: "bg-primary", headerColor: "text-primary", dropColor: "ring-primary/40" },
+  { id: "blocked", label: "Em Impedimento", icon: Ban, dotColor: "bg-red-500", headerColor: "text-red-400", dropColor: "ring-red-500/40" },
+  { id: "review", label: "Em Validação Interna", icon: Eye, dotColor: "bg-amber-500", headerColor: "text-amber-400", dropColor: "ring-amber-500/40" },
+  { id: "client_review", label: "Em Cliente", icon: UserCheck, dotColor: "bg-purple-500", headerColor: "text-purple-400", dropColor: "ring-purple-500/40" },
+  { id: "done", label: "Concluído", icon: CheckCircle2, dotColor: "bg-green-500", headerColor: "text-green-400", dropColor: "ring-green-500/40" },
 ];
 
 const priorityConfig = {
-  low:    { label: "Baixa", color: "bg-slate-500", flagColor: "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" },
-  medium: { label: "Média", color: "bg-primary",   flagColor: "bg-amber-500/20 text-amber-400 border border-amber-500/30" },
-  high:   { label: "Alta",  color: "bg-red-500",   flagColor: "bg-red-500/20 text-red-400 border border-red-500/30" },
+  low: { label: "Baixa", color: "bg-slate-500", flagColor: "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" },
+  medium: { label: "Média", color: "bg-primary", flagColor: "bg-amber-500/20 text-amber-400 border border-amber-500/30" },
+  high: { label: "Alta", color: "bg-red-500", flagColor: "bg-red-500/20 text-red-400 border border-red-500/30" },
 };
 
 export default function Tarefas() {
-  const { addTask, updateTask, deleteTask, isAdding, isUpdating } = useTaskMutations();
+  const { updateTask, deleteTask, isUpdating } = useTaskMutations();
+  const { user, profile } = useAuth();
+  const { mutateAsync: updateProfile } = useUpdateProfile(user?.id);
+  const getAvatarUrl = useProfileAvatarMap();
+  const teamOptions = useTeamOptions();
   const [searchParams] = useSearchParams();
   const [searchInput, setSearchInput] = useState("");
   const searchQuery = useDebounce(searchInput, 300);
@@ -162,18 +129,22 @@ export default function Tarefas() {
   const { data: allProjects = [] } = useAllProjects();
   const projects = allProjects;
   const getClient = (id: string) => clients.find((c) => c.id === id);
-  const [viewMode, setViewMode] = useState<ViewMode>("kanban");
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    (profile?.preferences?.task_view as ViewMode | undefined) ?? "kanban"
+  );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [createDialogDefaultStatus, setCreateDialogDefaultStatus] = useState<Task["status"]>("todo");
   const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [viewingTask, setViewingTask] = useState<Task | null>(null);
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
-  const [_defaultStatus, setDefaultStatus] = useState<Task["status"]>("todo");
 
   // Filtros
   const [filterPriority, setFilterPriority] = useState<string[]>([]);
   const [filterAssignees, setFilterAssignees] = useState<string[]>([]);
+  const [filterClientId, setFilterClientId] = useState<string>("");
   const [filterProjectId, setFilterProjectId] = useState<string>(() => searchParams.get("project") ?? "");
 
   // Sync URL param on mount (from navigate from Projetos)
@@ -181,6 +152,15 @@ export default function Tarefas() {
     const p = searchParams.get("project");
     if (p) setFilterProjectId(p);
   }, [searchParams]);
+
+  // Open specific task from notification deep-link (?task=<id>)
+  useEffect(() => {
+    const taskId = searchParams.get("task");
+    if (!taskId || tasks.length === 0) return;
+    const task = tasks.find((t) => t.id === taskId);
+    if (task) openViewDialog(task);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, tasks]);
 
   // Drag-and-drop
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
@@ -215,9 +195,15 @@ export default function Tarefas() {
     let result = tasks;
     if (filterPriority.length > 0) result = result.filter((t) => filterPriority.includes(t.priority));
     if (filterAssignees.length > 0) result = result.filter((t) => t.assignees.some((a) => filterAssignees.includes(a)));
+    if (filterClientId) result = result.filter((t) => t.clientId === filterClientId);
     if (filterProjectId) result = result.filter((t) => t.projectId === filterProjectId);
     return result;
-  }, [tasks, filterPriority, filterAssignees, filterProjectId]);
+  }, [tasks, filterPriority, filterAssignees, filterClientId, filterProjectId]);
+
+  const filterableProjects = useMemo(
+    () => filterClientId ? projects.filter((p) => p.clientId === filterClientId) : projects,
+    [filterClientId, projects],
+  );
 
   const availableProjects = useMemo(
     () => formData.clientId ? projects.filter((p) => p.clientId === formData.clientId) : [],
@@ -225,10 +211,8 @@ export default function Tarefas() {
   );
 
   const openNewDialog = useCallback((status: Task["status"] = "todo") => {
-    setEditingTask(null);
-    setDefaultStatus(status);
-    setFormData({ title: "", description: "", clientId: "", projectId: "", assignees: [], status, priority: "medium", dueDate: "", bu: "kora-dev", blockedReason: "", estimatedHours: "" });
-    setIsDialogOpen(true);
+    setCreateDialogDefaultStatus(status);
+    setIsCreateDialogOpen(true);
   }, []);
 
   const openEditDialog = useCallback((task: Task) => {
@@ -303,38 +287,22 @@ export default function Tarefas() {
       toast.error("Preencha os campos obrigatórios");
       return;
     }
-    if (editingTask) {
-      updateTask(editingTask.id, {
-        title: formData.title,
-        description: formData.description,
-        clientId: formData.clientId,
-        projectId: formData.projectId || undefined,
-        assignees: formData.assignees,
-        status: formData.status,
-        priority: formData.priority,
-        dueDate: formData.dueDate,
-        bu: formData.bu ? [formData.bu] : undefined,
-        blockedReason: formData.status === "blocked" ? formData.blockedReason : undefined,
-        estimatedHours: formData.estimatedHours ? parseFloat(formData.estimatedHours) : undefined,
-      });
-    } else {
-      addTask({
-        clientId: formData.clientId,
-        projectId: formData.projectId || undefined,
-        title: formData.title,
-        description: formData.description,
-        assignees: formData.assignees,
-        status: formData.status,
-        priority: formData.priority,
-        dueDate: formData.dueDate || "A definir",
-        bu: formData.bu ? [formData.bu] : undefined,
-        blockedReason: formData.status === "blocked" ? formData.blockedReason : undefined,
-        clientApproved: false,
-        estimatedHours: formData.estimatedHours ? parseFloat(formData.estimatedHours) : undefined,
-      });
-    }
+    if (!editingTask) return;
+    updateTask(editingTask.id, {
+      title: formData.title,
+      description: formData.description,
+      clientId: formData.clientId,
+      projectId: formData.projectId || undefined,
+      assignees: formData.assignees,
+      status: formData.status,
+      priority: formData.priority,
+      dueDate: formData.dueDate,
+      bu: formData.bu ? [formData.bu] : undefined,
+      blockedReason: formData.status === "blocked" ? formData.blockedReason : undefined,
+      estimatedHours: formData.estimatedHours ? parseFloat(formData.estimatedHours) : undefined,
+    });
     setIsDialogOpen(false);
-  }, [formData, editingTask, updateTask, addTask]);
+  }, [formData, editingTask, updateTask]);
 
   const handleDelete = useCallback(() => {
     if (deletingTaskId) {
@@ -360,7 +328,7 @@ export default function Tarefas() {
     return (
       <div className="flex -space-x-2">
         {assignees.slice(0, 3).map((name, i) => (
-          <AssigneeAvatar key={i} name={name} size="sm" />
+          <UserAvatar key={i} name={name} src={getAvatarUrl(name)} size="sm" />
         ))}
         {assignees.length > 3 && (
           <div className="w-6 h-6 rounded-full bg-muted border-2 border-card flex items-center justify-center">
@@ -376,7 +344,7 @@ export default function Tarefas() {
     const deadline = getDeadlineStatus(task.dueDate, task.status);
     const isOverdue = deadline.status === "overdue";
     const isAtRisk = deadline.status === "at_risk";
-    
+
     return (
       <div className={cn("flex items-center gap-1 text-xs", deadline.color)}>
         {isOverdue && <AlertTriangle className="w-3 h-3" />}
@@ -421,28 +389,46 @@ export default function Tarefas() {
               </button>
             ))}
           </div>
+          {/* Client filter */}
+          {clients.length > 0 && (
+            <select
+              value={filterClientId}
+              onChange={(e) => { setFilterClientId(e.target.value); setFilterProjectId(""); }}
+              className="h-9 px-3 rounded-lg bg-input border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              <option value="">Todos os clientes</option>
+              {clients.map((c) => <option key={c.id} value={c.id}>{c.company}</option>)}
+            </select>
+          )}
           {/* Project filter */}
-          {projects.length > 0 && (
+          {filterableProjects.length > 0 && (
             <select
               value={filterProjectId}
               onChange={(e) => setFilterProjectId(e.target.value)}
               className="h-9 px-3 rounded-lg bg-input border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
               <option value="">Todos os projetos</option>
-              {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              {filterableProjects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
           )}
           {/* Clear filters */}
-          {(filterPriority.length > 0 || filterAssignees.length > 0 || filterProjectId) && (
+          {(filterPriority.length > 0 || filterAssignees.length > 0 || filterClientId || filterProjectId) && (
             <button
-              onClick={() => { setFilterPriority([]); setFilterAssignees([]); setFilterProjectId(""); }}
+              onClick={() => { setFilterPriority([]); setFilterAssignees([]); setFilterClientId(""); setFilterProjectId(""); }}
               className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               <XIcon className="w-3.5 h-3.5" />
               Limpar filtros
             </button>
           )}
-          <ViewModeToggle modes={["kanban", "list", "grid"]} currentMode={viewMode} onChange={setViewMode} />
+          <ViewModeToggle
+            modes={["kanban", "list", "grid"]}
+            currentMode={viewMode}
+            onChange={(mode) => {
+              setViewMode(mode);
+              updateProfile({ preferences: { ...profile?.preferences, task_view: mode } }).catch(() => {});
+            }}
+          />
         </div>
 
         {/* Kanban View */}
@@ -570,12 +556,12 @@ export default function Tarefas() {
                     </td>
                     <td className="px-6 py-4">
                       <span className={cn("px-2.5 py-1 rounded-full text-xs font-medium",
-                        task.status === "done"          ? "bg-green-500/10 text-green-500" :
-                        task.status === "in_progress"   ? "bg-primary/10 text-primary" :
-                        task.status === "review"        ? "bg-amber-500/10 text-amber-500" :
-                        task.status === "blocked"       ? "bg-red-500/10 text-red-400" :
-                        task.status === "client_review" ? "bg-purple-500/10 text-purple-400" :
-                        "bg-muted text-muted-foreground"
+                        task.status === "done" ? "bg-green-500/10 text-green-500" :
+                          task.status === "in_progress" ? "bg-primary/10 text-primary" :
+                            task.status === "review" ? "bg-amber-500/10 text-amber-500" :
+                              task.status === "blocked" ? "bg-red-500/10 text-red-400" :
+                                task.status === "client_review" ? "bg-purple-500/10 text-purple-400" :
+                                  "bg-muted text-muted-foreground"
                       )}>
                         {statusColumns.find(s => s.id === task.status)?.label}
                       </span>
@@ -635,11 +621,18 @@ export default function Tarefas() {
         )}
       </div>
 
-      {/* Add/Edit Dialog */}
+      {/* Create Task Dialog */}
+      <CreateTaskDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        defaultStatus={createDialogDefaultStatus}
+      />
+
+      {/* Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="bg-card border-border sm:max-w-lg" aria-describedby={undefined}>
           <DialogHeader>
-            <DialogTitle className="text-foreground">{editingTask ? "Editar Tarefa" : "Nova Tarefa"}</DialogTitle>
+            <DialogTitle className="text-foreground">Editar Tarefa</DialogTitle>
           </DialogHeader>
           <DialogBody className="space-y-4 py-4">
             <div className="space-y-2">
@@ -712,6 +705,11 @@ export default function Tarefas() {
                 onChange={(value) => setFormData({ ...formData, dueDate: value })}
                 placeholder="Selecione o prazo"
               />
+              {formData.dueDate && (() => {
+                const ds = getDeadlineStatus(formData.dueDate, formData.status);
+                if (ds.daysRemaining === null) return null;
+                return <p className={cn("text-xs", ds.color)}>{ds.label}</p>;
+              })()}
             </div>
             <div className="space-y-2">
               <Label htmlFor="estimatedHours">Horas Estimadas</Label>
@@ -731,7 +729,7 @@ export default function Tarefas() {
             <div className="space-y-2">
               <Label>Responsáveis</Label>
               <MultiSelect
-                options={TEAM_OPTIONS}
+                options={teamOptions}
                 value={formData.assignees}
                 onChange={(value) => setFormData({ ...formData, assignees: value })}
                 placeholder="Adicionar responsável"
@@ -750,7 +748,7 @@ export default function Tarefas() {
           </DialogBody>
           <DialogFooter>
             <button onClick={() => setIsDialogOpen(false)} className="px-4 py-2 rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-colors">Cancelar</button>
-            <button onClick={handleSave} disabled={isAdding || isUpdating} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Salvar</button>
+            <button onClick={handleSave} disabled={isUpdating} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Salvar</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

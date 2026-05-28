@@ -1,5 +1,6 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   Plus, Search, Mail, Phone, Calendar, Edit,
@@ -53,6 +54,7 @@ const interactionTypeConfig = {
 };
 
 export default function ClientesAtivos() {
+  const [searchParams] = useSearchParams();
   const { data: clients = [] } = useAllClients();
   const { data: projects = [] } = useAllProjects();
   const { data: contracts = [] } = useAllContracts();
@@ -64,8 +66,17 @@ export default function ClientesAtivos() {
   const getTasksByClient = (clientId: string) => tasks.filter(t => t.clientId === clientId);
   const getTasksByProject = (projectId: string) => tasks.filter(t => t.projectId === projectId);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedHead, setSelectedHead] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+
+  // Open specific client from notification deep-link (?client=<id>)
+  useEffect(() => {
+    const clientId = searchParams.get("client");
+    if (!clientId || clients.length === 0) return;
+    const exists = clients.find((c) => c.id === clientId);
+    if (exists) setSelectedClientId(clientId);
+  }, [searchParams, clients]);
   const [ganttProject, setGanttProject] = useState<Project | null>(null);
   const [showAnniversaryDialog, setShowAnniversaryDialog] = useState(false);
   const [isInteractionDialogOpen, setIsInteractionDialogOpen] = useState(false);
@@ -81,13 +92,19 @@ export default function ClientesAtivos() {
   // Filter only active clients (stage === "cliente")
   const activeClients = clients.filter((client) => client.stage === "cliente");
 
+  const availableHeads = [...new Set(
+    activeClients.map((c) => c.head).filter((h): h is string => !!h)
+  )].sort();
+
   const filteredClients = activeClients.filter((client) => {
-    return client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const matchesSearch = client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       client.company.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesHead = !selectedHead || client.head === selectedHead;
+    return matchesSearch && matchesHead;
   });
 
   const selectedClient = selectedClientId ? clients.find(c => c.id === selectedClientId) : null;
-  const clientInteractions = selectedClientId 
+  const clientInteractions = selectedClientId
     ? interactions.filter(i => i.clientId === selectedClientId).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     : [];
   const clientProjects = selectedClientId ? getProjectsByClient(selectedClientId) : [];
@@ -155,7 +172,7 @@ export default function ClientesAtivos() {
   const calculateContractAnniversary = (clientId: string): string | null => {
     const contracts = getContractsByClient(clientId);
     if (contracts.length === 0) return null;
-    
+
     const signedContract = contracts.find(c => c.signedAt);
     if (signedContract?.signedAt) {
       return signedContract.signedAt;
@@ -167,11 +184,11 @@ export default function ClientesAtivos() {
     const today = new Date();
     const anniversary = new Date(anniversaryDate);
     anniversary.setFullYear(today.getFullYear());
-    
+
     if (anniversary < today) {
       anniversary.setFullYear(today.getFullYear() + 1);
     }
-    
+
     const diffTime = anniversary.getTime() - today.getTime();
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
@@ -238,7 +255,7 @@ export default function ClientesAtivos() {
             </CardContent>
           </Card>
 
-          <Card 
+          <Card
             className="bg-gradient-to-br from-amber-500/5 to-amber-500/10 border-amber-500/20 cursor-pointer hover:shadow-md transition-all hover:scale-[1.02]"
             onClick={() => setShowAnniversaryDialog(true)}
           >
@@ -276,6 +293,21 @@ export default function ClientesAtivos() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input type="text" placeholder="Buscar clientes..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-9 pl-10 pr-4 rounded-lg bg-input border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50" />
           </div>
+          {availableHeads.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-foreground">Head:</span>
+              <select
+                value={selectedHead || ""}
+                onChange={(e) => setSelectedHead(e.target.value || null)}
+                className="px-3 py-2 rounded-lg bg-input border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+              >
+                <option value="">Todos</option>
+                {availableHeads.map((head) => (
+                  <option key={head} value={head}>{head}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <ViewModeToggle modes={["grid", "list"]} currentMode={viewMode} onChange={setViewMode} />
         </div>
 
@@ -290,10 +322,10 @@ export default function ClientesAtivos() {
                 {filteredClients.map((client) => {
                   const anniversary = calculateContractAnniversary(client.id);
                   const daysUntil = anniversary ? getDaysUntilAnniversary(anniversary) : null;
-                  
+
                   return (
-                    <Card 
-                      key={client.id} 
+                    <Card
+                      key={client.id}
                       className={cn(
                         "cursor-pointer transition-all hover:shadow-medium",
                         selectedClientId === client.id && "ring-2 ring-primary"
@@ -316,7 +348,7 @@ export default function ClientesAtivos() {
                             </Badge>
                           )}
                         </div>
-                        
+
                         <div className="space-y-2 text-sm">
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <Mail className="w-4 h-4" />
@@ -449,7 +481,7 @@ export default function ClientesAtivos() {
                         <div className="relative space-y-6">
                           {/* Timeline line */}
                           <div className="absolute left-5 top-2 bottom-2 w-px bg-border" />
-                          
+
                           {clientInteractions.length === 0 ? (
                             <div className="text-center py-8">
                               <MessageSquare className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
@@ -462,7 +494,7 @@ export default function ClientesAtivos() {
                             clientInteractions.map((interaction) => {
                               const config = interactionTypeConfig[interaction.type];
                               const Icon = config.icon;
-                              
+
                               return (
                                 <div key={interaction.id} className="relative flex gap-4 pl-2">
                                   <div className={cn("w-8 h-8 rounded-full flex items-center justify-center z-10 border-2 border-background", config.color)}>
@@ -530,13 +562,13 @@ export default function ClientesAtivos() {
                           {clientTasks.map((task) => {
                             const StatusIcon = task.status === "done" ? CheckSquare : (task.status === "in_progress" ? Clock : (task.status === "review" ? AlertCircle : Circle));
                             const project = clientProjects.find(p => p.id === task.projectId);
-                            
+
                             return (
                               <div key={task.id} className="flex items-start gap-3 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-all">
                                 <div className={cn(
                                   "w-2 h-2 rounded-full mt-2",
-                                  task.priority === "high" ? "bg-red-500" : 
-                                  task.priority === "medium" ? "bg-amber-500" : "bg-green-500"
+                                  task.priority === "high" ? "bg-red-500" :
+                                    task.priority === "medium" ? "bg-amber-500" : "bg-green-500"
                                 )} />
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center justify-between gap-2 mb-1">
@@ -545,14 +577,14 @@ export default function ClientesAtivos() {
                                     </p>
                                     <Badge className={cn(
                                       task.status === "done" ? "bg-green-500/10 text-green-500" :
-                                      task.status === "in_progress" ? "bg-primary/10 text-primary" :
-                                      task.status === "review" ? "bg-amber-500/10 text-amber-500" :
-                                      "bg-slate-500/10 text-slate-500"
+                                        task.status === "in_progress" ? "bg-primary/10 text-primary" :
+                                          task.status === "review" ? "bg-amber-500/10 text-amber-500" :
+                                            "bg-slate-500/10 text-slate-500"
                                     )}>
                                       <StatusIcon className="w-3 h-3 mr-1" />
-                                      {task.status === "todo" ? "A Fazer" : 
-                                       task.status === "in_progress" ? "Em Progresso" :
-                                       task.status === "review" ? "Em Revisão" : "Concluído"}
+                                      {task.status === "todo" ? "Backlog" :
+                                        task.status === "in_progress" ? "Em Andamento" :
+                                          task.status === "review" ? "Em Validação Interna" : "Concluído"}
                                     </Badge>
                                   </div>
                                   {task.description && (
@@ -601,7 +633,7 @@ export default function ClientesAtivos() {
                               onClick={() => setGanttProject(null)}
                               className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
                             >
-                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m15 18-6-6 6-6"/></svg>
+                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m15 18-6-6 6-6" /></svg>
                               Projetos
                             </button>
                             <span className="text-muted-foreground">/</span>
@@ -651,7 +683,7 @@ export default function ClientesAtivos() {
                                 </div>
                                 <div className="flex items-center gap-2 flex-shrink-0 ml-3">
                                   <span className="text-[10px] text-muted-foreground">{project.dueDate}</span>
-                                  <svg className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 18 6-6-6-6"/></svg>
+                                  <svg className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 18 6-6-6-6" /></svg>
                                 </div>
                               </button>
                             );
@@ -817,7 +849,7 @@ export default function ClientesAtivos() {
             ) : (
               <div className="space-y-3">
                 {upcomingBirthdays.map(({ client, daysUntil }) => (
-                  <div 
+                  <div
                     key={client.id}
                     className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
                     onClick={() => {

@@ -245,6 +245,10 @@ export interface KnowledgeItem {
   hasPassword?: boolean;
   url?: string;
   tags: string[];
+  storagePath?: string;
+  fileName?: string;
+  mimeType?: string;
+  fileSize?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -262,7 +266,7 @@ export type LogSeverity = 'info' | 'warning' | 'error' | 'critical';
 
 export interface ClientIntegration {
   id: string;
-  client_id: string | 'koraflow_internal'; // Permite ID especial para Koraflow
+  client_id: string;
   integration_type: IntegrationType;
   status: IntegrationStatus;
   display_name?: string;
@@ -370,6 +374,77 @@ export interface Service {
   recurrencePriceBargain?: string;
   installmentsMax?: number;
   status: "ativo" | "inativo";
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ─── Internal Workspace ───────────────────────────────────────────────────────
+
+export interface InternalWorkspace {
+  id: string;
+  name: string;
+  slug?: string;
+  logoUrl?: string;
+  description?: string;
+  ownerUserId?: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InternalCredential {
+  id: string;
+  workspaceId: string;
+  title: string;
+  username?: string;
+  /** Never populated from list queries — fetched on demand via edge function */
+  password?: string;
+  hasPassword?: boolean;
+  url?: string;
+  notes?: string;
+  category?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InternalInsight {
+  id: string;
+  workspaceId: string;
+  title: string;
+  content?: string;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type InternalTaskStatus = 'todo' | 'in_progress' | 'review' | 'done' | 'blocked';
+export type InternalTaskPriority = 'low' | 'medium' | 'high';
+
+export interface InternalTask {
+  id: string;
+  workspaceId: string;
+  title: string;
+  description?: string;
+  status: InternalTaskStatus;
+  priority: InternalTaskPriority;
+  assignedTo?: string;
+  dueDate?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InternalDocument {
+  id: string;
+  workspaceId: string;
+  title: string;
+  content?: string;
+  category?: string;
+  docType?: string;
+  storagePath?: string;
+  fileName?: string;
+  mimeType?: string;
+  fileSize?: number;
+  url?: string;
   createdAt: string;
   updatedAt: string;
 }

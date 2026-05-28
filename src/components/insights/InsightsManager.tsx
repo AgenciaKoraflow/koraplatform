@@ -15,8 +15,12 @@ type ViewState =
   | { type: "canvas"; board: InsightsBoard }
   | { type: "document"; board: InsightsBoard };
 
-export function InsightsManager() {
-  const { boards, isLoading, createBoard, updateBoard, deleteBoard } = useInsightsBoards();
+interface Props {
+  source: string;
+}
+
+export function InsightsManager({ source }: Props) {
+  const { boards, isLoading, createBoard, updateBoard, deleteBoard } = useInsightsBoards(source);
   const [viewState, setViewState] = useState<ViewState>({ type: "list" });
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);

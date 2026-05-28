@@ -1,4 +1,4 @@
-import { Client, Project, Task, Contract, KnowledgeItem, SupportTicket, Service, TaskSubtask, TaskComment, TaskAttachment, TaskTimeEntry } from "@/types/data";
+import { Client, Project, Task, Contract, KnowledgeItem, SupportTicket, Service, TaskSubtask, TaskComment, TaskAttachment, TaskTimeEntry, InternalWorkspace, InternalCredential, InternalInsight, InternalTask, InternalDocument } from "@/types/data";
 import { parseCurrencyToNumber } from "@/lib/currency";
 import type { BU } from "@/types/bu";
 import type {
@@ -13,6 +13,11 @@ import type {
   DbTaskCommentRow,
   DbTaskAttachmentRow,
   DbTaskTimeEntryRow,
+  DbInternalWorkspaceRow,
+  DbInternalCredentialRow,
+  DbInternalInsightRow,
+  DbInternalTaskRow,
+  DbInternalDocumentRow,
 } from "@/types/db";
 
 const VALID_BUS = new Set(["kora-agents", "kora-dev", "kora-studio", "kora-corp"]);
@@ -276,6 +281,10 @@ export function mapDbKnowledge(db: DbKnowledgeItemRow): KnowledgeItem {
     hasPassword: Boolean(db.has_password),
     url: db.url ?? undefined,
     tags: db.tags ?? [],
+    storagePath: db.storage_path ?? undefined,
+    fileName: db.file_name ?? undefined,
+    mimeType: db.mime_type ?? undefined,
+    fileSize: db.file_size ?? undefined,
     createdAt: db.created_at ? formatDate(db.created_at) : "",
     updatedAt: db.updated_at ? formatDate(db.updated_at) : "",
   };
@@ -321,5 +330,79 @@ export function mapDbService(db: DbServiceRow): Service {
     status: (db.status as Service["status"]) ?? "ativo",
     createdAt: db.created_at ? formatDate(db.created_at) : "",
     updatedAt: db.updated_at ? formatDate(db.updated_at) : "",
+  };
+}
+
+export function mapDbInternalWorkspace(db: DbInternalWorkspaceRow): InternalWorkspace {
+  return {
+    id: db.id,
+    name: db.name,
+    slug: db.slug ?? undefined,
+    logoUrl: db.logo_url ?? undefined,
+    description: db.description ?? undefined,
+    ownerUserId: db.owner_user_id ?? undefined,
+    active: db.active,
+    createdAt: db.created_at,
+    updatedAt: db.updated_at,
+  };
+}
+
+export function mapDbInternalCredential(db: DbInternalCredentialRow): InternalCredential {
+  return {
+    id: db.id,
+    workspaceId: db.workspace_id,
+    title: db.title ?? "",
+    username: db.username ?? undefined,
+    hasPassword: Boolean(db.has_password),
+    url: db.url ?? undefined,
+    notes: db.notes ?? undefined,
+    category: db.category ?? undefined,
+    createdAt: db.created_at,
+    updatedAt: db.updated_at,
+  };
+}
+
+export function mapDbInternalInsight(db: DbInternalInsightRow): InternalInsight {
+  return {
+    id: db.id,
+    workspaceId: db.workspace_id,
+    title: db.title ?? "",
+    content: db.content ?? undefined,
+    tags: db.tags ?? [],
+    createdAt: db.created_at,
+    updatedAt: db.updated_at,
+  };
+}
+
+export function mapDbInternalTask(db: DbInternalTaskRow): InternalTask {
+  return {
+    id: db.id,
+    workspaceId: db.workspace_id,
+    title: db.title ?? "",
+    description: db.description ?? undefined,
+    status: (db.status as InternalTask["status"]) ?? "todo",
+    priority: (db.priority as InternalTask["priority"]) ?? "medium",
+    assignedTo: db.assigned_to ?? undefined,
+    dueDate: db.due_date ?? undefined,
+    createdAt: db.created_at,
+    updatedAt: db.updated_at,
+  };
+}
+
+export function mapDbInternalDocument(db: DbInternalDocumentRow): InternalDocument {
+  return {
+    id: db.id,
+    workspaceId: db.workspace_id,
+    title: db.title ?? "",
+    content: db.content ?? undefined,
+    category: db.category ?? undefined,
+    docType: db.doc_type ?? undefined,
+    storagePath: db.storage_path ?? undefined,
+    fileName: db.file_name ?? undefined,
+    mimeType: db.mime_type ?? undefined,
+    fileSize: db.file_size ?? undefined,
+    url: db.url ?? undefined,
+    createdAt: db.created_at,
+    updatedAt: db.updated_at,
   };
 }

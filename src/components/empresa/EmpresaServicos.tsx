@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { Tag, Plus, Search, Package, DollarSign, RefreshCw, CreditCard, Eye } from "lucide-react";
 import { Edit, Trash2 } from "@/components/shared/ActionMenu";
-import { AppLayout } from "@/components/layout/AppLayout";
-import { PageHeader } from "@/components/shared/PageHeader";
 import { BUBadge } from "@/components/shared/BUBadge";
 import { BUSelect } from "@/components/shared/BUSelect";
 import { ActionMenu } from "@/components/shared/ActionMenu";
@@ -84,7 +82,7 @@ function hasRecurrence(billingType: Service["billingType"]) {
   return billingType === "recorrencia" || billingType === "combo";
 }
 
-export default function Servicos() {
+export function EmpresaServicos() {
   const [searchInput, setSearchInput] = useState("");
   const searchQuery = useDebounce(searchInput, 300);
   const [selectedBU, setSelectedBU] = useState<string>("");
@@ -188,20 +186,24 @@ export default function Servicos() {
   const isSaving = isAdding || isUpdating;
 
   return (
-    <AppLayout>
+    <>
       <div className="space-y-5 animate-fade-in">
-        <PageHeader
-          icon={Tag}
-          title="Serviços & Preços"
-          subtitle="Catálogo interno de serviços e tabela de preços por vertente"
-          kpi={{ label: "Total de serviços", value: total, icon: Package, accent: "primary" }}
-          actions={
-            <Button onClick={openCreate} className="gap-2">
-              <Plus className="w-4 h-4" />
-              Novo Serviço
-            </Button>
-          }
-        />
+        {/* Actions header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">Serviços & Preços</h2>
+            <p className="text-sm text-muted-foreground">
+              Catálogo interno de serviços e tabela de preços por vertente
+              {total > 0 && (
+                <span className="ml-2 font-medium text-foreground">{total} serviços</span>
+              )}
+            </p>
+          </div>
+          <Button onClick={openCreate} className="gap-2">
+            <Plus className="w-4 h-4" />
+            Novo Serviço
+          </Button>
+        </div>
 
         {/* Filtros */}
         <div className="flex items-center gap-3 flex-wrap">
@@ -222,9 +224,7 @@ export default function Servicos() {
             <SelectContent>
               <SelectItem value="all">Todas as vertentes</SelectItem>
               {BU_LIST.map((cfg) => (
-                <SelectItem key={cfg.id} value={cfg.id}>
-                  {cfg.label}
-                </SelectItem>
+                <SelectItem key={cfg.id} value={cfg.id}>{cfg.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -300,9 +300,7 @@ export default function Servicos() {
                       {service.priceInitial ?? "—"}
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-muted-foreground hidden lg:table-cell">
-                      {service.recurrencePriceInitial
-                        ? `${service.recurrencePriceInitial}/mês`
-                        : "—"}
+                      {service.recurrencePriceInitial ? `${service.recurrencePriceInitial}/mês` : "—"}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <Badge
@@ -319,11 +317,7 @@ export default function Servicos() {
                     <td className="px-2 py-3" onClick={(e) => e.stopPropagation()}>
                       <ActionMenu
                         items={[
-                          {
-                            label: "Editar",
-                            icon: Edit,
-                            onClick: () => openEdit(service),
-                          },
+                          { label: "Editar", icon: Edit, onClick: () => openEdit(service) },
                           {
                             label: "Excluir",
                             icon: Trash2,
@@ -376,7 +370,6 @@ export default function Servicos() {
 
           {viewingService && (
             <DialogBody className="space-y-4">
-              {/* Vertente + Tipo */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-lg border border-border bg-muted/30 px-3 py-2.5">
                   <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">Vertente</p>
@@ -388,7 +381,6 @@ export default function Servicos() {
                 </div>
               </div>
 
-              {/* Descrição */}
               {viewingService.description && (
                 <div className="rounded-lg border border-border bg-muted/30 px-3 py-2.5">
                   <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">Descrição</p>
@@ -396,7 +388,6 @@ export default function Servicos() {
                 </div>
               )}
 
-              {/* Preços de Setup */}
               {(viewingService.priceInitial || viewingService.priceBargain) && (
                 <div>
                   <div className="flex items-center gap-1.5 mb-2">
@@ -422,7 +413,6 @@ export default function Servicos() {
                 </div>
               )}
 
-              {/* Recorrência */}
               {(viewingService.recurrencePriceInitial || viewingService.recurrencePriceBargain) && (
                 <div>
                   <div className="flex items-center gap-1.5 mb-2">
@@ -433,20 +423,25 @@ export default function Servicos() {
                     {viewingService.recurrencePriceInitial && (
                       <div className="rounded-lg border border-border bg-muted/30 px-3 py-2.5">
                         <p className="text-[10px] text-muted-foreground mb-0.5">Recorrência Inicial</p>
-                        <p className="text-sm font-mono font-semibold text-foreground">{viewingService.recurrencePriceInitial}<span className="text-xs font-normal text-muted-foreground">/mês</span></p>
+                        <p className="text-sm font-mono font-semibold text-foreground">
+                          {viewingService.recurrencePriceInitial}
+                          <span className="text-xs font-normal text-muted-foreground">/mês</span>
+                        </p>
                       </div>
                     )}
                     {viewingService.recurrencePriceBargain && (
                       <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2.5">
                         <p className="text-[10px] text-amber-500/80 mb-0.5">Recorrência Barganha <span className="opacity-70">[Interno]</span></p>
-                        <p className="text-sm font-mono font-semibold text-amber-500">{viewingService.recurrencePriceBargain}<span className="text-xs font-normal text-amber-500/60">/mês</span></p>
+                        <p className="text-sm font-mono font-semibold text-amber-500">
+                          {viewingService.recurrencePriceBargain}
+                          <span className="text-xs font-normal text-amber-500/60">/mês</span>
+                        </p>
                       </div>
                     )}
                   </div>
                 </div>
               )}
 
-              {/* Parcelamento */}
               {viewingService.installmentsMax && (
                 <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2.5">
                   <CreditCard className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -487,7 +482,6 @@ export default function Servicos() {
           </DialogHeader>
 
           <DialogBody className="space-y-5">
-            {/* Nome */}
             <div className="space-y-1.5">
               <Label htmlFor="name">Nome do Serviço *</Label>
               <Input
@@ -499,7 +493,6 @@ export default function Servicos() {
               />
             </div>
 
-            {/* Vertente + Tipo */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Vertente *</Label>
@@ -529,7 +522,6 @@ export default function Servicos() {
               </div>
             </div>
 
-            {/* Categoria + Status */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="category">Categoria</Label>
@@ -560,7 +552,6 @@ export default function Servicos() {
               </div>
             </div>
 
-            {/* Descrição */}
             <div className="space-y-1.5">
               <Label htmlFor="description">Descrição</Label>
               <Textarea
@@ -575,7 +566,6 @@ export default function Servicos() {
 
             <Separator className="bg-border" />
 
-            {/* Preços de Setup */}
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
                 Preços de Setup / Valor Total
@@ -605,7 +595,6 @@ export default function Servicos() {
               </div>
             </div>
 
-            {/* Preços de Recorrência — exibidos apenas quando aplicável */}
             {hasRecurrence(formData.billingType) && (
               <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
@@ -637,7 +626,6 @@ export default function Servicos() {
               </div>
             )}
 
-            {/* Parcelamento */}
             <div className="space-y-1.5 max-w-[200px]">
               <Label htmlFor="installments">Parcelamento máximo (x vezes)</Label>
               <NumberInput
@@ -662,7 +650,6 @@ export default function Servicos() {
         </DialogContent>
       </Dialog>
 
-      {/* Confirm Delete */}
       <ConfirmDialog
         open={isDeleteOpen}
         onOpenChange={setIsDeleteOpen}
@@ -672,6 +659,6 @@ export default function Servicos() {
         onConfirm={handleDelete}
         variant="destructive"
       />
-    </AppLayout>
+    </>
   );
 }

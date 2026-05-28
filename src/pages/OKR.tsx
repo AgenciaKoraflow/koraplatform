@@ -50,10 +50,12 @@ export default function OKR() {
   const [updateFormData, setUpdateFormData] = useState({ value: 0, comment: "" });
 
   const resetForm = () => {
-    setFormData({ title: "", description: "", target: 100, current: 0, unit: "",
+    setFormData({
+      title: "", description: "", target: 100, current: 0, unit: "",
       status: "not_started", startDate: format(new Date(), "yyyy-MM-dd"),
       endDate: format(new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"),
-      priority: "medium", category: "revenue", bu: [] });
+      priority: "medium", category: "revenue", bu: []
+    });
     setEditingObjective(null);
   };
 
@@ -181,10 +183,12 @@ export default function OKR() {
 
   const handleEdit = (objective: OKRObjective) => {
     setEditingObjective(objective);
-    setFormData({ title: objective.title, description: objective.description || "",
+    setFormData({
+      title: objective.title, description: objective.description || "",
       target: objective.target, current: objective.current, unit: objective.unit,
       status: objective.status, startDate: objective.startDate, endDate: objective.endDate,
-      priority: objective.priority, category: objective.category, bu: objective.bu });
+      priority: objective.priority, category: objective.category, bu: objective.bu
+    });
     setIsDialogOpen(true);
   };
 
@@ -200,7 +204,7 @@ export default function OKR() {
   const filteredObjectives = useMemo(() => {
     return objectives.filter(obj => {
       const matchesSearch = obj.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           obj.description?.toLowerCase().includes(searchTerm.toLowerCase());
+        obj.description?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = filterStatus === "all" || obj.status === filterStatus;
       const matchesCategory = filterCategory === "all" || obj.category === filterCategory;
       const matchesBU = filterBU.length === 0 || (Array.isArray(obj.bu) ? obj.bu.some(bu => filterBU.includes(bu)) : filterBU.includes(obj.bu));
@@ -255,7 +259,7 @@ export default function OKR() {
             <CheckCircle2 className="h-4 w-4 text-emerald-600" /></CardHeader>
             <CardContent><div className={cn(typographyClasses.statValue, "text-emerald-600")}>{stats.completed}</div></CardContent></Card>
           <Card className="bg-card border-border/50"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-semibold text-foreground/70 uppercase tracking-wide">Em Progresso</CardTitle>
+            <CardTitle className="text-xs font-semibold text-foreground/70 uppercase tracking-wide">Em Andamento</CardTitle>
             <TrendingUp className="h-4 w-4 text-primary600" /></CardHeader>
             <CardContent><div className={cn(typographyClasses.statValue, "text-primary600")}>{stats.inProgress}</div></CardContent></Card>
           <Card className="bg-card border-border/50"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -302,67 +306,67 @@ export default function OKR() {
           <CardTitle className={typographyClasses.subsectionTitle}>OKRs Ativos</CardTitle>
           <CardDescription className={typographyClasses.description}>Metas e objetivos em andamento</CardDescription>
         </CardHeader><CardContent>
-          <div className="space-y-6">
-            {filteredObjectives.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <Target className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p className="text-foreground/70">Nenhum OKR encontrado</p>
-                <p className="text-sm text-muted-foreground">Crie seu primeiro OKR para começar</p>
-              </div>) : (filteredObjectives.map((objective) => (
-                <div key={objective.id} className="border border-border/50 rounded-lg p-6 space-y-4 hover:shadow-lg hover:border-primary/50 transition-all bg-card/50 cursor-pointer" onClick={() => handleViewObjective(objective)}>
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-base font-semibold text-foreground">{objective.title}</h3>
-                        <Badge variant="outline" className={cn(STATUS_COLORS[objective.status], "border-border/50", objective.status === "not_started" && "text-white")}>
-                          {getStatusIcon(objective.status)}<span className="ml-1">{STATUS_LABELS[objective.status]}</span></Badge>
-                        <Badge variant="secondary" className={cn(PRIORITY_COLORS[objective.priority], "border-border/50")}>
-                          <Flag className="w-3 h-3 mr-1" />{PRIORITY_LABELS[objective.priority]}</Badge>
-                        <Badge variant="outline" className="border-border/50 bg-muted/50 text-foreground/80">
-                          <Flag className="w-3 h-3 mr-1" />{CATEGORY_LABELS[objective.category]}</Badge>
-                      </div>
-                      {objective.description && <p className={cn(typographyClasses.description, "mb-3")}>{objective.description}</p>}
-                      <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1"><Calendar className="w-4 h-4 text-slate-500" />{formatDateSafely(objective.startDate)} - {formatDateSafely(objective.endDate)}</span>
-                        <span className="flex items-center gap-1"><Target className="w-4 h-4 text-slate-500" />Meta: {objective.current.toLocaleString()} / {objective.target.toLocaleString()} {objective.unit}</span>
-                        <span className="flex items-center gap-1"><BarChart3 className="w-4 h-4 text-slate-500" />Progresso: {objective.progress}%</span>
-                        <div className="flex items-center gap-1 flex-wrap">
-                          <Flag className="w-4 h-4 text-slate-500" />
-                          <span>BUs: {Array.isArray(objective.bu) ? objective.bu.join(", ") : objective.bu}</span>
+            <div className="space-y-6">
+              {filteredObjectives.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Target className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-foreground/70">Nenhum OKR encontrado</p>
+                  <p className="text-sm text-muted-foreground">Crie seu primeiro OKR para começar</p>
+                </div>) : (filteredObjectives.map((objective) => (
+                  <div key={objective.id} className="border border-border/50 rounded-lg p-6 space-y-4 hover:shadow-lg hover:border-primary/50 transition-all bg-card/50 cursor-pointer" onClick={() => handleViewObjective(objective)}>
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="text-base font-semibold text-foreground">{objective.title}</h3>
+                          <Badge variant="outline" className={cn(STATUS_COLORS[objective.status], "border-border/50", objective.status === "not_started" && "text-white")}>
+                            {getStatusIcon(objective.status)}<span className="ml-1">{STATUS_LABELS[objective.status]}</span></Badge>
+                          <Badge variant="secondary" className={cn(PRIORITY_COLORS[objective.priority], "border-border/50")}>
+                            <Flag className="w-3 h-3 mr-1" />{PRIORITY_LABELS[objective.priority]}</Badge>
+                          <Badge variant="outline" className="border-border/50 bg-muted/50 text-foreground/80">
+                            <Flag className="w-3 h-3 mr-1" />{CATEGORY_LABELS[objective.category]}</Badge>
+                        </div>
+                        {objective.description && <p className={cn(typographyClasses.description, "mb-3")}>{objective.description}</p>}
+                        <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1"><Calendar className="w-4 h-4 text-slate-500" />{formatDateSafely(objective.startDate)} - {formatDateSafely(objective.endDate)}</span>
+                          <span className="flex items-center gap-1"><Target className="w-4 h-4 text-slate-500" />Meta: {objective.current.toLocaleString()} / {objective.target.toLocaleString()} {objective.unit}</span>
+                          <span className="flex items-center gap-1"><BarChart3 className="w-4 h-4 text-slate-500" />Progresso: {objective.progress}%</span>
+                          <div className="flex items-center gap-1 flex-wrap">
+                            <Flag className="w-4 h-4 text-slate-500" />
+                            <span>BUs: {Array.isArray(objective.bu) ? objective.bu.join(", ") : objective.bu}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                      <Button variant="outline" size="sm" onClick={() => { setSelectedObjective(objective); setUpdateFormData({ value: objective.current, comment: "" }); setIsUpdateDialogOpen(true); }}
-                        className="border-border/50 text-foreground hover:bg-muted/50"><History className="w-4 h-4 mr-1" />Atualizar</Button>
-                      <ActionMenu items={[
-                        { label: "Editar", icon: Edit, onClick: () => handleEdit(objective), variant: "default" },
-                        { label: "Excluir", icon: Trash2, onClick: () => setDeleteId(objective.id), variant: "destructive" }]} />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm"><span className="text-muted-foreground">Progresso Geral</span>
-                      <span className={cn("font-medium", objective.progress > 100 ? "text-emerald-600" : "text-foreground")}>{objective.progress}%{objective.progress > 100 && " ✓ Meta superada"}</span></div>
-                    <Progress value={Math.min(100, objective.progress)} className={cn("h-3", objective.progress > 100 && "[&>div]:bg-emerald-500")} />
-                    <div className="flex justify-between text-xs text-muted-foreground"><span>0%</span><span>{objective.progress > 100 ? <span className="text-emerald-600 font-medium">{objective.progress}%</span> : "100%"}</span></div>
-                  </div>
-                  {updates.filter(u => u.objectiveId === objective.id).slice(0, 3).length > 0 && (
-                    <div className="border-t border-border/50 pt-4">
-                      <h4 className="text-sm font-medium mb-2 flex items-center gap-1 text-foreground">
-                        <History className="w-4 h-4 text-slate-500" />Ultimas Atualizacoes</h4>
-                      <div className="space-y-2">
-                        {updates.filter(u => u.objectiveId === objective.id).slice(0, 3).map((update) => (
-                          <div key={update.id} className="flex items-center justify-between text-sm bg-muted/30 p-2 rounded border border-border/30">
-                            <div className="flex items-center gap-2"><span className="font-medium text-foreground">{update.value.toLocaleString()} {objective.unit}</span>
-                              <span className="text-muted-foreground">- {update.comment}</span></div>
-                            <span className="text-muted-foreground text-xs">por {update.updatedBy} em {formatDateSafely(update.date)}</span>
-                          </div>))}
+                      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                        <Button variant="outline" size="sm" onClick={() => { setSelectedObjective(objective); setUpdateFormData({ value: objective.current, comment: "" }); setIsUpdateDialogOpen(true); }}
+                          className="border-border/50 text-foreground hover:bg-muted/50"><History className="w-4 h-4 mr-1" />Atualizar</Button>
+                        <ActionMenu items={[
+                          { label: "Editar", icon: Edit, onClick: () => handleEdit(objective), variant: "default" },
+                          { label: "Excluir", icon: Trash2, onClick: () => setDeleteId(objective.id), variant: "destructive" }]} />
                       </div>
                     </div>
-                  )}
-                </div>)))}
-          </div>
-        </CardContent></Card>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm"><span className="text-muted-foreground">Progresso Geral</span>
+                        <span className={cn("font-medium", objective.progress > 100 ? "text-emerald-600" : "text-foreground")}>{objective.progress}%{objective.progress > 100 && " ✓ Meta superada"}</span></div>
+                      <Progress value={Math.min(100, objective.progress)} className={cn("h-3", objective.progress > 100 && "[&>div]:bg-emerald-500")} />
+                      <div className="flex justify-between text-xs text-muted-foreground"><span>0%</span><span>{objective.progress > 100 ? <span className="text-emerald-600 font-medium">{objective.progress}%</span> : "100%"}</span></div>
+                    </div>
+                    {updates.filter(u => u.objectiveId === objective.id).slice(0, 3).length > 0 && (
+                      <div className="border-t border-border/50 pt-4">
+                        <h4 className="text-sm font-medium mb-2 flex items-center gap-1 text-foreground">
+                          <History className="w-4 h-4 text-slate-500" />Ultimas Atualizacoes</h4>
+                        <div className="space-y-2">
+                          {updates.filter(u => u.objectiveId === objective.id).slice(0, 3).map((update) => (
+                            <div key={update.id} className="flex items-center justify-between text-sm bg-muted/30 p-2 rounded border border-border/30">
+                              <div className="flex items-center gap-2"><span className="font-medium text-foreground">{update.value.toLocaleString()} {objective.unit}</span>
+                                <span className="text-muted-foreground">- {update.comment}</span></div>
+                              <span className="text-muted-foreground text-xs">por {update.updatedBy} em {formatDateSafely(update.date)}</span>
+                            </div>))}
+                        </div>
+                      </div>
+                    )}
+                  </div>)))}
+            </div>
+          </CardContent></Card>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="max-w-2xl bg-card border-border">
@@ -370,46 +374,46 @@ export default function OKR() {
               <DialogDescription className={typographyClasses.description}>{editingObjective ? "Atualize as informacoes do seu objetivo" : "Defina um novo objetivo e metas para sua equipe"}</DialogDescription>
             </DialogHeader>
             <DialogBody>
-            <form id="okr-form" onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4"><div className="space-y-2">
+              <form id="okr-form" onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4"><div className="space-y-2">
                   <Label className={typographyClasses.label}>Titulo</Label>
                   <Input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     placeholder="Ex: Aumentar receita recorrente" required className="bg-background border-border text-foreground" /></div>
-                <div className="space-y-2"><Label className="text-foreground/90">Categoria</Label>
-                  <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v as OKRFormData["category"] })}>
-                    <SelectTrigger className="bg-background border-border text-foreground"><SelectValue /></SelectTrigger>
-                    <SelectContent className="bg-card border-border">
-                      {Object.entries(CATEGORY_LABELS).map(([key, label]) => (<SelectItem key={key} value={key} className="text-foreground">{label}</SelectItem>))}</SelectContent></Select></div></div>
-              <div className="space-y-2"><Label className="text-foreground/90">Descricao</Label>
-                <Textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Descreva o objetivo com mais detalhes..." rows={3} className="bg-background border-border text-foreground" /></div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="space-y-2"><Label className="text-foreground/90">Meta</Label>
-                  <NumberInput value={formData.target} onChange={(e) => setFormData({ ...formData, target: Number(e.target.value) })}
-                    required className="bg-background" /></div>
-                <div className="space-y-2"><Label className="text-foreground/90">Unidade</Label>
-                  <Input value={formData.unit} onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                    placeholder="R$, %, dias..." className="bg-background border-border text-foreground" /></div>
-                <div className="space-y-2"><Label className="text-foreground/90">Prioridade</Label>
-                  <Select value={formData.priority} onValueChange={(v) => setFormData({ ...formData, priority: v as OKRFormData["priority"] })}>
-                    <SelectTrigger className="bg-background border-border text-foreground"><SelectValue /></SelectTrigger>
-                    <SelectContent className="bg-card border-border">
-                      {Object.entries(PRIORITY_LABELS).map(([key, label]) => (<SelectItem key={key} value={key} className="text-foreground">{label}</SelectItem>))}</SelectContent></Select></div>
-                <BUMultiSelect
-                  value={formData.bu}
-                  onChange={(bus) => setFormData({ ...formData, bu: bus })}
-                />
+                  <div className="space-y-2"><Label className="text-foreground/90">Categoria</Label>
+                    <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v as OKRFormData["category"] })}>
+                      <SelectTrigger className="bg-background border-border text-foreground"><SelectValue /></SelectTrigger>
+                      <SelectContent className="bg-card border-border">
+                        {Object.entries(CATEGORY_LABELS).map(([key, label]) => (<SelectItem key={key} value={key} className="text-foreground">{label}</SelectItem>))}</SelectContent></Select></div></div>
+                <div className="space-y-2"><Label className="text-foreground/90">Descricao</Label>
+                  <Textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Descreva o objetivo com mais detalhes..." rows={3} className="bg-background border-border text-foreground" /></div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="space-y-2"><Label className="text-foreground/90">Meta</Label>
+                    <NumberInput value={formData.target} onChange={(e) => setFormData({ ...formData, target: Number(e.target.value) })}
+                      required className="bg-background" /></div>
+                  <div className="space-y-2"><Label className="text-foreground/90">Unidade</Label>
+                    <Input value={formData.unit} onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                      placeholder="R$, %, dias..." className="bg-background border-border text-foreground" /></div>
+                  <div className="space-y-2"><Label className="text-foreground/90">Prioridade</Label>
+                    <Select value={formData.priority} onValueChange={(v) => setFormData({ ...formData, priority: v as OKRFormData["priority"] })}>
+                      <SelectTrigger className="bg-background border-border text-foreground"><SelectValue /></SelectTrigger>
+                      <SelectContent className="bg-card border-border">
+                        {Object.entries(PRIORITY_LABELS).map(([key, label]) => (<SelectItem key={key} value={key} className="text-foreground">{label}</SelectItem>))}</SelectContent></Select></div>
+                  <BUMultiSelect
+                    value={formData.bu}
+                    onChange={(bus) => setFormData({ ...formData, bu: bus })}
+                  />
                 </div>
-              <div className="grid grid-cols-2 gap-4"><div className="space-y-2">
+                <div className="grid grid-cols-2 gap-4"><div className="space-y-2">
                   <Label className={typographyClasses.label}>Data de Inicio</Label>
                   <DatePicker value={formData.startDate} onChange={(date) => setFormData({ ...formData, startDate: date })} /></div>
-                <div className="space-y-2"><Label className="text-foreground/90">Data de Termino</Label>
-                  <DatePicker value={formData.endDate} onChange={(date) => setFormData({ ...formData, endDate: date })} /></div></div>
-            </form>
+                  <div className="space-y-2"><Label className="text-foreground/90">Data de Termino</Label>
+                    <DatePicker value={formData.endDate} onChange={(date) => setFormData({ ...formData, endDate: date })} /></div></div>
+              </form>
             </DialogBody>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => { setIsDialogOpen(false); resetForm(); }}
-                  className="border-border/50 text-foreground hover:bg-muted/50">Cancelar</Button>
+                className="border-border/50 text-foreground hover:bg-muted/50">Cancelar</Button>
               <Button form="okr-form" type="submit" disabled={isSaving}>{isSaving ? "Salvando..." : (editingObjective ? "Atualizar" : "Criar")}</Button>
             </DialogFooter>
           </DialogContent>
@@ -422,54 +426,54 @@ export default function OKR() {
             </DialogHeader>
             {selectedObjective && (
               <DialogBody>
-              <form id="update-form" onSubmit={handleAddUpdate} className="space-y-4">
-                <div className="bg-muted/30 p-4 rounded-lg border border-border/30">
-                  <h4 className={cn(typographyClasses.cardTitle, "mb-2")}>{selectedObjective.title}</h4>
-                  <div className={typographyClasses.statLabel}>Meta: {selectedObjective.current.toLocaleString()} / {selectedObjective.target.toLocaleString()} {selectedObjective.unit}</div>
-                  <Progress value={selectedObjective.progress} className="h-2 mt-2" /></div>
-                <div className="space-y-3">
-                  <Label className="text-foreground/90">Novo Valor</Label>
-                  <div className="flex items-center justify-center gap-4">
-                    <Button type="button" variant="outline" size="icon"
-                      onClick={() => setUpdateFormData(d => ({ ...d, value: d.value - 1 }))}
-                      className="h-11 w-11 rounded-xl border-2 shrink-0">
-                      <Minus className="h-5 w-5" />
-                    </Button>
-                    <div className="flex flex-col items-center gap-0.5 min-w-[120px]">
-                      <input
-                        type="number"
-                        value={updateFormData.value}
-                        onChange={(e) => setUpdateFormData({ ...updateFormData, value: Number(e.target.value) })}
-                        className="w-full text-center text-3xl font-bold bg-transparent border-none focus:outline-none text-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      />
-                      <span className="text-xs text-muted-foreground">{selectedObjective.unit}</span>
+                <form id="update-form" onSubmit={handleAddUpdate} className="space-y-4">
+                  <div className="bg-muted/30 p-4 rounded-lg border border-border/30">
+                    <h4 className={cn(typographyClasses.cardTitle, "mb-2")}>{selectedObjective.title}</h4>
+                    <div className={typographyClasses.statLabel}>Meta: {selectedObjective.current.toLocaleString()} / {selectedObjective.target.toLocaleString()} {selectedObjective.unit}</div>
+                    <Progress value={selectedObjective.progress} className="h-2 mt-2" /></div>
+                  <div className="space-y-3">
+                    <Label className="text-foreground/90">Novo Valor</Label>
+                    <div className="flex items-center justify-center gap-4">
+                      <Button type="button" variant="outline" size="icon"
+                        onClick={() => setUpdateFormData(d => ({ ...d, value: d.value - 1 }))}
+                        className="h-11 w-11 rounded-xl border-2 shrink-0">
+                        <Minus className="h-5 w-5" />
+                      </Button>
+                      <div className="flex flex-col items-center gap-0.5 min-w-[120px]">
+                        <input
+                          type="number"
+                          value={updateFormData.value}
+                          onChange={(e) => setUpdateFormData({ ...updateFormData, value: Number(e.target.value) })}
+                          className="w-full text-center text-3xl font-bold bg-transparent border-none focus:outline-none text-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                        <span className="text-xs text-muted-foreground">{selectedObjective.unit}</span>
+                      </div>
+                      <Button type="button" variant="outline" size="icon"
+                        onClick={() => setUpdateFormData(d => ({ ...d, value: d.value + 1 }))}
+                        className="h-11 w-11 rounded-xl border-2 shrink-0">
+                        <Plus className="h-5 w-5" />
+                      </Button>
                     </div>
-                    <Button type="button" variant="outline" size="icon"
-                      onClick={() => setUpdateFormData(d => ({ ...d, value: d.value + 1 }))}
-                      className="h-11 w-11 rounded-xl border-2 shrink-0">
-                      <Plus className="h-5 w-5" />
-                    </Button>
+                    <p className="text-center text-sm">
+                      {updateFormData.value !== selectedObjective.current ? (
+                        <span className={updateFormData.value > selectedObjective.current ? "text-green-600" : "text-red-500"}>
+                          {updateFormData.value > selectedObjective.current ? "+" : ""}{(updateFormData.value - selectedObjective.current).toLocaleString()} {selectedObjective.unit}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">Sem alteração</span>
+                      )}
+                      <span className="text-muted-foreground"> em relação ao atual ({selectedObjective.current.toLocaleString()})</span>
+                    </p>
                   </div>
-                  <p className="text-center text-sm">
-                    {updateFormData.value !== selectedObjective.current ? (
-                      <span className={updateFormData.value > selectedObjective.current ? "text-green-600" : "text-red-500"}>
-                        {updateFormData.value > selectedObjective.current ? "+" : ""}{(updateFormData.value - selectedObjective.current).toLocaleString()} {selectedObjective.unit}
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">Sem alteração</span>
-                    )}
-                    <span className="text-muted-foreground"> em relação ao atual ({selectedObjective.current.toLocaleString()})</span>
-                  </p>
-                </div>
-                <div className="space-y-2"><Label className="text-foreground/90">Comentario</Label>
-                  <Textarea value={updateFormData.comment} onChange={(e) => setUpdateFormData({ ...updateFormData, comment: e.target.value })}
-                    placeholder="Descreva o que foi feito..." rows={3} className="bg-background border-border text-foreground" /></div>
-              </form>
+                  <div className="space-y-2"><Label className="text-foreground/90">Comentario</Label>
+                    <Textarea value={updateFormData.comment} onChange={(e) => setUpdateFormData({ ...updateFormData, comment: e.target.value })}
+                      placeholder="Descreva o que foi feito..." rows={3} className="bg-background border-border text-foreground" /></div>
+                </form>
               </DialogBody>
             )}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => { setIsUpdateDialogOpen(false); setSelectedObjective(null); setUpdateFormData({ value: 0, comment: "" }); }}
-                  className="border-border/50 text-foreground hover:bg-muted/50">Cancelar</Button>
+                className="border-border/50 text-foreground hover:bg-muted/50">Cancelar</Button>
               <Button form="update-form" type="submit" disabled={isSaving}>{isSaving ? "Salvando..." : "Registrar Atualizacao"}</Button>
             </DialogFooter>
           </DialogContent>

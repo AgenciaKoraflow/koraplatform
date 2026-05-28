@@ -1,7 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
-  DollarSign,
   BarChart3,
   Filter,
   Activity,
@@ -12,11 +11,9 @@ import {
   BookOpen,
   HeadphonesIcon,
   LayoutDashboard,
-  Workflow,
   Target,
   Users,
-  Settings,
-  Tag,
+  Building2,
 } from "lucide-react";
 import { BU } from "@/types/bu";
 import {
@@ -47,11 +44,9 @@ const navigation: NavItem[] = [
   { name: "Sustentação", href: "/sustentacao", icon: HeadphonesIcon, bu: "kora-dev" },
   { name: "Observabilidade", href: "/observabilidade", icon: Activity, bu: "kora-dev", hiddenForObserver: true },
   { name: "Conhecimento", href: "/conhecimento", icon: BookOpen, bu: "kora-studio", hiddenForObserver: true },
-  { name: "Processos", href: "/processos", icon: Workflow, bu: "kora-corp", hiddenForObserver: true },
-  { name: "Financeiro", href: "/financeiro", icon: DollarSign, bu: "kora-corp", hiddenForObserver: true },
-  { name: "Serviços", href: "/servicos", icon: Tag, bu: "kora-corp", hiddenForObserver: true },
   { name: "Indicadores", href: "/indicadores", icon: BarChart3, bu: "kora-corp", hiddenForObserver: true },
   { name: "OKR", href: "/okr", icon: Target, bu: "kora-corp", hiddenForObserver: true },
+  { name: "Empresa", href: "/empresa", icon: Building2, bu: "kora-corp", hiddenForObserver: true },
 ];
 
 interface AppSidebarProps {
@@ -133,7 +128,6 @@ export function AppSidebar({ onNavigate, collapsed = false }: AppSidebarProps) {
 
               {[
                 { href: "/usuarios", label: "Usuários", Icon: Users },
-                { href: "/configuracoes", label: "Configurações", Icon: Settings },
               ].map(({ href, label, Icon }) => {
                 const isActive = location.pathname === href;
                 return (

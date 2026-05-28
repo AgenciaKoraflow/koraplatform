@@ -2,6 +2,7 @@ import { useState, useEffect, createContext, useContext, useCallback, ReactNode 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Profile } from '@/hooks/useProfile';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface User {
   id: string;
@@ -25,6 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const qc = useQueryClient();
+  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -69,6 +71,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return data;
     },
   });
+
+  // Sync theme from profile preference when profile loads
+  useEffect(() => {
+    const saved = profile?.preferences?.theme;
+    if (saved && saved !== theme) setTheme(saved);
+  // Only run when the profile first loads (not on every theme toggle)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.id]);
 
   const refreshProfile = useCallback(() => {
     qc.invalidateQueries({ queryKey: profileQueryKey });
