@@ -31,7 +31,7 @@ const MONTHS_PT = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set"
 // ─── status config ────────────────────────────────────────────────────────────
 
 const STATUS_CFG: Record<Task["status"], { label: string; bar: string; dot: string }> = {
-  todo: { label: "Backlog", bar: "bg-slate-400", dot: "bg-slate-400" },
+  todo: { label: "A Fazer", bar: "bg-slate-400", dot: "bg-slate-400" },
   in_progress: { label: "Em andamento", bar: "bg-blue-500", dot: "bg-blue-500" },
   review: { label: "Em Validação Interna", bar: "bg-amber-500", dot: "bg-amber-500" },
   done: { label: "Concluído", bar: "bg-emerald-500", dot: "bg-emerald-500" },

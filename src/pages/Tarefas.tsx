@@ -99,7 +99,7 @@ function getDeadlineStatus(dueDate: string, status: Task["status"]): {
 }
 
 const statusColumns = [
-  { id: "todo", label: "Backlog", icon: Circle, dotColor: "bg-slate-500", headerColor: "text-slate-400", dropColor: "ring-slate-500/40" },
+  { id: "todo", label: "A Fazer", icon: Circle, dotColor: "bg-slate-500", headerColor: "text-slate-400", dropColor: "ring-slate-500/40" },
   { id: "in_progress", label: "Em Andamento", icon: Clock, dotColor: "bg-primary", headerColor: "text-primary", dropColor: "ring-primary/40" },
   { id: "blocked", label: "Em Impedimento", icon: Ban, dotColor: "bg-red-500", headerColor: "text-red-400", dropColor: "ring-red-500/40" },
   { id: "review", label: "Em Validação Interna", icon: Eye, dotColor: "bg-amber-500", headerColor: "text-amber-400", dropColor: "ring-amber-500/40" },
@@ -426,7 +426,7 @@ export default function Tarefas() {
             currentMode={viewMode}
             onChange={(mode) => {
               setViewMode(mode);
-              updateProfile({ preferences: { ...profile?.preferences, task_view: mode } }).catch(() => {});
+              updateProfile({ preferences: { ...profile?.preferences, task_view: mode } }).catch(() => { });
             }}
           />
         </div>

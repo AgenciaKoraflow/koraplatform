@@ -582,7 +582,7 @@ export default function ClientesAtivos() {
                                             "bg-slate-500/10 text-slate-500"
                                     )}>
                                       <StatusIcon className="w-3 h-3 mr-1" />
-                                      {task.status === "todo" ? "Backlog" :
+                                      {task.status === "todo" ? "A Fazer" :
                                         task.status === "in_progress" ? "Em Andamento" :
                                           task.status === "review" ? "Em Validação Interna" : "Concluído"}
                                     </Badge>

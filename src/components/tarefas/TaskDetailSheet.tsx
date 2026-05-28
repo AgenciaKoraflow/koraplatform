@@ -40,7 +40,7 @@ import { SubtaskDetailDialog } from "./SubtaskDetailDialog";
 const BUCKET = "task-attachments";
 
 const statusConfig: Record<string, { label: string; icon: React.ElementType; color: string }> = {
-  todo: { label: "Backlog", icon: Circle, color: "text-slate-400" },
+  todo: { label: "A Fazer", icon: Circle, color: "text-slate-400" },
   in_progress: { label: "Em Andamento", icon: Clock, color: "text-primary" },
   blocked: { label: "Em Impedimento", icon: Ban, color: "text-red-400" },
   review: { label: "Em Validação Interna", icon: Eye, color: "text-amber-400" },

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { BookOpen, LayoutGrid, Key, FileText, Link2, Lightbulb } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,6 +10,8 @@ import { ConhecimentoLinks } from "@/components/conhecimento/ConhecimentoLinks";
 import { InsightsManager } from "@/components/insights/InsightsManager";
 
 export default function Conhecimento() {
+  const [activeTab, setActiveTab] = useState("geral");
+
   return (
     <AppLayout>
       <div className="space-y-6 animate-fade-in">
@@ -18,7 +21,7 @@ export default function Conhecimento() {
           subtitle="Senhas, documentos, links e insights dos clientes"
         />
 
-        <Tabs defaultValue="geral" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="bg-input border border-border flex-wrap h-auto gap-1">
             <TabsTrigger value="geral" className="gap-2">
               <LayoutGrid className="w-4 h-4" />
@@ -51,7 +54,7 @@ export default function Conhecimento() {
           </TabsContent>
 
           <TabsContent value="documentos" className="mt-6">
-            <ConhecimentoDocumentos />
+            <ConhecimentoDocumentos onSaved={() => setActiveTab("geral")} />
           </TabsContent>
 
           <TabsContent value="links" className="mt-6">

@@ -24,9 +24,11 @@ export default defineConfig(() => ({
           "vendor-query": ["@tanstack/react-query"],
           "vendor-supabase": ["@supabase/supabase-js"],
           "vendor-date": ["date-fns"],
+          "vendor-tiptap": ["@tiptap/react", "@tiptap/starter-kit", "@tiptap/extension-text-style", "@tiptap/extension-color", "@tiptap/extension-text-align", "@tiptap/extension-underline", "@tiptap/extension-highlight", "@tiptap/extension-link"],
+          "vendor-spreadsheet": ["@fortune-sheet/react", "@fortune-sheet/core"],
         },
       },
     },
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 800,
   },
 }));

@@ -285,6 +285,7 @@ export function mapDbKnowledge(db: DbKnowledgeItemRow): KnowledgeItem {
     fileName: db.file_name ?? undefined,
     mimeType: db.mime_type ?? undefined,
     fileSize: db.file_size ?? undefined,
+    docType: db.doc_type ?? undefined,
     createdAt: db.created_at ? formatDate(db.created_at) : "",
     updatedAt: db.updated_at ? formatDate(db.updated_at) : "",
   };

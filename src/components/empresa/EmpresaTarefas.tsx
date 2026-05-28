@@ -35,7 +35,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import type { InternalTask, InternalTaskStatus, InternalTaskPriority } from "@/types/data";
 
 const statusColumns = [
-  { id: "todo" as InternalTaskStatus, label: "Backlog", icon: Circle, headerColor: "text-slate-400", dotColor: "bg-slate-500", dropColor: "ring-slate-500/40" },
+  { id: "todo" as InternalTaskStatus, label: "A Fazer", icon: Circle, headerColor: "text-slate-400", dotColor: "bg-slate-500", dropColor: "ring-slate-500/40" },
   { id: "in_progress" as InternalTaskStatus, label: "Em andamento", icon: Clock, headerColor: "text-primary", dotColor: "bg-primary", dropColor: "ring-primary/40" },
   { id: "blocked" as InternalTaskStatus, label: "Em Impedimento", icon: Ban, headerColor: "text-red-400", dotColor: "bg-red-500", dropColor: "ring-red-500/40" },
   { id: "review" as InternalTaskStatus, label: "Em Validação Interna", icon: Eye, headerColor: "text-amber-400", dotColor: "bg-amber-500", dropColor: "ring-amber-500/40" },

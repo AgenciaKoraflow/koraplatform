@@ -17,7 +17,7 @@ import { useAllProjects } from "@/hooks/useProjects";
 import { useTeamOptions } from "@/hooks/useProfile";
 
 const statusColumns = [
-  { id: "todo", label: "Backlog" },
+  { id: "todo", label: "A Fazer" },
   { id: "in_progress", label: "Em Andamento" },
   { id: "blocked", label: "Em Impedimento" },
   { id: "review", label: "Em Validação Interna" },

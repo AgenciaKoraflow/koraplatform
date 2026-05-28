@@ -49,7 +49,7 @@ const statusConfig = {
 const statusOrder: (keyof typeof statusConfig)[] = ["planning", "in_progress", "review", "completed", "on_hold"];
 
 const taskStatusConfig = {
-  todo: { label: "Backlog", color: "text-slate-400", dot: "bg-slate-400", bg: "bg-slate-500/10" },
+  todo: { label: "A Fazer", color: "text-slate-400", dot: "bg-slate-400", bg: "bg-slate-500/10" },
   in_progress: { label: "Em Andamento", color: "text-primary", dot: "bg-primary", bg: "bg-primary/10" },
   blocked: { label: "Impedimento", color: "text-red-400", dot: "bg-red-400", bg: "bg-red-500/10" },
   review: { label: "Em Validação Interna", color: "text-amber-400", dot: "bg-amber-400", bg: "bg-amber-500/10" },
@@ -193,6 +193,18 @@ export default function Projetos() {
   const handleSave = useCallback(() => {
     if (!formData.name || !formData.clientId) {
       toast.error("Preencha os campos obrigatórios");
+      return;
+    }
+    if (!formData.value) {
+      toast.error("Informe o valor do projeto");
+      return;
+    }
+    if (formData.billingType === "implantacao_recorrencia" && !formData.recurrenceValue) {
+      toast.error("Informe o valor da recorrência");
+      return;
+    }
+    if (!formData.dueDate) {
+      toast.error("Informe o prazo do projeto");
       return;
     }
     const teamArray = formData.team.split(",").map(t => t.trim()).filter(Boolean);
@@ -763,7 +775,7 @@ export default function Projetos() {
               <Textarea id="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Descrição do projeto" className="bg-input border-border" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="value">Valor do Projeto (opcional)</Label>
+              <Label htmlFor="value">Valor do Projeto *</Label>
               <CurrencyInput id="value" value={formData.value} onChange={(value) => setFormData({ ...formData, value })} placeholder="R$ 0,00" />
             </div>
             <div className="space-y-2">
@@ -972,7 +984,7 @@ export default function Projetos() {
                       </div>
                       <div className="grid grid-cols-3 gap-2 text-center">
                         {[
-                          { key: "todo", label: "Backlog", icon: Circle, color: "text-slate-400 bg-slate-500/10" },
+                          { key: "todo", label: "A Fazer", icon: Circle, color: "text-slate-400 bg-slate-500/10" },
                           { key: "in_progress", label: "Em Andamento", icon: Clock, color: "text-primary bg-primary/10" },
                           { key: "blocked", label: "Impedimento", icon: Ban, color: "text-red-400 bg-red-500/10" },
                           { key: "review", label: "Em Validação Interna", icon: Eye, color: "text-amber-400 bg-amber-500/10" },

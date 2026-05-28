@@ -249,6 +249,7 @@ export interface KnowledgeItem {
   fileName?: string;
   mimeType?: string;
   fileSize?: number;
+  docType?: string;
   createdAt: string;
   updatedAt: string;
 }

@@ -15,7 +15,7 @@ function errMsg(e: unknown) {
 // Columns to select after insert — same set as list queries, never includes
 // the password column so the value never reaches the browser.
 const KI_COLS =
-  "id, client_id, project_ids, project_id, title, category, content, username, has_password, url, tags, storage_path, file_name, mime_type, file_size, created_at, updated_at";
+  "id, client_id, project_ids, project_id, title, category, content, username, has_password, url, tags, storage_path, file_name, mime_type, file_size, doc_type, created_at, updated_at";
 
 async function savePassword(id: string, password: string): Promise<void> {
   const { error } = await supabase.functions.invoke("get-password", {
@@ -73,6 +73,7 @@ export function useKnowledgeMutations() {
         file_name: fileName,
         mime_type: mimeType,
         file_size: fileSize,
+        doc_type: item.docType ?? null,
       };
       const { data: rows, error } = await supabase
         .from("knowledge_items")
@@ -115,6 +116,7 @@ export function useKnowledgeMutations() {
       if (data.username !== undefined) dbData.username = data.username;
       if (data.url !== undefined) dbData.url = data.url;
       if (data.tags) dbData.tags = data.tags;
+      if (data.docType !== undefined) dbData.doc_type = data.docType ?? null;
 
       if (data.file && data.clientId) {
         const newPath = await uploadFile(data.clientId, data.file);
