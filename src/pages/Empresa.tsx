@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useInternalWorkspace } from "@/hooks/useInternalWorkspace";
 import { EmpresaGeral } from "@/components/empresa/EmpresaGeral";
+import { EmpresaOKR } from "@/components/empresa/EmpresaOKR";
 import { EmpresaFinanceiro } from "@/components/empresa/EmpresaFinanceiro";
 import { EmpresaServicos } from "@/components/empresa/EmpresaServicos";
 import { EmpresaProcessos } from "@/components/empresa/EmpresaProcessos";
@@ -37,6 +38,7 @@ export default function Empresa() {
           <Tabs defaultValue="geral">
             <TabsList className="mb-4 flex-wrap h-auto gap-1">
               <TabsTrigger value="geral">Geral</TabsTrigger>
+              <TabsTrigger value="okr">OKR</TabsTrigger>
               <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
               <TabsTrigger value="servicos">Serviços</TabsTrigger>
               <TabsTrigger value="processos">Processos</TabsTrigger>
@@ -49,6 +51,10 @@ export default function Empresa() {
 
             <TabsContent value="geral">
               <EmpresaGeral />
+            </TabsContent>
+
+            <TabsContent value="okr">
+              <EmpresaOKR />
             </TabsContent>
 
             <TabsContent value="financeiro">
