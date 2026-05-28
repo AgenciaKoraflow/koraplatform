@@ -558,7 +558,7 @@ export default function ClientesAtivos() {
                           <p className="text-muted-foreground">Nenhuma tarefa encontrada</p>
                         </div>
                       ) : (
-                        <div className="space-y-3">
+                        <div className="space-y-3 max-h-[500px] overflow-y-auto scrollbar-none">
                           {clientTasks.map((task) => {
                             const StatusIcon = task.status === "done" ? CheckSquare : (task.status === "in_progress" ? Clock : (task.status === "review" ? AlertCircle : Circle));
                             const project = clientProjects.find(p => p.id === task.projectId);
