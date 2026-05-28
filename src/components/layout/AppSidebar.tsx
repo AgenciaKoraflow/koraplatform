@@ -44,7 +44,6 @@ const navigation: NavItem[] = [
   { name: "Observabilidade", href: "/observabilidade", icon: Activity, bu: "kora-dev", hiddenForObserver: true },
   { name: "Conhecimento", href: "/conhecimento", icon: BookOpen, bu: "kora-studio", hiddenForObserver: true },
   { name: "Indicadores", href: "/indicadores", icon: BarChart3, bu: "kora-corp", hiddenForObserver: true },
-  { name: "Empresa", href: "/empresa", icon: Building2, bu: "kora-corp", hiddenForObserver: true },
 ];
 
 interface AppSidebarProps {
@@ -119,14 +118,15 @@ export function AppSidebar({ onNavigate, collapsed = false }: AppSidebarProps) {
             );
           })}
 
-          {/* Admin-only items */}
-          {isAdmin && (
+          {/* Empresa + Admin items */}
+          {!isObservador && (
             <>
               <div className={cn("my-1 border-t border-sidebar-border", collapsed ? "mx-2" : "mx-1")} />
 
               {[
-                { href: "/usuarios", label: "Usuários", Icon: Users },
-              ].map(({ href, label, Icon }) => {
+                { href: "/empresa", label: "Empresa", Icon: Building2, show: true },
+                { href: "/usuarios", label: "Usuários", Icon: Users, show: isAdmin },
+              ].filter(({ show }) => show).map(({ href, label, Icon }) => {
                 const isActive = location.pathname === href;
                 return (
                   <Tooltip key={href}>
