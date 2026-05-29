@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Heart, FileSignature, TrendingUp, Target, FolderKanban, CheckCircle2, AlertTriangle, ListChecks } from "lucide-react";
 import { useAllClients } from "@/hooks/useClients";
 import { useAllContracts } from "@/hooks/useContracts";
@@ -67,6 +68,7 @@ function StatCard({
 }
 
 export function EmpresaGeral() {
+  const navigate = useNavigate();
   const { data: allClients = [] } = useAllClients();
   const { data: allContracts = [] } = useAllContracts();
   const { data: allProjects = [] } = useAllProjects();
@@ -111,7 +113,13 @@ export function EmpresaGeral() {
       .filter(p => p.status === "in_progress" && p.progress < 30)
       .slice(0, 5);
     const criticalTasks = allTasks
-      .filter(t => t.priority === "high" && t.status !== "done")
+      .filter(t => {
+        if (t.priority !== "high" || t.status === "done") return false;
+        const due = parsePtBrDate(t.dueDate);
+        if (!due) return false;
+        const daysLeft = (due.getTime() - now) / 86_400_000;
+        return daysLeft <= 5;
+      })
       .slice(0, 5);
 
     return {
@@ -301,13 +309,17 @@ export function EmpresaGeral() {
             ) : (
               <div className="space-y-2">
                 {metrics.criticalTasks.map(t => (
-                  <div key={t.id} className="flex items-center justify-between gap-2 py-1.5 border-b border-border/30 last:border-0">
+                  <button
+                    key={t.id}
+                    onClick={() => navigate(`/tarefas?task=${t.id}`)}
+                    className="w-full flex items-center justify-between gap-2 py-1.5 border-b border-border/30 last:border-0 text-left hover:bg-muted/50 rounded px-1 -mx-1 transition-colors"
+                  >
                     <span className="text-sm truncate flex-1">{t.title}</span>
                     <div className="flex items-center gap-2 shrink-0">
                       <Badge variant="secondary" className="text-xs">{TASK_STATUS_LABELS[t.status] ?? t.status}</Badge>
                       {t.dueDate && <span className="text-xs text-muted-foreground hidden sm:inline">{t.dueDate}</span>}
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             )}
