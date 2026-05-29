@@ -98,6 +98,35 @@ export function useTaskMutations() {
     },
   });
 
+  const duplicateMutation = useMutation({
+    mutationFn: async (task: Task): Promise<Task> => {
+      const dbData: Record<string, unknown> = {
+        client_id: task.clientId,
+        project_id: task.projectId || null,
+        title: `${task.title} (Cópia)`,
+        description: task.description,
+        status: "todo",
+        priority: task.priority,
+        due_date: toISODate(task.dueDate),
+        assigned_to: task.assignees.join(", "),
+        blocked_reason: null,
+        client_approved: false,
+        estimated_hours: task.estimatedHours ?? null,
+      };
+      if (task.bu) dbData.bu = task.bu;
+      const { data: rows, error } = await supabase.from("tasks").insert(dbData).select();
+      if (error) throw new Error(error.message);
+      if (!rows?.[0]) throw new Error("Resposta vazia ao duplicar tarefa");
+      return mapDbTask(rows[0] as DbTaskRow);
+    },
+    onSuccess: async (newTask) => {
+      qc.invalidateQueries({ queryKey: taskKeys.all });
+      if (newTask.projectId) await syncProjectProgress(newTask.projectId, qc);
+      toast.success("Tarefa duplicada com sucesso");
+    },
+    onError: (error) => toast.error(`Erro ao duplicar tarefa: ${errMsg(error)}`),
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { data: taskRow } = await supabase
@@ -122,9 +151,11 @@ export function useTaskMutations() {
     addTask: (data: Omit<Task, "id">) =>
       addMutation.mutateAsync(data).catch(() => null as Task | null),
     updateTask: (id: string, data: Partial<Task>) => updateMutation.mutate({ id, data }),
+    duplicateTask: (task: Task) => duplicateMutation.mutate(task),
     deleteTask: (id: string) => deleteMutation.mutate(id),
     isAdding: addMutation.isPending,
     isUpdating: updateMutation.isPending,
+    isDuplicating: duplicateMutation.isPending,
     isDeleting: deleteMutation.isPending,
   };
 }

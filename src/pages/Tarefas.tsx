@@ -2,7 +2,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Plus, Search, Calendar, CheckCircle2, Circle, Clock, Eye, Edit, Trash2, AlertTriangle, User, ListChecks, Ban, UserCheck, Flag, ThumbsUp, X as XIcon } from "lucide-react";
+import { Plus, Search, Calendar, CheckCircle2, Circle, Clock, Eye, Edit, Trash2, AlertTriangle, User, ListChecks, Ban, UserCheck, Flag, ThumbsUp, X as XIcon, Copy } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Dialog, DialogContent, DialogHeader, DialogBody, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -114,7 +114,7 @@ const priorityConfig = {
 };
 
 export default function Tarefas() {
-  const { updateTask, deleteTask, isUpdating } = useTaskMutations();
+  const { updateTask, deleteTask, duplicateTask, isUpdating } = useTaskMutations();
   const { user, profile } = useAuth();
   const { mutateAsync: updateProfile } = useUpdateProfile(user?.id);
   const getAvatarUrl = useProfileAvatarMap();
@@ -496,6 +496,7 @@ export default function Tarefas() {
                               <ActionMenu items={[
                                 { label: "Visualizar", icon: Eye, onClick: () => openViewDialog(task) },
                                 { label: "Editar", icon: Edit, onClick: () => openEditDialog(task) },
+                                { label: "Duplicar", icon: Copy, onClick: () => duplicateTask(task) },
                                 { label: "Excluir", icon: Trash2, onClick: () => { setDeletingTaskId(task.id); setIsDeleteDialogOpen(true); }, variant: "destructive" },
                               ]} />
                             </div>
@@ -602,6 +603,7 @@ export default function Tarefas() {
                       <ActionMenu items={[
                         { label: "Visualizar", icon: Eye, onClick: () => openViewDialog(task) },
                         { label: "Editar", icon: Edit, onClick: () => openEditDialog(task) },
+                        { label: "Duplicar", icon: Copy, onClick: () => duplicateTask(task) },
                         { label: "Excluir", icon: Trash2, onClick: () => { setDeletingTaskId(task.id); setIsDeleteDialogOpen(true); }, variant: "destructive" },
                       ]} />
                     </td>
@@ -624,6 +626,7 @@ export default function Tarefas() {
                   </div>
                   <ActionMenu items={[
                     { label: "Editar", icon: Edit, onClick: () => openEditDialog(task) },
+                    { label: "Duplicar", icon: Copy, onClick: () => duplicateTask(task) },
                     { label: "Excluir", icon: Trash2, onClick: () => { setDeletingTaskId(task.id); setIsDeleteDialogOpen(true); }, variant: "destructive" },
                   ]} />
                 </div>

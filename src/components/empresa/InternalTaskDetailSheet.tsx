@@ -16,6 +16,11 @@ import {
   Circle, Clock, Eye, Ban, CheckCircle2, Flag,
   Calendar, AlertTriangle, User, Users, Timer, Trash2, Plus, ChevronRight,
 } from "lucide-react";
+import { CommentComposer, sanitizeCommentHtml } from "@/components/shared/CommentComposer";
+import { useAllProfiles, useProfileAvatarMap } from "@/hooks/useProfile";
+import { UserAvatar } from "@/components/shared/UserAvatar";
+import { useInternalTaskComments } from "@/hooks/useInternalTaskComments";
+import { useInternalCommentMutations } from "@/hooks/mutations/useInternalCommentMutations";
 import { cn } from "@/lib/utils";
 import { format, parseISO, differenceInDays, parse, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -93,6 +98,17 @@ export function InternalTaskDetailSheet({ task, open, onClose, onEdit, profileNa
     useInternalSubtaskMutations(task?.id ?? "");
   const { addEntry, deleteEntry, isAdding: isAddingEntry } =
     useInternalTimeEntryMutations(task?.id ?? "");
+
+  const { data: comments = [] } = useInternalTaskComments(task?.id);
+  const { addComment, deleteComment, isAdding: isAddingComment } =
+    useInternalCommentMutations(task?.id ?? "");
+  const { data: profiles = [] } = useAllProfiles();
+  const getAvatarUrl = useProfileAvatarMap();
+
+  const handleAddComment = useCallback(({ html, mentionedUserIds, isPrivate }: { html: string; mentionedUserIds: string[]; isPrivate: boolean; files: File[] }) => {
+    if (!task) return;
+    addComment(authorName, html, mentionedUserIds, isPrivate);
+  }, [task, addComment, authorName]);
 
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
   const [entryDescription, setEntryDescription] = useState("");
@@ -296,6 +312,59 @@ export function InternalTaskDetailSheet({ task, open, onClose, onEdit, profileNa
                     Adicionar
                   </Button>
                 </div>
+              </div>
+
+              {/* ── Comentários ── */}
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                    Comentários
+                  </span>
+                  <div className="flex-1 h-px bg-border" />
+                  {comments.length > 0 && (
+                    <span className="text-xs text-muted-foreground shrink-0">{comments.length}</span>
+                  )}
+                </div>
+
+                <div className="space-y-4 mb-4">
+                  {comments.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-3">
+                      Nenhum comentário ainda.
+                    </p>
+                  )}
+                  {comments.map((c) => (
+                    <div key={c.id} className="group flex gap-3">
+                      <div className="shrink-0 mt-0.5">
+                        <UserAvatar name={c.author} src={getAvatarUrl(c.author)} size="sm" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className="text-xs font-medium">{c.author}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {format(parseISO(c.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                          </span>
+                          <button
+                            onClick={() => deleteComment(c.id)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive ml-auto"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                        <div
+                          className="text-sm text-foreground/90 leading-relaxed break-words prose prose-invert prose-sm max-w-none"
+                          dangerouslySetInnerHTML={{ __html: sanitizeCommentHtml(c.content) }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <CommentComposer
+                  profiles={profiles}
+                  avatarUrl={getAvatarUrl}
+                  onSubmit={handleAddComment}
+                  isSubmitting={isAddingComment}
+                />
               </div>
 
             </TabsContent>

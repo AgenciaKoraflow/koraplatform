@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import {
   Plus, CheckSquare, Edit, Trash2, Circle, Clock, Ban, Eye, CheckCircle2,
-  Flag, Calendar, AlertTriangle, User, Users, Search, X as XIcon,
+  Flag, Calendar, AlertTriangle, User, Users, Search, X as XIcon, Copy,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { differenceInDays, parse, isValid } from "date-fns";
@@ -109,7 +109,7 @@ interface Props {
 export function EmpresaTarefas({ workspaceId }: Props) {
   const { isAdmin } = usePermissions();
   const { data: tasks = [], isLoading } = useInternalTasks(workspaceId);
-  const { addTask, updateTask, deleteTask, isAdding, isUpdating } = useInternalTaskMutations();
+  const { addTask, updateTask, deleteTask, duplicateTask, isAdding, isUpdating } = useInternalTaskMutations();
 
   const { data: profiles = [] } = useQuery({
     queryKey: ["profiles", "all"],
@@ -392,6 +392,7 @@ export function EmpresaTarefas({ workspaceId }: Props) {
                             { label: "Visualizar", icon: Eye, onClick: () => setViewingTask(task) },
                             ...(isAdmin ? [
                               { label: "Editar", icon: Edit, onClick: () => openEdit(task) },
+                              { label: "Duplicar", icon: Copy, onClick: () => duplicateTask(task) },
                               { label: "Excluir", icon: Trash2, onClick: () => setDeleteId(task.id), variant: "destructive" as const },
                             ] : []),
                           ]} />

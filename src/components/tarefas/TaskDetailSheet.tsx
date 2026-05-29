@@ -10,19 +10,19 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NumberInput } from "@/components/ui/number-input";
-import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   CheckCircle2, Circle, Clock, Eye, Ban, UserCheck, Flag, Calendar,
-  Paperclip, MessageSquare, Trash2, Upload, Download,
+  Paperclip, Trash2, Upload, Download,
   AlertTriangle, User, Folder, ThumbsUp, Timer, X, Plus, ChevronRight,
 } from "lucide-react";
+import { CommentComposer, sanitizeCommentHtml } from "@/components/shared/CommentComposer";
 import { cn } from "@/lib/utils";
 import { format, parseISO, differenceInDays, parse, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useAuth } from "@/hooks/useAuth";
-import { useAllProfiles, useProfileAvatarMap, type Profile } from "@/hooks/useProfile";
+import { useAllProfiles, useProfileAvatarMap } from "@/hooks/useProfile";
 import { UserAvatar } from "@/components/shared/UserAvatar";
 import { useTaskSubtasks } from "@/hooks/useTaskSubtasks";
 import { useTaskComments } from "@/hooks/useTaskComments";
@@ -156,44 +156,11 @@ export function TaskDetailSheet({
     useTimeEntryMutations(task?.id ?? "");
 
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
-  const [newCommentText, setNewCommentText] = useState("");
-  const [mentionedUserIds, setMentionedUserIds] = useState<string[]>([]);
-  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
-  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [entryDescription, setEntryDescription] = useState("");
   const [entryHours, setEntryHours] = useState("");
   const [selectedSubtask, setSelectedSubtask] = useState<TaskSubtask | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const commentFileInputRef = useRef<HTMLInputElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  const filteredMentions = useMemo(() => {
-    if (mentionQuery === null) return [];
-    const q = mentionQuery.toLowerCase();
-    return profiles
-      .filter((p) => p.full_name?.toLowerCase().includes(q) || p.cargo?.toLowerCase().includes(q))
-      .slice(0, 5);
-  }, [mentionQuery, profiles]);
-
-  const handleCommentTextChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const text = e.target.value;
-    setNewCommentText(text);
-    const cursor = e.target.selectionStart ?? text.length;
-    const match = text.slice(0, cursor).match(/@(\w*)$/);
-    setMentionQuery(match ? match[1].toLowerCase() : null);
-  }, []);
-
-  const handleSelectMention = useCallback(
-    (p: Profile) => {
-      const name = (p.full_name ?? "Usuário").replace(/\s+/g, "");
-      setNewCommentText((prev) => prev.replace(/@\w*$/, `@${name} `));
-      if (!mentionedUserIds.includes(p.id)) setMentionedUserIds((prev) => [...prev, p.id]);
-      setMentionQuery(null);
-      textareaRef.current?.focus();
-    },
-    [mentionedUserIds]
-  );
 
   const handleAddSubtask = useCallback(() => {
     if (!newSubtaskTitle.trim() || !task) return;
@@ -201,21 +168,11 @@ export function TaskDetailSheet({
     setNewSubtaskTitle("");
   }, [newSubtaskTitle, task, addSubtask]);
 
-  const handleCommentFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    if (files.length) setPendingFiles((prev) => [...prev, ...files]);
-    e.target.value = "";
-  }, []);
-
-  const handleAddComment = useCallback(() => {
-    if (!newCommentText.trim() || !task) return;
-    for (const file of pendingFiles) uploadAttachment(file);
-    addComment(authorName, newCommentText.trim(), mentionedUserIds);
-    setNewCommentText("");
-    setMentionedUserIds([]);
-    setPendingFiles([]);
-    setMentionQuery(null);
-  }, [newCommentText, task, pendingFiles, uploadAttachment, addComment, authorName, mentionedUserIds]);
+  const handleAddComment = useCallback(({ html, mentionedUserIds, files }: { html: string; mentionedUserIds: string[]; isPrivate: boolean; files: File[] }) => {
+    if (!task) return;
+    for (const file of files) uploadAttachment(file);
+    addComment(authorName, html, mentionedUserIds);
+  }, [task, uploadAttachment, addComment, authorName]);
 
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -519,66 +476,22 @@ export function TaskDetailSheet({
                               <Trash2 className="w-3 h-3" />
                             </button>
                           </div>
-                          <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed break-words">
-                            {c.content}
-                          </p>
+                          <div
+                            className="text-sm text-foreground/90 leading-relaxed break-words prose prose-invert prose-sm max-w-none"
+                            dangerouslySetInnerHTML={{ __html: sanitizeCommentHtml(c.content) }}
+                          />
                         </div>
                       </div>
                     ))}
                   </div>
 
                   {/* Composer */}
-                  <div className="rounded-lg border border-border bg-muted/20 p-3 space-y-2">
-                    {filteredMentions.length > 0 && (
-                      <div className="rounded-md border border-border bg-popover shadow-md overflow-hidden">
-                        {filteredMentions.map((p) => (
-                          <button key={p.id} type="button"
-                            onMouseDown={(e) => { e.preventDefault(); handleSelectMention(p); }}
-                            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted transition-colors text-left">
-                            <UserAvatar name={p.full_name ?? "Usuário"} src={getAvatarUrl(p.full_name ?? "")} size="xs" />
-                            <div className="min-w-0">
-                              <p className="font-medium leading-none truncate">{p.full_name ?? "Usuário"}</p>
-                              {p.cargo && <p className="text-xs text-muted-foreground mt-0.5 truncate">{p.cargo}</p>}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    {pendingFiles.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {pendingFiles.map((f, i) => (
-                          <span key={i} className="flex items-center gap-1 text-xs bg-muted rounded px-2 py-1 max-w-[160px]">
-                            <Paperclip className="w-3 h-3 shrink-0" />
-                            <span className="truncate">{f.name}</span>
-                            <button onClick={() => setPendingFiles((prev) => prev.filter((_, j) => j !== i))}
-                              className="text-muted-foreground hover:text-destructive ml-0.5 shrink-0">
-                              <X className="w-3 h-3" />
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    <Textarea ref={textareaRef}
-                      placeholder="Escreva um comentário... use @ para mencionar alguém"
-                      value={newCommentText} onChange={handleCommentTextChange} rows={3}
-                      className="text-sm resize-none bg-transparent border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none" />
-                    <div className="flex items-center justify-between pt-1 border-t border-border">
-                      <div>
-                        <input ref={commentFileInputRef} type="file" multiple className="hidden"
-                          onChange={handleCommentFileChange} />
-                        <button type="button" onClick={() => commentFileInputRef.current?.click()}
-                          className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                          title="Anexar arquivo">
-                          <Paperclip className="w-4 h-4" />
-                        </button>
-                      </div>
-                      <Button size="sm" onClick={handleAddComment}
-                        disabled={!newCommentText.trim() || isAddingComment} className="h-7 text-xs">
-                        <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
-                        Enviar
-                      </Button>
-                    </div>
-                  </div>
+                  <CommentComposer
+                    profiles={profiles}
+                    avatarUrl={getAvatarUrl}
+                    onSubmit={handleAddComment}
+                    isSubmitting={isAddingComment}
+                  />
                 </div>
               </TabsContent>
 

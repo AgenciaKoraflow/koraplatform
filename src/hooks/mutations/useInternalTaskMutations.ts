@@ -77,6 +77,49 @@ export function useInternalTaskMutations() {
     onError: (error) => toast.error(`Erro ao atualizar tarefa: ${errMsg(error)}`),
   });
 
+  const duplicateMutation = useMutation({
+    mutationFn: async (item: InternalTask): Promise<InternalTask> => {
+      const { data: rows, error } = await supabase
+        .from("internal_tasks")
+        .insert({
+          workspace_id: item.workspaceId,
+          title: `${item.title} (Cópia)`,
+          description: item.description ?? null,
+          status: "todo",
+          priority: item.priority,
+          assigned_to: item.assignedTo ?? null,
+          all_involved: item.allInvolved ?? false,
+          due_date: item.dueDate ?? null,
+          estimated_hours: item.estimatedHours ?? null,
+          blocked_reason: null,
+        })
+        .select("*");
+      if (error) throw new Error(error.message);
+      if (!rows?.[0]) throw new Error("Resposta vazia ao duplicar tarefa");
+      const r = rows[0];
+      return {
+        id: r.id,
+        workspaceId: r.workspace_id,
+        title: r.title ?? "",
+        description: r.description ?? undefined,
+        status: r.status as InternalTask["status"],
+        priority: r.priority as InternalTask["priority"],
+        assignedTo: r.assigned_to ?? undefined,
+        allInvolved: r.all_involved ?? false,
+        dueDate: r.due_date ?? undefined,
+        estimatedHours: r.estimated_hours ?? undefined,
+        blockedReason: r.blocked_reason ?? undefined,
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+      };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: internalTaskKeys.all });
+      toast.success("Tarefa duplicada com sucesso");
+    },
+    onError: (error) => toast.error(`Erro ao duplicar tarefa: ${errMsg(error)}`),
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("internal_tasks").delete().eq("id", id);
@@ -94,9 +137,11 @@ export function useInternalTaskMutations() {
       addMutation.mutateAsync(data).catch(() => null as InternalTask | null),
     updateTask: (id: string, data: Partial<InternalTask>) =>
       updateMutation.mutate({ id, data }),
+    duplicateTask: (task: InternalTask) => duplicateMutation.mutate(task),
     deleteTask: (id: string) => deleteMutation.mutate(id),
     isAdding: addMutation.isPending,
     isUpdating: updateMutation.isPending,
+    isDuplicating: duplicateMutation.isPending,
     isDeleting: deleteMutation.isPending,
   };
 }
