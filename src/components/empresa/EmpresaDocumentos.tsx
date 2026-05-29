@@ -37,6 +37,7 @@ type ContentMode = "file" | "text" | "link";
 
 type FormData = {
   title: string;
+  description: string;
   docType: string;
   category: string;
   contentMode: ContentMode;
@@ -47,6 +48,7 @@ type FormData = {
 
 const EMPTY_FORM: FormData = {
   title: "",
+  description: "",
   docType: "",
   category: "",
   contentMode: "text",
@@ -94,6 +96,7 @@ export function EmpresaDocumentos({ workspaceId }: Props) {
     else if (item.url) contentMode = "link";
     setFormData({
       title: item.title,
+      description: item.description ?? "",
       docType: item.docType ?? "",
       category: item.category ?? "",
       contentMode,
@@ -134,6 +137,7 @@ export function EmpresaDocumentos({ workspaceId }: Props) {
         {
           workspaceId,
           title: formData.title,
+          description: formData.description || undefined,
           content: isFileMode || isLinkMode ? undefined : formData.content || undefined,
           url: isLinkMode ? formData.url || undefined : undefined,
           category: formData.category || undefined,
@@ -147,6 +151,7 @@ export function EmpresaDocumentos({ workspaceId }: Props) {
       await addDocument({
         workspaceId,
         title: formData.title,
+        description: formData.description || undefined,
         content: isFileMode || isLinkMode ? undefined : formData.content || undefined,
         url: isLinkMode ? formData.url || undefined : undefined,
         category: formData.category || undefined,
@@ -241,6 +246,9 @@ export function EmpresaDocumentos({ workspaceId }: Props) {
                   </Badge>
                 )}
               </div>
+              {item.description && (
+                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.description}</p>
+              )}
               {item.fileName ? (
                 <p className="text-xs text-muted-foreground mt-1">
                   {item.fileName}
@@ -327,6 +335,17 @@ export function EmpresaDocumentos({ workspaceId }: Props) {
                 placeholder="Ex: SOP — Onboarding de Clientes"
                 value={formData.title}
                 onChange={(e) => setFormData((p) => ({ ...p, title: e.target.value }))}
+              />
+            </div>
+
+            {/* Descrição */}
+            <div className="space-y-1.5">
+              <Label>Descrição</Label>
+              <Textarea
+                placeholder="Breve descrição ou comentário sobre o documento..."
+                rows={2}
+                value={formData.description}
+                onChange={(e) => setFormData((p) => ({ ...p, description: e.target.value }))}
               />
             </div>
 

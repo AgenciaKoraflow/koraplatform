@@ -249,9 +249,9 @@ export default function Funil() {
     [clientsByStage],
   );
 
-  const calculateClientPotentialValue = useCallback((clientId: string): string => {
+  const getClientContractValue = useCallback((clientId: string): number => {
     const cc = contractsByClient[clientId] ?? [];
-    if (cc.length === 0) return "R$ 0,00";
+    if (cc.length === 0) return 0;
     let total = 0;
     for (const contract of cc) {
       if (contract.projectIds && contract.projectIds.length > 0) {
@@ -263,28 +263,31 @@ export default function Funil() {
         total += parseCurrencyToNumber(contract.value);
       }
     }
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total);
+    return total;
   }, [contractsByClient, projectsById]);
+
+  const calculateClientPotentialValue = useCallback((clientId: string): string => {
+    const contractTotal = getClientContractValue(clientId);
+    if (contractTotal > 0) {
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(contractTotal);
+    }
+    const client = clients.find(c => c.id === clientId);
+    const estimatedValue = client?.value ? parseCurrencyToNumber(client.value) : 0;
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(estimatedValue);
+  }, [getClientContractValue, clients]);
 
   const stageValues = useMemo(() => {
     const map: Record<string, number> = {};
     for (const stage of stageOrder) {
       const stageClients = clientsByStage[stage] ?? [];
       map[stage] = stageClients.reduce((acc, client) => {
-        const cc = contractsByClient[client.id] ?? [];
-        return acc + cc.reduce((sum, contract) => {
-          if (contract.projectIds && contract.projectIds.length > 0) {
-            return sum + contract.projectIds.reduce((pSum, pid) => {
-              const proj = projectsById[pid];
-              return pSum + (proj?.value ? parseCurrencyToNumber(proj.value) : 0);
-            }, 0);
-          }
-          return sum + parseCurrencyToNumber(contract.value);
-        }, 0);
+        const contractTotal = getClientContractValue(client.id);
+        if (contractTotal > 0) return acc + contractTotal;
+        return acc + (client.value ? parseCurrencyToNumber(client.value) : 0);
       }, 0);
     }
     return map;
-  }, [clientsByStage, contractsByClient, projectsById]);
+  }, [clientsByStage, getClientContractValue]);
 
   const calculateStageValue = useCallback((stage: string) => stageValues[stage] ?? 0, [stageValues]);
 

@@ -459,6 +459,7 @@ export interface InternalDocument {
   id: string;
   workspaceId: string;
   title: string;
+  description?: string;
   content?: string;
   category?: string;
   docType?: string;

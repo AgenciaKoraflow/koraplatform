@@ -60,6 +60,7 @@ export function useInternalDocumentMutations() {
         .insert({
           workspace_id: item.workspaceId,
           title: item.title,
+          description: item.description ?? null,
           content: item.content ?? null,
           category: item.category ?? null,
           doc_type: item.docType ?? null,
@@ -80,6 +81,7 @@ export function useInternalDocumentMutations() {
         id: r.id,
         workspaceId: r.workspace_id,
         title: r.title ?? "",
+        description: r.description ?? undefined,
         content: r.content ?? undefined,
         category: r.category ?? undefined,
         docType: r.doc_type ?? undefined,
@@ -103,6 +105,7 @@ export function useInternalDocumentMutations() {
     mutationFn: async ({ id, data, oldStoragePath }: { id: string; data: UpdatePayload; oldStoragePath?: string }) => {
       const dbData: Record<string, unknown> = {};
       if (data.title !== undefined) dbData.title = data.title;
+      if (data.description !== undefined) dbData.description = data.description ?? null;
       if (data.content !== undefined) dbData.content = data.content ?? null;
       if (data.category !== undefined) dbData.category = data.category ?? null;
       if (data.docType !== undefined) dbData.doc_type = data.docType ?? null;

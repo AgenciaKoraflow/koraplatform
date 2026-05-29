@@ -15,7 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   CheckCircle2, Circle, Clock, Eye, Ban, UserCheck, Flag, Calendar,
   Paperclip, Trash2, Upload, Download,
-  AlertTriangle, User, Folder, ThumbsUp, Timer, X, Plus, ChevronRight,
+  AlertTriangle, User, Folder, ThumbsUp, Timer, X, Plus, ChevronRight, ChevronDown,
 } from "lucide-react";
 import { CommentComposer, sanitizeCommentHtml } from "@/components/shared/CommentComposer";
 import { cn } from "@/lib/utils";
@@ -29,6 +29,13 @@ import { useTaskComments } from "@/hooks/useTaskComments";
 import { useTaskAttachments } from "@/hooks/useTaskAttachments";
 import { useTaskTimeEntries } from "@/hooks/useTaskTimeEntries";
 import { useSubtaskMutations } from "@/hooks/mutations/useSubtaskMutations";
+import { useTaskMutations } from "@/hooks/mutations/useTaskMutations";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useCommentMutations } from "@/hooks/mutations/useCommentMutations";
 import { useAttachmentMutations } from "@/hooks/mutations/useAttachmentMutations";
 import { useTimeEntryMutations } from "@/hooks/mutations/useTimeEntryMutations";
@@ -146,6 +153,8 @@ export function TaskDetailSheet({
     return map;
   }, [allTimeEntries]);
 
+  const { updateTask } = useTaskMutations();
+
   const { addSubtask, toggleSubtask, deleteSubtask, isAdding: isAddingSubtask } =
     useSubtaskMutations(task?.id ?? "");
   const { addComment, deleteComment, isAdding: isAddingComment } =
@@ -215,10 +224,31 @@ export function TaskDetailSheet({
                   <Flag className="w-3 h-3" />
                   {priorityInfo.label}
                 </span>
-                <span className={cn("flex items-center gap-1.5 text-xs font-medium", statusInfo.color)}>
-                  <StatusIcon className="w-3.5 h-3.5" />
-                  {statusInfo.label}
-                </span>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className={cn("flex items-center gap-1.5 text-xs font-medium hover:opacity-70 transition-opacity", statusInfo.color)}>
+                      <StatusIcon className="w-3.5 h-3.5" />
+                      {statusInfo.label}
+                      <ChevronDown className="w-3 h-3 opacity-60" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-52">
+                    {(Object.entries(statusConfig) as [string, { label: string; icon: React.ElementType; color: string }][]).map(([key, cfg]) => {
+                      const Icon = cfg.icon;
+                      return (
+                        <DropdownMenuItem
+                          key={key}
+                          onClick={() => updateTask(task.id, { status: key as Task["status"] })}
+                          className="gap-2 cursor-pointer"
+                        >
+                          <Icon className={cn("w-3.5 h-3.5 shrink-0", cfg.color)} />
+                          <span className={task.status === key ? "font-semibold" : ""}>{cfg.label}</span>
+                          {task.status === key && <CheckCircle2 className="w-3 h-3 ml-auto opacity-50" />}
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 {task.clientApproved && (
                   <span className="px-2 py-0.5 rounded text-xs font-medium flex items-center gap-1 bg-green-500/20 text-green-400 border border-green-500/30">
                     <ThumbsUp className="w-3 h-3" />

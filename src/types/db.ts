@@ -269,6 +269,7 @@ export interface DbInternalDocumentRow {
   id: string;
   workspace_id: string;
   title: string | null;
+  description: string | null;
   content: string | null;
   category: string | null;
   doc_type: string | null;

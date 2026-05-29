@@ -14,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import {
   Circle, Clock, Eye, Ban, CheckCircle2, Flag,
-  Calendar, AlertTriangle, User, Users, Timer, Trash2, Plus, ChevronRight,
+  Calendar, AlertTriangle, User, Users, Timer, Trash2, Plus, ChevronRight, ChevronDown,
 } from "lucide-react";
 import { CommentComposer, sanitizeCommentHtml } from "@/components/shared/CommentComposer";
 import { useAllProfiles, useProfileAvatarMap } from "@/hooks/useProfile";
@@ -28,6 +28,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { useInternalTaskSubtasks } from "@/hooks/useInternalTaskSubtasks";
 import { useInternalTaskTimeEntries } from "@/hooks/useInternalTaskTimeEntries";
 import { useInternalSubtaskMutations } from "@/hooks/mutations/useInternalSubtaskMutations";
+import { useInternalTaskMutations } from "@/hooks/mutations/useInternalTaskMutations";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useInternalTimeEntryMutations } from "@/hooks/mutations/useInternalTimeEntryMutations";
 import type { InternalTask } from "@/types/data";
 
@@ -94,6 +101,8 @@ export function InternalTaskDetailSheet({ task, open, onClose, onEdit, profileNa
     [timeEntries],
   );
 
+  const { updateTask } = useInternalTaskMutations();
+
   const { addSubtask, toggleSubtask, deleteSubtask, isAdding: isAddingSubtask } =
     useInternalSubtaskMutations(task?.id ?? "");
   const { addEntry, deleteEntry, isAdding: isAddingEntry } =
@@ -152,10 +161,31 @@ export function InternalTaskDetailSheet({ task, open, onClose, onEdit, profileNa
                 <Flag className="w-3 h-3" />
                 {priorityInfo.label}
               </span>
-              <span className={cn("flex items-center gap-1.5 text-xs font-medium", statusInfo.color)}>
-                <StatusIcon className="w-3.5 h-3.5" />
-                {statusInfo.label}
-              </span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className={cn("flex items-center gap-1.5 text-xs font-medium hover:opacity-70 transition-opacity", statusInfo.color)}>
+                    <StatusIcon className="w-3.5 h-3.5" />
+                    {statusInfo.label}
+                    <ChevronDown className="w-3 h-3 opacity-60" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-52">
+                  {(Object.entries(statusConfig) as [string, { label: string; icon: React.ElementType; color: string }][]).map(([key, cfg]) => {
+                    const Icon = cfg.icon;
+                    return (
+                      <DropdownMenuItem
+                        key={key}
+                        onClick={() => updateTask(task.id, { status: key as InternalTask["status"] })}
+                        className="gap-2 cursor-pointer"
+                      >
+                        <Icon className={cn("w-3.5 h-3.5 shrink-0", cfg.color)} />
+                        <span className={task.status === key ? "font-semibold" : ""}>{cfg.label}</span>
+                        {task.status === key && <CheckCircle2 className="w-3 h-3 ml-auto opacity-50" />}
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
               <div className="ml-auto flex items-center gap-2 flex-shrink-0">
                 <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => onEdit(task)}>
                   Editar

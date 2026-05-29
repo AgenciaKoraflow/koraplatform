@@ -422,6 +422,7 @@ export function mapDbInternalDocument(db: DbInternalDocumentRow): InternalDocume
     id: db.id,
     workspaceId: db.workspace_id,
     title: db.title ?? "",
+    description: db.description ?? undefined,
     content: db.content ?? undefined,
     category: db.category ?? undefined,
     docType: db.doc_type ?? undefined,
