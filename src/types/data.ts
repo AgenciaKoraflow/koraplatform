@@ -368,7 +368,7 @@ export interface Service {
   description?: string;
   category?: string;
   bu: BU;
-  billingType: "projeto_unico" | "recorrencia" | "hora" | "combo";
+  billingType: "projeto_unico" | "recorrencia" | "hora" | "combo" | "adicional";
   priceInitial?: string;
   priceBargain?: string;
   recurrencePriceInitial?: string;

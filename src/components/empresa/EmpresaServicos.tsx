@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Tag, Plus, Search, Package, DollarSign, RefreshCw, CreditCard, Eye } from "lucide-react";
+import { Tag, Plus, Search, Package, DollarSign, RefreshCw, CreditCard, Eye, PlusCircle } from "lucide-react";
 import { Edit, Trash2 } from "@/components/shared/ActionMenu";
 import { BUBadge } from "@/components/shared/BUBadge";
 import { BUSelect } from "@/components/shared/BUSelect";
@@ -43,6 +43,7 @@ const BILLING_TYPE_LABELS: Record<Service["billingType"], string> = {
   recorrencia: "Recorrência",
   hora: "Por Hora",
   combo: "Combo",
+  adicional: "Adicional",
 };
 
 const STATUS_LABELS: Record<Service["status"], string> = {
@@ -96,6 +97,7 @@ export function EmpresaServicos() {
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>(emptyForm());
+  const [isAdicionalMode, setIsAdicionalMode] = useState(false);
 
   const { data, isLoading } = useServices({
     page,
@@ -118,11 +120,20 @@ export function EmpresaServicos() {
 
   function openCreate() {
     setEditingService(null);
+    setIsAdicionalMode(false);
     setFormData(emptyForm());
     setIsDialogOpen(true);
   }
 
+  function openCreateAdicional() {
+    setEditingService(null);
+    setIsAdicionalMode(true);
+    setFormData({ ...emptyForm(), billingType: "adicional" });
+    setIsDialogOpen(true);
+  }
+
   function openEdit(service: Service) {
+    setIsAdicionalMode(service.billingType === "adicional");
     setEditingService(service);
     setFormData({
       name: service.name,
@@ -199,10 +210,16 @@ export function EmpresaServicos() {
               )}
             </p>
           </div>
-          <Button onClick={openCreate} className="gap-2">
-            <Plus className="w-4 h-4" />
-            Novo Serviço
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={openCreateAdicional} className="gap-2">
+              <PlusCircle className="w-4 h-4" />
+              Custo Adicional
+            </Button>
+            <Button onClick={openCreate} className="gap-2">
+              <Plus className="w-4 h-4" />
+              Novo Serviço
+            </Button>
+          </div>
         </div>
 
         {/* Filtros */}
@@ -293,8 +310,14 @@ export function EmpresaServicos() {
                     <td className="px-4 py-3">
                       <BUBadge bu={service.bu} />
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell">
-                      {BILLING_TYPE_LABELS[service.billingType]}
+                    <td className="px-4 py-3 hidden lg:table-cell">
+                      {service.billingType === "adicional" ? (
+                        <Badge variant="outline" className="border-violet-500/30 bg-violet-500/10 text-violet-400 text-xs">
+                          Adicional
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground">{BILLING_TYPE_LABELS[service.billingType]}</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-foreground hidden sm:table-cell">
                       {service.priceInitial ?? "—"}
@@ -377,7 +400,13 @@ export function EmpresaServicos() {
                 </div>
                 <div className="rounded-lg border border-border bg-muted/30 px-3 py-2.5">
                   <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">Tipo de Cobrança</p>
-                  <p className="text-sm font-medium text-foreground">{BILLING_TYPE_LABELS[viewingService.billingType]}</p>
+                  {viewingService.billingType === "adicional" ? (
+                    <Badge variant="outline" className="border-violet-500/30 bg-violet-500/10 text-violet-400 text-xs">
+                      Adicional
+                    </Badge>
+                  ) : (
+                    <p className="text-sm font-medium text-foreground">{BILLING_TYPE_LABELS[viewingService.billingType]}</p>
+                  )}
                 </div>
               </div>
 
@@ -477,7 +506,9 @@ export function EmpresaServicos() {
         <DialogContent className="max-w-2xl bg-card border-border">
           <DialogHeader>
             <DialogTitle className="text-foreground">
-              {editingService ? "Editar Serviço" : "Novo Serviço"}
+              {editingService
+                ? isAdicionalMode ? "Editar Custo Adicional" : "Editar Serviço"
+                : isAdicionalMode ? "Novo Custo Adicional" : "Novo Serviço"}
             </DialogTitle>
           </DialogHeader>
 
@@ -517,6 +548,7 @@ export function EmpresaServicos() {
                     <SelectItem value="recorrencia">Recorrência</SelectItem>
                     <SelectItem value="hora">Por Hora</SelectItem>
                     <SelectItem value="combo">Combo (Setup + Recorrência)</SelectItem>
+                    <SelectItem value="adicional">Adicional</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -568,7 +600,7 @@ export function EmpresaServicos() {
 
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-                Preços de Setup / Valor Total
+                {formData.billingType === "adicional" ? "Precificação" : "Preços de Setup / Valor Total"}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
@@ -644,7 +676,11 @@ export function EmpresaServicos() {
               Cancelar
             </Button>
             <Button onClick={handleSubmit} disabled={isSaving || !formData.name.trim()}>
-              {isSaving ? "Salvando..." : editingService ? "Salvar Alterações" : "Criar Serviço"}
+              {isSaving
+              ? "Salvando..."
+              : editingService
+                ? "Salvar Alterações"
+                : isAdicionalMode ? "Criar Custo Adicional" : "Criar Serviço"}
             </Button>
           </DialogFooter>
         </DialogContent>
