@@ -265,6 +265,14 @@ export interface DbInternalTaskTimeEntryRow {
   created_at: string;
 }
 
+export interface DbInternalDocumentFolderRow {
+  id: string;
+  workspace_id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface DbInternalDocumentRow {
   id: string;
   workspace_id: string;
@@ -278,6 +286,7 @@ export interface DbInternalDocumentRow {
   mime_type: string | null;
   file_size: number | null;
   url: string | null;
+  folder_id: string | null;
   created_at: string;
   updated_at: string;
 }

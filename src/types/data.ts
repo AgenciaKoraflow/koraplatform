@@ -455,6 +455,14 @@ export interface InternalTaskTimeEntry {
   createdAt: string;
 }
 
+export interface InternalDocumentFolder {
+  id: string;
+  workspaceId: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface InternalDocument {
   id: string;
   workspaceId: string;
@@ -468,6 +476,7 @@ export interface InternalDocument {
   mimeType?: string;
   fileSize?: number;
   url?: string;
+  folderId?: string;
   createdAt: string;
   updatedAt: string;
 }

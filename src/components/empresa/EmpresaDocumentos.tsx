@@ -1,5 +1,8 @@
 import { useRef, useState } from "react";
-import { Plus, FileText, Edit2, Trash2, Paperclip, X, Download, Link2, ExternalLink } from "lucide-react";
+import {
+  Plus, FileText, Edit2, Trash2, Paperclip, X, Download, Link2,
+  ExternalLink, FolderPlus, Folder, ChevronDown, ChevronRight, Pencil, Check,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,11 +26,13 @@ import {
 } from "@/components/ui/select";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { useInternalDocuments } from "@/hooks/useInternalDocuments";
+import { useInternalDocumentFolders } from "@/hooks/useInternalDocumentFolders";
 import { useInternalDocumentMutations, detectDocType } from "@/hooks/mutations/useInternalDocumentMutations";
+import { useInternalDocumentFolderMutations } from "@/hooks/mutations/useInternalDocumentFolderMutations";
 import { usePermissions } from "@/hooks/usePermissions";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import type { InternalDocument } from "@/types/data";
+import type { InternalDocument, InternalDocumentFolder } from "@/types/data";
 
 const BUCKET = "internal-documents";
 const CATEGORIES = ["SOP", "Processo", "Técnico", "Administrativo", "Outro"];
@@ -40,6 +45,7 @@ type FormData = {
   description: string;
   docType: string;
   category: string;
+  folderId: string;
   contentMode: ContentMode;
   content: string;
   url: string;
@@ -51,6 +57,7 @@ const EMPTY_FORM: FormData = {
   description: "",
   docType: "",
   category: "",
+  folderId: "",
   contentMode: "text",
   content: "",
   url: "",
@@ -67,21 +74,266 @@ interface Props {
   workspaceId: string;
 }
 
+function DocumentRow({
+  item,
+  isAdmin,
+  onEdit,
+  onDelete,
+  onDownload,
+}: {
+  item: InternalDocument;
+  isAdmin: boolean;
+  onEdit: (item: InternalDocument) => void;
+  onDelete: (item: InternalDocument) => void;
+  onDownload: (doc: InternalDocument) => void;
+}) {
+  return (
+    <div className="bg-card rounded-xl border border-border p-4 flex items-start gap-3">
+      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-primary/10">
+        {item.storagePath ? (
+          <Paperclip className="w-4 h-4 text-primary" />
+        ) : item.url ? (
+          <Link2 className="w-4 h-4 text-primary" />
+        ) : (
+          <FileText className="w-4 h-4 text-primary" />
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="font-medium text-sm">{item.title}</p>
+          {item.docType && (
+            <Badge variant="secondary" className="text-xs">
+              {item.docType}
+            </Badge>
+          )}
+          {item.category && (
+            <Badge variant="outline" className="text-xs">
+              {item.category}
+            </Badge>
+          )}
+        </div>
+        {item.description && (
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.description}</p>
+        )}
+        {item.fileName ? (
+          <p className="text-xs text-muted-foreground mt-1">
+            {item.fileName}
+            {item.fileSize ? ` · ${formatFileSize(item.fileSize)}` : ""}
+          </p>
+        ) : item.url ? (
+          <a
+            href={item.url.startsWith("http") ? item.url : `https://${item.url}`}
+            target="_blank"
+            rel="noreferrer"
+            className="text-xs text-primary hover:underline mt-1 flex items-center gap-1 truncate"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {item.url}
+            <ExternalLink className="w-3 h-3 flex-shrink-0" />
+          </a>
+        ) : item.content ? (
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.content}</p>
+        ) : null}
+      </div>
+      <div className="flex items-center gap-1 flex-shrink-0">
+        {item.storagePath && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            title="Download"
+            onClick={() => onDownload(item)}
+          >
+            <Download className="w-3.5 h-3.5" />
+          </Button>
+        )}
+        {item.url && !item.storagePath && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            title="Abrir link"
+            onClick={() =>
+              window.open(
+                item.url!.startsWith("http") ? item.url! : `https://${item.url}`,
+                "_blank",
+              )
+            }
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+          </Button>
+        )}
+        {isAdmin && (
+          <>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(item)}>
+              <Edit2 className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-destructive hover:text-destructive"
+              onClick={() => onDelete(item)}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function FolderSection({
+  folder,
+  documents,
+  isAdmin,
+  onEdit,
+  onDelete,
+  onDownload,
+  onRename,
+  onDeleteFolder,
+}: {
+  folder: InternalDocumentFolder | null;
+  documents: InternalDocument[];
+  isAdmin: boolean;
+  onEdit: (item: InternalDocument) => void;
+  onDelete: (item: InternalDocument) => void;
+  onDownload: (doc: InternalDocument) => void;
+  onRename?: (folder: InternalDocumentFolder, name: string) => void;
+  onDeleteFolder?: (folder: InternalDocumentFolder) => void;
+}) {
+  const [expanded, setExpanded] = useState(true);
+  const [renaming, setRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState(folder?.name ?? "");
+
+  const handleRenameCommit = () => {
+    const trimmed = renameValue.trim();
+    if (folder && trimmed && trimmed !== folder.name) {
+      onRename?.(folder, trimmed);
+    }
+    setRenaming(false);
+  };
+
+  const isNoFolder = folder === null;
+  const label = isNoFolder ? "Sem pasta" : folder.name;
+
+  return (
+    <div className="space-y-2">
+      <div
+        className="flex items-center gap-2 cursor-pointer select-none group"
+        onClick={() => !renaming && setExpanded((v) => !v)}
+      >
+        {expanded ? (
+          <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+        ) : (
+          <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+        )}
+        <Folder className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+
+        {renaming ? (
+          <div className="flex items-center gap-1 flex-1" onClick={(e) => e.stopPropagation()}>
+            <Input
+              autoFocus
+              className="h-6 text-sm py-0 px-2"
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              onBlur={handleRenameCommit}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleRenameCommit();
+                if (e.key === "Escape") {
+                  setRenameValue(folder?.name ?? "");
+                  setRenaming(false);
+                }
+              }}
+            />
+            <button
+              type="button"
+              className="text-muted-foreground hover:text-foreground"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={handleRenameCommit}
+            >
+              <Check className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ) : (
+          <span className="text-sm font-medium flex-1">
+            {label}
+            <span className="ml-1.5 text-muted-foreground font-normal">({documents.length})</span>
+          </span>
+        )}
+
+        {isAdmin && !isNoFolder && !renaming && (
+          <div
+            className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              title="Renomear pasta"
+              onClick={() => {
+                setRenameValue(folder!.name);
+                setRenaming(true);
+              }}
+            >
+              <Pencil className="w-3 h-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-destructive hover:text-destructive"
+              title="Excluir pasta"
+              onClick={() => onDeleteFolder?.(folder!)}
+            >
+              <Trash2 className="w-3 h-3" />
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {expanded && documents.length > 0 && (
+        <div className="pl-6 space-y-2">
+          {documents.map((item) => (
+            <DocumentRow
+              key={item.id}
+              item={item}
+              isAdmin={isAdmin}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onDownload={onDownload}
+            />
+          ))}
+        </div>
+      )}
+
+      {expanded && documents.length === 0 && (
+        <div className="pl-6">
+          <p className="text-xs text-muted-foreground py-2">Nenhum documento nesta pasta</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function EmpresaDocumentos({ workspaceId }: Props) {
   const { isAdmin } = usePermissions();
-  const { data: documents = [], isLoading } = useInternalDocuments(workspaceId);
+  const { data: documents = [], isLoading: loadingDocs } = useInternalDocuments(workspaceId);
+  const { data: folders = [], isLoading: loadingFolders } = useInternalDocumentFolders(workspaceId);
   const { addDocument, updateDocument, deleteDocument, isAdding, isUpdating } =
     useInternalDocumentMutations();
+  const { addFolder, renameFolder, deleteFolder } = useInternalDocumentFolderMutations();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InternalDocument | null>(null);
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM);
   const [deleteTarget, setDeleteTarget] = useState<InternalDocument | null>(null);
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [deleteFolderTarget, setDeleteFolderTarget] = useState<InternalDocumentFolder | null>(null);
 
-  const filtered =
-    categoryFilter === "all" ? documents : documents.filter((d) => d.category === categoryFilter);
+  // New folder inline state
+  const [addingFolder, setAddingFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
 
   const openAdd = () => {
     setEditingItem(null);
@@ -99,6 +351,7 @@ export function EmpresaDocumentos({ workspaceId }: Props) {
       description: item.description ?? "",
       docType: item.docType ?? "",
       category: item.category ?? "",
+      folderId: item.folderId ?? "",
       contentMode,
       content: item.content ?? "",
       url: item.url ?? "",
@@ -142,6 +395,7 @@ export function EmpresaDocumentos({ workspaceId }: Props) {
           url: isLinkMode ? formData.url || undefined : undefined,
           category: formData.category || undefined,
           docType: formData.docType || undefined,
+          folderId: formData.folderId || undefined,
           file: hasNewFile ? formData.file! : undefined,
           removeFile: removingExistingFile ? true : undefined,
         },
@@ -156,6 +410,7 @@ export function EmpresaDocumentos({ workspaceId }: Props) {
         url: isLinkMode ? formData.url || undefined : undefined,
         category: formData.category || undefined,
         docType: formData.docType || undefined,
+        folderId: formData.folderId || undefined,
         file: formData.file ?? undefined,
         createdAt: "",
         updatedAt: "",
@@ -176,7 +431,15 @@ export function EmpresaDocumentos({ workspaceId }: Props) {
     window.open(data.signedUrl, "_blank");
   };
 
-  if (isLoading) {
+  const handleAddFolder = () => {
+    const trimmed = newFolderName.trim();
+    if (!trimmed) return;
+    addFolder(workspaceId, trimmed);
+    setNewFolderName("");
+    setAddingFolder(false);
+  };
+
+  if (loadingDocs || loadingFolders) {
     return <div className="text-muted-foreground text-sm">Carregando...</div>;
   }
 
@@ -184,24 +447,59 @@ export function EmpresaDocumentos({ workspaceId }: Props) {
   const existingFileSize = editingItem?.fileSize;
   const existingStoragePath = editingItem?.storagePath;
 
+  // Group documents by folder
+  const byFolder = new Map<string | null, InternalDocument[]>();
+  byFolder.set(null, []);
+  for (const folder of folders) byFolder.set(folder.id, []);
+  for (const doc of documents) {
+    const key = doc.folderId && byFolder.has(doc.folderId) ? doc.folderId : null;
+    byFolder.get(key)!.push(doc);
+  }
+
+  const noFolderDocs = byFolder.get(null) ?? [];
+
   return (
     <div className="space-y-4">
+      {/* Header */}
       <div className="flex items-center gap-3">
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-40">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas</SelectItem>
-            {CATEGORIES.map((c) => (
-              <SelectItem key={c} value={c}>
-                {c}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
         {isAdmin && (
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            {addingFolder ? (
+              <div className="flex items-center gap-2">
+                <Input
+                  autoFocus
+                  className="h-8 w-44 text-sm"
+                  placeholder="Nome da pasta"
+                  value={newFolderName}
+                  onChange={(e) => setNewFolderName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleAddFolder();
+                    if (e.key === "Escape") {
+                      setNewFolderName("");
+                      setAddingFolder(false);
+                    }
+                  }}
+                />
+                <Button size="sm" onClick={handleAddFolder} disabled={!newFolderName.trim()}>
+                  <Check className="w-3.5 h-3.5" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setNewFolderName("");
+                    setAddingFolder(false);
+                  }}
+                >
+                  <X className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            ) : (
+              <Button size="sm" variant="outline" onClick={() => setAddingFolder(true)}>
+                <FolderPlus className="w-4 h-4 mr-2" />
+                Nova Pasta
+              </Button>
+            )}
             <Button size="sm" onClick={openAdd}>
               <Plus className="w-4 h-4 mr-2" />
               Novo Documento
@@ -210,113 +508,44 @@ export function EmpresaDocumentos({ workspaceId }: Props) {
         )}
       </div>
 
-      {filtered.length === 0 && (
+      {/* Empty state */}
+      {documents.length === 0 && folders.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
           <FileText className="w-8 h-8 mx-auto mb-2 opacity-40" />
           <p>Nenhum documento cadastrado</p>
         </div>
       )}
 
-      <div className="space-y-2">
-        {filtered.map((item) => (
-          <div
-            key={item.id}
-            className="bg-card rounded-xl border border-border p-4 flex items-start gap-3"
-          >
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-primary/10">
-              {item.storagePath ? (
-                <Paperclip className="w-4 h-4 text-primary" />
-              ) : item.url ? (
-                <Link2 className="w-4 h-4 text-primary" />
-              ) : (
-                <FileText className="w-4 h-4 text-primary" />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <p className="font-medium text-sm">{item.title}</p>
-                {item.docType && (
-                  <Badge variant="secondary" className="text-xs">
-                    {item.docType}
-                  </Badge>
-                )}
-                {item.category && (
-                  <Badge variant="outline" className="text-xs">
-                    {item.category}
-                  </Badge>
-                )}
-              </div>
-              {item.description && (
-                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.description}</p>
-              )}
-              {item.fileName ? (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {item.fileName}
-                  {item.fileSize ? ` · ${formatFileSize(item.fileSize)}` : ""}
-                </p>
-              ) : item.url ? (
-                <a
-                  href={item.url.startsWith("http") ? item.url : `https://${item.url}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs text-primary hover:underline mt-1 flex items-center gap-1 truncate"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {item.url}
-                  <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                </a>
-              ) : item.content ? (
-                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.content}</p>
-              ) : null}
-            </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              {item.storagePath && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  title="Download"
-                  onClick={() => handleDownload(item)}
-                >
-                  <Download className="w-3.5 h-3.5" />
-                </Button>
-              )}
-              {item.url && !item.storagePath && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  title="Abrir link"
-                  onClick={() => window.open(item.url!.startsWith("http") ? item.url! : `https://${item.url}`, "_blank")}
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </Button>
-              )}
-              {isAdmin && (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => openEdit(item)}
-                  >
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-destructive hover:text-destructive"
-                    onClick={() => setDeleteTarget(item)}
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
+      {/* Folder sections */}
+      <div className="space-y-6">
+        {folders.map((folder) => (
+          <FolderSection
+            key={folder.id}
+            folder={folder}
+            documents={byFolder.get(folder.id) ?? []}
+            isAdmin={isAdmin}
+            onEdit={openEdit}
+            onDelete={setDeleteTarget}
+            onDownload={handleDownload}
+            onRename={(f, name) => renameFolder(f.id, name)}
+            onDeleteFolder={setDeleteFolderTarget}
+          />
         ))}
+
+        {/* "Sem pasta" section — always shown if there are ungrouped docs or no folders exist */}
+        {(noFolderDocs.length > 0 || folders.length === 0) && (
+          <FolderSection
+            folder={null}
+            documents={noFolderDocs}
+            isAdmin={isAdmin}
+            onEdit={openEdit}
+            onDelete={setDeleteTarget}
+            onDownload={handleDownload}
+          />
+        )}
       </div>
 
+      {/* Document dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -412,9 +641,7 @@ export function EmpresaDocumentos({ workspaceId }: Props) {
                       )}
                       <button
                         type="button"
-                        onClick={() =>
-                          setFormData((p) => ({ ...p, contentMode: "text" }))
-                        }
+                        onClick={() => setFormData((p) => ({ ...p, contentMode: "text" }))}
                         className="text-muted-foreground hover:text-foreground"
                         title="Remover arquivo"
                       >
@@ -466,6 +693,29 @@ export function EmpresaDocumentos({ workspaceId }: Props) {
                   onChange={(e) => setFormData((p) => ({ ...p, content: e.target.value }))}
                 />
               )}
+            </div>
+
+            {/* Pasta */}
+            <div className="space-y-1.5">
+              <Label>Pasta</Label>
+              <Select
+                value={formData.folderId || "none"}
+                onValueChange={(v) =>
+                  setFormData((p) => ({ ...p, folderId: v === "none" ? "" : v }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sem pasta" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sem pasta</SelectItem>
+                  {folders.map((f) => (
+                    <SelectItem key={f.id} value={f.id}>
+                      {f.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Tipo de Documento */}
@@ -528,6 +778,7 @@ export function EmpresaDocumentos({ workspaceId }: Props) {
         </DialogContent>
       </Dialog>
 
+      {/* Delete document confirm */}
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
@@ -538,6 +789,20 @@ export function EmpresaDocumentos({ workspaceId }: Props) {
         onConfirm={() => {
           if (deleteTarget) deleteDocument(deleteTarget.id, deleteTarget.storagePath);
           setDeleteTarget(null);
+        }}
+      />
+
+      {/* Delete folder confirm */}
+      <ConfirmDialog
+        open={!!deleteFolderTarget}
+        onOpenChange={(open) => !open && setDeleteFolderTarget(null)}
+        title="Excluir pasta"
+        description={`A pasta "${deleteFolderTarget?.name}" será excluída. Os documentos dentro dela serão movidos para "Sem pasta".`}
+        confirmLabel="Excluir pasta"
+        variant="destructive"
+        onConfirm={() => {
+          if (deleteFolderTarget) deleteFolder(deleteFolderTarget.id);
+          setDeleteFolderTarget(null);
         }}
       />
     </div>

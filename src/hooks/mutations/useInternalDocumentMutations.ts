@@ -35,7 +35,7 @@ async function removeFile(storagePath: string) {
   await supabase.storage.from(BUCKET).remove([storagePath]);
 }
 
-type AddPayload = Omit<InternalDocument, "id"> & { file?: File };
+type AddPayload = Omit<InternalDocument, "id"> & { file?: File; folderId?: string };
 type UpdatePayload = Partial<InternalDocument> & { file?: File; removeFile?: boolean; url?: string };
 
 export function useInternalDocumentMutations() {
@@ -69,6 +69,7 @@ export function useInternalDocumentMutations() {
           mime_type: mimeType,
           file_size: fileSize,
           url: item.url ?? null,
+          folder_id: item.folderId ?? null,
         })
         .select("*");
       if (error) {
@@ -90,6 +91,7 @@ export function useInternalDocumentMutations() {
         mimeType: r.mime_type ?? undefined,
         fileSize: r.file_size ?? undefined,
         url: r.url ?? undefined,
+        folderId: r.folder_id ?? undefined,
         createdAt: r.created_at,
         updatedAt: r.updated_at,
       };
@@ -110,6 +112,7 @@ export function useInternalDocumentMutations() {
       if (data.category !== undefined) dbData.category = data.category ?? null;
       if (data.docType !== undefined) dbData.doc_type = data.docType ?? null;
       if (data.url !== undefined) dbData.url = data.url ?? null;
+      if (data.folderId !== undefined) dbData.folder_id = data.folderId ?? null;
 
       if (data.file) {
         const workspaceId = data.workspaceId ?? "";

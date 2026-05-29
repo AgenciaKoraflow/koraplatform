@@ -1,4 +1,4 @@
-import { Client, Project, Task, Contract, KnowledgeItem, SupportTicket, Service, TaskSubtask, TaskComment, TaskAttachment, TaskTimeEntry, InternalWorkspace, InternalCredential, InternalInsight, InternalTask, InternalDocument, InternalTaskSubtask, InternalTaskTimeEntry } from "@/types/data";
+import { Client, Project, Task, Contract, KnowledgeItem, SupportTicket, Service, TaskSubtask, TaskComment, TaskAttachment, TaskTimeEntry, InternalWorkspace, InternalCredential, InternalInsight, InternalTask, InternalDocument, InternalDocumentFolder, InternalTaskSubtask, InternalTaskTimeEntry } from "@/types/data";
 import { parseCurrencyToNumber } from "@/lib/currency";
 import type { BU } from "@/types/bu";
 import type {
@@ -18,6 +18,7 @@ import type {
   DbInternalInsightRow,
   DbInternalTaskRow,
   DbInternalDocumentRow,
+  DbInternalDocumentFolderRow,
   DbInternalTaskSubtaskRow,
   DbInternalTaskTimeEntryRow,
 } from "@/types/db";
@@ -431,6 +432,17 @@ export function mapDbInternalDocument(db: DbInternalDocumentRow): InternalDocume
     mimeType: db.mime_type ?? undefined,
     fileSize: db.file_size ?? undefined,
     url: db.url ?? undefined,
+    folderId: db.folder_id ?? undefined,
+    createdAt: db.created_at,
+    updatedAt: db.updated_at,
+  };
+}
+
+export function mapDbInternalDocumentFolder(db: DbInternalDocumentFolderRow): InternalDocumentFolder {
+  return {
+    id: db.id,
+    workspaceId: db.workspace_id,
+    name: db.name,
     createdAt: db.created_at,
     updatedAt: db.updated_at,
   };
