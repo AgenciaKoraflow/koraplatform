@@ -29,6 +29,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useServices } from "@/hooks/useServices";
 import { useServiceMutations } from "@/hooks/mutations/useServiceMutations";
@@ -325,17 +326,13 @@ export function EmpresaServicos() {
                     <td className="px-4 py-3 text-right font-mono text-muted-foreground hidden lg:table-cell">
                       {service.recurrencePriceInitial ? `${service.recurrencePriceInitial}/mês` : "—"}
                     </td>
-                    <td className="px-4 py-3 text-center">
-                      <Badge
-                        variant="outline"
-                        className={
-                          service.status === "ativo"
-                            ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-500"
-                            : "border-muted-foreground/30 bg-muted/30 text-muted-foreground"
+                    <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                      <Switch
+                        checked={service.status === "ativo"}
+                        onCheckedChange={(checked) =>
+                          updateService(service.id, { status: checked ? "ativo" : "inativo" })
                         }
-                      >
-                        {STATUS_LABELS[service.status]}
-                      </Badge>
+                      />
                     </td>
                     <td className="px-2 py-3" onClick={(e) => e.stopPropagation()}>
                       <ActionMenu
