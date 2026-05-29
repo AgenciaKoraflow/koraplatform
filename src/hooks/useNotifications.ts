@@ -5,6 +5,8 @@ import { useAllContracts } from "@/hooks/useContracts";
 import { useAllTickets } from "@/hooks/useTickets";
 import { useAllClients } from "@/hooks/useClients";
 import { useAuth } from "@/hooks/useAuth";
+import { useInternalWorkspace } from "@/hooks/useInternalWorkspace";
+import { useInternalTasks } from "@/hooks/useInternalTasks";
 import { parseISO, isPast, differenceInDays, isToday } from "date-fns";
 import { Client } from "@/types/data";
 
@@ -47,18 +49,27 @@ const parseDate = (dateString: string): Date | null => {
   }
 };
 
+function isAssignedToUser(assignees: string[], userName: string | null): boolean {
+  if (!userName) return false;
+  const lower = userName.toLowerCase().trim();
+  return assignees.some((a) => a.trim().toLowerCase() === lower);
+}
+
 export function useNotifications() {
   const { data: tasks = [] } = useAllTasks();
   const { data: contracts = [] } = useAllContracts();
   const { data: tickets = [] } = useAllTickets();
   const { data: clients = [] } = useAllClients();
   const { profile } = useAuth();
+  const { data: workspace } = useInternalWorkspace();
+  const { data: internalTasks = [] } = useInternalTasks(workspace?.id);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Generate notifications from real data
   const generatedNotifications = useMemo(() => {
     const notifs: Notification[] = [];
+    const currentUserName = profile?.full_name ?? null;
 
     // Password expiry — pinned at the top if > 90 days without change
     if (profile?.password_changed_at) {
@@ -79,9 +90,9 @@ export function useNotifications() {
       }
     }
 
-    // Overdue tasks
+    // Overdue tasks — only for the current user's assigned tasks
     tasks.forEach((task) => {
-      if (task.status !== "done") {
+      if (task.status !== "done" && isAssignedToUser(task.assignees, currentUserName)) {
         const dueDate = parseDate(task.dueDate);
         if (dueDate && isPast(dueDate) && !isToday(dueDate)) {
           const daysOverdue = differenceInDays(new Date(), dueDate);
@@ -100,9 +111,9 @@ export function useNotifications() {
       }
     });
 
-    // Tasks due today
+    // Tasks due today — only for the current user's assigned tasks
     tasks.forEach((task) => {
-      if (task.status !== "done") {
+      if (task.status !== "done" && isAssignedToUser(task.assignees, currentUserName)) {
         const dueDate = parseDate(task.dueDate);
         if (dueDate && isToday(dueDate)) {
           notifs.push({
@@ -117,6 +128,51 @@ export function useNotifications() {
             metadata: { taskId: task.id, title: task.title },
           });
         }
+      }
+    });
+
+    // Internal tasks — overdue
+    internalTasks.forEach((task) => {
+      if (task.status === "done") return;
+      const isForCurrentUser =
+        task.allInvolved || (currentUserName && task.assignedTo?.trim().toLowerCase() === currentUserName.toLowerCase().trim());
+      if (!isForCurrentUser) return;
+      const dueDate = task.dueDate ? parseDate(task.dueDate) : null;
+      if (dueDate && isPast(dueDate) && !isToday(dueDate)) {
+        const daysOverdue = differenceInDays(new Date(), dueDate);
+        notifs.push({
+          id: `internal-task-overdue-${task.id}`,
+          type: "task_overdue",
+          title: "Tarefa interna atrasada",
+          message: `${task.title} está ${daysOverdue} ${daysOverdue === 1 ? "dia" : "dias"} atrasada`,
+          timestamp: dueDate,
+          read: false,
+          actionUrl: `/empresa?tab=tarefas`,
+          priority: daysOverdue > 3 ? "critical" : "high",
+          metadata: { taskId: task.id, title: task.title, internal: true },
+        });
+      }
+    });
+
+    // Internal tasks — due today
+    internalTasks.forEach((task) => {
+      if (task.status === "done") return;
+      const isForCurrentUser =
+        task.allInvolved || (currentUserName && task.assignedTo?.trim().toLowerCase() === currentUserName.toLowerCase().trim());
+      if (!isForCurrentUser) return;
+      const dueDate = task.dueDate ? parseDate(task.dueDate) : null;
+      if (dueDate && isToday(dueDate)) {
+        notifs.push({
+          id: `internal-task-due-${task.id}`,
+          type: "task_due",
+          title: "Tarefa interna vence hoje",
+          message: task.title,
+          timestamp: dueDate,
+          read: false,
+          actionUrl: `/empresa?tab=tarefas`,
+          priority: task.priority === "high" ? "high" : "medium",
+          metadata: { taskId: task.id, title: task.title, internal: true },
+        });
       }
     });
 
@@ -255,7 +311,7 @@ export function useNotifications() {
     const notifPrefs = profile?.preferences?.notifications;
     if (!notifPrefs) return sorted;
     return sorted.filter((n) => notifPrefs[n.type] !== false);
-  }, [tasks, contracts, tickets, clients, profile]);
+  }, [tasks, contracts, tickets, clients, profile, internalTasks]);
 
   useEffect(() => {
     setIsLoading(true);
