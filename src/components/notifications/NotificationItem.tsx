@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { priority as priorityColors } from "@/lib/colors";
 
 const iconMap = {
   task_due: Clock,
@@ -42,10 +43,10 @@ const colorMap = {
 };
 
 const priorityIndicator = {
-  low: "bg-slate-500",
-  medium: "bg-primary",
-  high: "bg-amber-500",
-  critical: "bg-red-500",
+  low:      priorityColors.low.dot,
+  medium:   priorityColors.medium.dot,
+  high:     priorityColors.high.dot,
+  critical: priorityColors.critical.dot,
 };
 
 interface NotificationItemProps {

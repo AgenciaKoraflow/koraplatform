@@ -22,19 +22,21 @@ import { useProfileAvatarMap, useTeamOptions } from "@/hooks/useProfile";
 import { UserAvatar } from "@/components/shared/UserAvatar";
 import { SupportTicket } from "@/types/data";
 
+import { priority, ticketStatus } from "@/lib/colors";
+
 const statusConfig = {
-  open: { label: "Aberto", color: "bg-primary/10 text-primary border-blue-500/20", icon: MessageSquare },
-  in_progress: { label: "Em Andamento", color: "bg-amber-500/10 text-amber-500 border-amber-500/20", icon: Clock },
-  waiting: { label: "Aguardando", color: "bg-muted/10 text-muted-foreground border-purple-500/20", icon: AlertCircle },
-  resolved: { label: "Resolvido", color: "bg-green-500/10 text-green-500 border-green-500/20", icon: CheckCircle },
-  closed: { label: "Fechado", color: "bg-slate-500/10 text-slate-500 border-slate-500/20", icon: CheckCircle },
+  open:        { label: "Aberto",       color: ticketStatus.open.badge,        icon: MessageSquare },
+  in_progress: { label: "Em Andamento", color: ticketStatus.in_progress.badge,  icon: Clock },
+  waiting:     { label: "Aguardando",   color: ticketStatus.waiting.badge,      icon: AlertCircle },
+  resolved:    { label: "Resolvido",    color: ticketStatus.resolved.badge,     icon: CheckCircle },
+  closed:      { label: "Fechado",      color: ticketStatus.closed.badge,       icon: CheckCircle },
 };
 
 const priorityConfig = {
-  low: { label: "Baixa", color: "bg-slate-500" },
-  medium: { label: "Média", color: "bg-primary" },
-  high: { label: "Alta", color: "bg-amber-500" },
-  critical: { label: "Crítica", color: "bg-red-500" },
+  low:      { label: "Baixa",   color: priority.low.dot },
+  medium:   { label: "Média",   color: priority.medium.dot },
+  high:     { label: "Alta",    color: priority.high.dot },
+  critical: { label: "Crítica", color: priority.critical.dot },
 };
 
 export default function Sustentacao() {

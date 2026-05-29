@@ -31,6 +31,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { ProjectGantt } from "@/components/shared/ProjectGantt";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CreateTaskDialog } from "@/components/tarefas/CreateTaskDialog";
+import { taskStatus } from "@/lib/colors";
 
 const typeConfig = {
   projeto: { label: "Projeto", color: "bg-primary/10 text-primary" },
@@ -49,12 +50,12 @@ const statusConfig = {
 const statusOrder: (keyof typeof statusConfig)[] = ["planning", "in_progress", "review", "completed", "on_hold"];
 
 const taskStatusConfig = {
-  todo: { label: "A Fazer", color: "text-slate-400", dot: "bg-slate-400", bg: "bg-slate-500/10" },
-  in_progress: { label: "Em Andamento", color: "text-primary", dot: "bg-primary", bg: "bg-primary/10" },
-  blocked: { label: "Impedimento", color: "text-red-400", dot: "bg-red-400", bg: "bg-red-500/10" },
-  review: { label: "Em Validação Interna", color: "text-amber-400", dot: "bg-amber-400", bg: "bg-amber-500/10" },
-  client_review: { label: "Em Cliente", color: "text-purple-400", dot: "bg-purple-400", bg: "bg-purple-500/10" },
-  done: { label: "Concluído", color: "text-green-400", dot: "bg-green-400", bg: "bg-green-500/10" },
+  todo:          { label: "A Fazer",             color: taskStatus.todo.text,          dot: taskStatus.todo.dot,          bg: taskStatus.todo.bg },
+  in_progress:   { label: "Em Andamento",         color: taskStatus.in_progress.text,   dot: taskStatus.in_progress.dot,   bg: taskStatus.in_progress.bg },
+  blocked:       { label: "Impedimento",          color: taskStatus.blocked.text,       dot: taskStatus.blocked.dot,       bg: taskStatus.blocked.bg },
+  review:        { label: "Em Validação Interna", color: taskStatus.review.text,        dot: taskStatus.review.dot,        bg: taskStatus.review.bg },
+  client_review: { label: "Em Cliente",           color: taskStatus.client_review.text, dot: taskStatus.client_review.dot, bg: taskStatus.client_review.bg },
+  done:          { label: "Concluído",            color: taskStatus.done.text,          dot: taskStatus.done.dot,          bg: taskStatus.done.bg },
 };
 
 const MONTHS_PT = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];

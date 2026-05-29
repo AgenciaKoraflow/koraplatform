@@ -37,18 +37,20 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { InternalTaskDetailSheet } from "./InternalTaskDetailSheet";
 import type { InternalTask, InternalTaskStatus, InternalTaskPriority } from "@/types/data";
 
+import { taskStatus, priority } from "@/lib/colors";
+
 const statusColumns = [
-  { id: "todo" as InternalTaskStatus, label: "A Fazer", icon: Circle, headerColor: "text-slate-400", dotColor: "bg-slate-500", dropColor: "ring-slate-500/40" },
-  { id: "in_progress" as InternalTaskStatus, label: "Em andamento", icon: Clock, headerColor: "text-primary", dotColor: "bg-primary", dropColor: "ring-primary/40" },
-  { id: "blocked" as InternalTaskStatus, label: "Em Impedimento", icon: Ban, headerColor: "text-red-400", dotColor: "bg-red-500", dropColor: "ring-red-500/40" },
-  { id: "review" as InternalTaskStatus, label: "Em Validação Interna", icon: Eye, headerColor: "text-amber-400", dotColor: "bg-amber-500", dropColor: "ring-amber-500/40" },
-  { id: "done" as InternalTaskStatus, label: "Concluídos", icon: CheckCircle2, headerColor: "text-green-400", dotColor: "bg-green-500", dropColor: "ring-green-500/40" },
+  { id: "todo" as InternalTaskStatus,        label: "A Fazer",             icon: Circle,       headerColor: taskStatus.todo.text,        dotColor: taskStatus.todo.dot,        dropColor: taskStatus.todo.ring },
+  { id: "in_progress" as InternalTaskStatus, label: "Em andamento",        icon: Clock,        headerColor: taskStatus.in_progress.text, dotColor: taskStatus.in_progress.dot, dropColor: taskStatus.in_progress.ring },
+  { id: "blocked" as InternalTaskStatus,     label: "Em Impedimento",      icon: Ban,          headerColor: taskStatus.blocked.text,     dotColor: taskStatus.blocked.dot,     dropColor: taskStatus.blocked.ring },
+  { id: "review" as InternalTaskStatus,      label: "Em Validação Interna", icon: Eye,         headerColor: taskStatus.review.text,      dotColor: taskStatus.review.dot,      dropColor: taskStatus.review.ring },
+  { id: "done" as InternalTaskStatus,        label: "Concluídos",          icon: CheckCircle2, headerColor: taskStatus.done.text,        dotColor: taskStatus.done.dot,        dropColor: taskStatus.done.ring },
 ];
 
 const priorityConfig: Record<InternalTaskPriority, { label: string; color: string; flagColor: string }> = {
-  low: { label: "Baixa", color: "bg-slate-500", flagColor: "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" },
-  medium: { label: "Média", color: "bg-primary", flagColor: "bg-amber-500/20 text-amber-400 border border-amber-500/30" },
-  high: { label: "Alta", color: "bg-red-500", flagColor: "bg-red-500/20 text-red-400 border border-red-500/30" },
+  low:    { label: "Baixa", color: priority.low.dot,    flagColor: priority.low.badge },
+  medium: { label: "Média", color: priority.medium.dot, flagColor: priority.medium.badge },
+  high:   { label: "Alta",  color: priority.high.dot,   flagColor: priority.high.badge },
 };
 
 function getDeadlineStatus(dueDate: string | undefined, status: InternalTaskStatus) {

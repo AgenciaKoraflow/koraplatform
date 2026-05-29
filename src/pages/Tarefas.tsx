@@ -32,6 +32,7 @@ import { BUSelect } from "@/components/shared/BUSelect";
 import { TaskDetailSheet } from "@/components/tarefas/TaskDetailSheet";
 import { CreateTaskDialog } from "@/components/tarefas/CreateTaskDialog";
 import { differenceInDays, parse, isValid } from "date-fns";
+import { taskStatus, priority } from "@/lib/colors";
 
 // Função para calcular status do prazo
 function getDeadlineStatus(dueDate: string, status: Task["status"]): {
@@ -99,18 +100,18 @@ function getDeadlineStatus(dueDate: string, status: Task["status"]): {
 }
 
 const statusColumns = [
-  { id: "todo", label: "A Fazer", icon: Circle, dotColor: "bg-slate-500", headerColor: "text-slate-400", dropColor: "ring-slate-500/40" },
-  { id: "in_progress", label: "Em Andamento", icon: Clock, dotColor: "bg-primary", headerColor: "text-primary", dropColor: "ring-primary/40" },
-  { id: "blocked", label: "Em Impedimento", icon: Ban, dotColor: "bg-red-500", headerColor: "text-red-400", dropColor: "ring-red-500/40" },
-  { id: "review", label: "Em Validação Interna", icon: Eye, dotColor: "bg-amber-500", headerColor: "text-amber-400", dropColor: "ring-amber-500/40" },
-  { id: "client_review", label: "Em Cliente", icon: UserCheck, dotColor: "bg-purple-500", headerColor: "text-purple-400", dropColor: "ring-purple-500/40" },
-  { id: "done", label: "Concluído", icon: CheckCircle2, dotColor: "bg-green-500", headerColor: "text-green-400", dropColor: "ring-green-500/40" },
+  { id: "todo",          label: "A Fazer",               icon: Circle,      dotColor: taskStatus.todo.dot,          headerColor: taskStatus.todo.text,          dropColor: taskStatus.todo.ring },
+  { id: "in_progress",   label: "Em Andamento",           icon: Clock,       dotColor: taskStatus.in_progress.dot,   headerColor: taskStatus.in_progress.text,   dropColor: taskStatus.in_progress.ring },
+  { id: "blocked",       label: "Em Impedimento",         icon: Ban,         dotColor: taskStatus.blocked.dot,       headerColor: taskStatus.blocked.text,       dropColor: taskStatus.blocked.ring },
+  { id: "review",        label: "Em Validação Interna",   icon: Eye,         dotColor: taskStatus.review.dot,        headerColor: taskStatus.review.text,        dropColor: taskStatus.review.ring },
+  { id: "client_review", label: "Em Cliente",             icon: UserCheck,   dotColor: taskStatus.client_review.dot, headerColor: taskStatus.client_review.text, dropColor: taskStatus.client_review.ring },
+  { id: "done",          label: "Concluído",              icon: CheckCircle2, dotColor: taskStatus.done.dot,         headerColor: taskStatus.done.text,          dropColor: taskStatus.done.ring },
 ];
 
 const priorityConfig = {
-  low: { label: "Baixa", color: "bg-slate-500", flagColor: "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" },
-  medium: { label: "Média", color: "bg-primary", flagColor: "bg-amber-500/20 text-amber-400 border border-amber-500/30" },
-  high: { label: "Alta", color: "bg-red-500", flagColor: "bg-red-500/20 text-red-400 border border-red-500/30" },
+  low:    { label: "Baixa", color: priority.low.dot,    flagColor: priority.low.badge },
+  medium: { label: "Média", color: priority.medium.dot, flagColor: priority.medium.badge },
+  high:   { label: "Alta",  color: priority.high.dot,   flagColor: priority.high.badge },
 };
 
 export default function Tarefas() {

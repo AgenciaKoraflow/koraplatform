@@ -1,6 +1,7 @@
 import { useMemo, useRef, useEffect } from "react";
 import { Task, Project } from "@/types/data";
 import { cn } from "@/lib/utils";
+import { taskStatus } from "@/lib/colors";
 
 // ─── date helpers ────────────────────────────────────────────────────────────
 
@@ -31,12 +32,12 @@ const MONTHS_PT = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set"
 // ─── status config ────────────────────────────────────────────────────────────
 
 const STATUS_CFG: Record<Task["status"], { label: string; bar: string; dot: string }> = {
-  todo: { label: "A Fazer", bar: "bg-slate-400", dot: "bg-slate-400" },
-  in_progress: { label: "Em andamento", bar: "bg-blue-500", dot: "bg-blue-500" },
-  review: { label: "Em Validação Interna", bar: "bg-amber-500", dot: "bg-amber-500" },
-  done: { label: "Concluído", bar: "bg-emerald-500", dot: "bg-emerald-500" },
-  blocked: { label: "Impedimento", bar: "bg-red-500", dot: "bg-red-500" },
-  client_review: { label: "Em cliente", bar: "bg-purple-500", dot: "bg-purple-500" },
+  todo:          { label: "A Fazer",               bar: taskStatus.todo.dot,          dot: taskStatus.todo.dot },
+  in_progress:   { label: "Em andamento",           bar: taskStatus.in_progress.dot,   dot: taskStatus.in_progress.dot },
+  review:        { label: "Em Validação Interna",   bar: taskStatus.review.dot,        dot: taskStatus.review.dot },
+  done:          { label: "Concluído",              bar: taskStatus.done.dot,          dot: taskStatus.done.dot },
+  blocked:       { label: "Impedimento",            bar: taskStatus.blocked.dot,       dot: taskStatus.blocked.dot },
+  client_review: { label: "Em cliente",             bar: taskStatus.client_review.dot, dot: taskStatus.client_review.dot },
 };
 
 const DAY_PX = 36; // px per day column

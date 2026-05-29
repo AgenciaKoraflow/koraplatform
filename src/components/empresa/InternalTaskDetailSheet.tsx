@@ -38,18 +38,20 @@ import {
 import { useInternalTimeEntryMutations } from "@/hooks/mutations/useInternalTimeEntryMutations";
 import type { InternalTask } from "@/types/data";
 
+import { taskStatus, priority } from "@/lib/colors";
+
 const statusConfig: Record<string, { label: string; icon: React.ElementType; color: string }> = {
-  todo: { label: "A Fazer", icon: Circle, color: "text-slate-400" },
-  in_progress: { label: "Em Andamento", icon: Clock, color: "text-primary" },
-  blocked: { label: "Em Impedimento", icon: Ban, color: "text-red-400" },
-  review: { label: "Em Validação Interna", icon: Eye, color: "text-amber-400" },
-  done: { label: "Concluído", icon: CheckCircle2, color: "text-green-400" },
+  todo:        { label: "A Fazer",             icon: Circle,       color: taskStatus.todo.text },
+  in_progress: { label: "Em Andamento",         icon: Clock,        color: taskStatus.in_progress.text },
+  blocked:     { label: "Em Impedimento",       icon: Ban,          color: taskStatus.blocked.text },
+  review:      { label: "Em Validação Interna", icon: Eye,          color: taskStatus.review.text },
+  done:        { label: "Concluído",            icon: CheckCircle2, color: taskStatus.done.text },
 };
 
 const priorityConfig: Record<string, { label: string; color: string }> = {
-  low: { label: "Baixa", color: "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" },
-  medium: { label: "Média", color: "bg-amber-500/20 text-amber-400 border border-amber-500/30" },
-  high: { label: "Alta", color: "bg-red-500/20 text-red-400 border border-red-500/30" },
+  low:    { label: "Baixa", color: priority.low.badge },
+  medium: { label: "Média", color: priority.medium.badge },
+  high:   { label: "Alta",  color: priority.high.badge },
 };
 
 function formatDisplayDate(iso: string | undefined): string {
