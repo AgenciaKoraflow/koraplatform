@@ -430,8 +430,28 @@ export interface InternalTask {
   priority: InternalTaskPriority;
   assignedTo?: string;
   dueDate?: string;
+  estimatedHours?: number;
+  blockedReason?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface InternalTaskSubtask {
+  id: string;
+  taskId: string;
+  title: string;
+  done: boolean;
+  position: number;
+  createdAt: string;
+}
+
+export interface InternalTaskTimeEntry {
+  id: string;
+  taskId: string;
+  description: string;
+  hours: number;
+  author: string;
+  createdAt: string;
 }
 
 export interface InternalDocument {

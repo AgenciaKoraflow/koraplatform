@@ -1,6 +1,6 @@
 // Edge Function: admin-create-user
-// Only callable by authenticated users with role = 'admin'.
-// Creates a new Supabase auth user + profile row with the specified role.
+// Callable by any authenticated user.
+// Creates a new Supabase auth user + profile row.
 // The on_auth_user_created trigger handles profile creation via raw_user_meta_data.
 // Returns a one-time temporary password; the user is forced to change it on first login.
 
@@ -55,31 +55,18 @@ Deno.serve(async (req: Request) => {
     return err("Invalid or expired session", 401);
   }
 
-  // Check that caller is an admin
   const adminClient = createClient(supabaseUrl, serviceKey);
-  const { data: callerProfile, error: profileError } = await adminClient
-    .from("profiles")
-    .select("role")
-    .eq("id", callerUser.id)
-    .single<{ role: string }>();
 
-  if (profileError || !callerProfile || callerProfile.role !== "admin") {
-    return err("Forbidden: admin access required", 403);
-  }
-
-  let body: { email?: string; full_name?: string; role?: string };
+  let body: { email?: string; full_name?: string };
   try {
     body = await req.json();
   } catch {
     return err("Invalid JSON body", 400);
   }
 
-  const { email, full_name, role } = body;
+  const { email, full_name } = body;
   if (!email) return err("email is required", 400);
   if (!full_name) return err("full_name is required", 400);
-
-  const validRoles = ["admin", "operador", "observador"];
-  const targetRole = validRoles.includes(role ?? "") ? role : "observador";
 
   const tempPassword = generateTempPassword();
 
@@ -89,10 +76,7 @@ Deno.serve(async (req: Request) => {
     email,
     password: tempPassword,
     email_confirm: true,
-    user_metadata: {
-      full_name,
-      role: targetRole,
-    },
+    user_metadata: { full_name },
   });
 
   if (createError) {
@@ -117,7 +101,6 @@ Deno.serve(async (req: Request) => {
       {
         id: created.user.id,
         full_name: full_name,
-        role: targetRole,
         first_login: true,
         password_changed_at: new Date().toISOString(),
       },

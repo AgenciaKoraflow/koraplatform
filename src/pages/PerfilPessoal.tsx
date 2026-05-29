@@ -211,15 +211,6 @@ export default function PerfilPessoal() {
     savePrefs({ task_view: view });
   };
 
-  // ── Role badge ────────────────────────────────────────────────────────────
-
-  const roleBadge = {
-    admin: { label: 'Admin', class: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300' },
-    operador: { label: 'Operador', class: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' },
-    observador: { label: 'Observador', class: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' },
-  };
-  const badge = profile?.role ? roleBadge[profile.role] : roleBadge.observador;
-
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -261,9 +252,6 @@ export default function PerfilPessoal() {
                 <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
                 <div>
                   <p className="font-medium text-foreground">{profile?.full_name ?? user?.email?.split('@')[0]}</p>
-                  <span className={`mt-1 inline-block text-xs font-medium px-2 py-0.5 rounded-full ${badge.class}`}>
-                    {badge.label}
-                  </span>
                   <p className="text-xs text-muted-foreground mt-1.5">JPG, PNG ou WebP · Máx. 5 MB</p>
                 </div>
               </div>

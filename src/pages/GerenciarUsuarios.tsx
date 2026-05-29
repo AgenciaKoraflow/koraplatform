@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { UserPlus, User as UserIcon, Shield, Search, CheckCircle2, Copy, Check, Mail, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAllProfiles, useUpdateUserRole, useAdminUpdateUser, type Profile, type AdminUserUpdate } from '@/hooks/useProfile';
+import { useAllProfiles, useAdminUpdateUser, type Profile, type AdminUserUpdate } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -15,32 +15,6 @@ import {
 } from '@/components/ui/dialog';
 import { useQueryClient } from '@tanstack/react-query';
 
-// ── Role display helpers ──────────────────────────────────────────────────────
-
-const ROLES: Profile['role'][] = ['admin', 'operador', 'observador'];
-
-const roleMeta: Record<Profile['role'], { label: string; badge: string }> = {
-  admin: {
-    label: 'Admin',
-    badge: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
-  },
-  operador: {
-    label: 'Operador',
-    badge: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-  },
-  observador: {
-    label: 'Observador',
-    badge: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
-  },
-};
-
-function RoleBadge({ role }: { role: Profile['role'] }) {
-  const m = roleMeta[role];
-  return (
-    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${m.badge}`}>{m.label}</span>
-  );
-}
-
 // ── Invite dialog ─────────────────────────────────────────────────────────────
 
 interface InviteDialogProps {
@@ -52,7 +26,6 @@ function InviteDialog({ open, onClose }: InviteDialogProps) {
   const qc = useQueryClient();
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
-  const [role, setRole] = useState<Profile['role']>('operador');
   const [submitting, setSubmitting] = useState(false);
   const [created, setCreated] = useState<{ name: string; email: string; password: string } | null>(null);
   const [copied, setCopied] = useState(false);
@@ -60,7 +33,6 @@ function InviteDialog({ open, onClose }: InviteDialogProps) {
   const handleClose = () => {
     setEmail('');
     setFullName('');
-    setRole('operador');
     setCreated(null);
     setCopied(false);
     onClose();
@@ -88,7 +60,7 @@ function InviteDialog({ open, onClose }: InviteDialogProps) {
       const res = await fetch(`${supabaseUrl}/functions/v1/admin-create-user`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ email, full_name: fullName, role }),
+        body: JSON.stringify({ email, full_name: fullName }),
       });
 
       const body = await res.json();
@@ -182,25 +154,6 @@ function InviteDialog({ open, onClose }: InviteDialogProps) {
                 </div>
               </div>
 
-              {/* Papel */}
-              <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-foreground">Papel</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {ROLES.map((r) => (
-                    <button
-                      key={r}
-                      type="button"
-                      onClick={() => setRole(r)}
-                      className={`h-9 rounded-xl text-sm font-medium transition-all border ${role === r
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'border-input text-foreground hover:bg-muted'
-                        }`}
-                    >
-                      {roleMeta[r].label}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </form>
           )}
         </DialogBody>
@@ -255,14 +208,12 @@ function EditDialog({ profile, onClose }: EditDialogProps) {
   const { mutateAsync: updateUser } = useAdminUpdateUser();
   const [fullName, setFullName] = useState(profile?.full_name ?? '');
   const [cargo, setCargo] = useState(profile?.cargo ?? '');
-  const [role, setRole] = useState<Profile['role']>(profile?.role ?? 'observador');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (profile) {
       setFullName(profile.full_name ?? '');
       setCargo(profile.cargo ?? '');
-      setRole(profile.role ?? 'observador');
     }
   }, [profile?.id]);
 
@@ -274,7 +225,6 @@ function EditDialog({ profile, onClose }: EditDialogProps) {
     const updates: AdminUserUpdate = {};
     if (fullName !== profile.full_name) updates.full_name = fullName;
     if (cargo !== (profile.cargo ?? '')) updates.cargo = cargo || undefined;
-    if (role !== profile.role) updates.role = role;
 
     if (Object.keys(updates).length === 0) {
       onClose();
@@ -338,25 +288,6 @@ function EditDialog({ profile, onClose }: EditDialogProps) {
               </div>
             </div>
 
-            {/* Papel */}
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-foreground">Papel</label>
-              <div className="grid grid-cols-3 gap-2">
-                {ROLES.map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    onClick={() => setRole(r)}
-                    className={`h-9 rounded-xl text-sm font-medium transition-all border ${role === r
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'border-input text-foreground hover:bg-muted'
-                      }`}
-                  >
-                    {roleMeta[r].label}
-                  </button>
-                ))}
-              </div>
-            </div>
           </form>
         </DialogBody>
 
@@ -532,9 +463,8 @@ export default function GerenciarUsuarios() {
           ) : (
             <div className="divide-y divide-border">
               {/* Header row */}
-              <div className="grid grid-cols-[1fr_auto_auto] sm:grid-cols-[1fr_160px_140px_72px] gap-4 px-5 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              <div className="grid grid-cols-[1fr_140px_72px] gap-4 px-5 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
                 <span>Usuário</span>
-                <span className="hidden sm:block">Papel</span>
                 <span className="hidden sm:block">Membro desde</span>
                 <span />
               </div>
@@ -544,7 +474,7 @@ export default function GerenciarUsuarios() {
                 return (
                   <div
                     key={profile.id}
-                    className="grid grid-cols-[1fr_auto_auto] sm:grid-cols-[1fr_160px_140px_72px] gap-4 px-5 py-4 items-center hover:bg-muted/30 transition-colors"
+                    className="grid grid-cols-[1fr_auto_auto] sm:grid-cols-[1fr_140px_72px] gap-4 px-5 py-4 items-center hover:bg-muted/30 transition-colors"
                   >
                     {/* User info */}
                     <div className="flex items-center gap-3 min-w-0">
@@ -569,11 +499,6 @@ export default function GerenciarUsuarios() {
                       </div>
                     </div>
 
-                    {/* Role badge */}
-                    <div className="hidden sm:block">
-                      <RoleBadge role={profile.role} />
-                    </div>
-
                     {/* Created at */}
                     <div className="hidden sm:block">
                       <span className="text-xs text-muted-foreground">
@@ -581,11 +506,6 @@ export default function GerenciarUsuarios() {
                           day: '2-digit', month: 'short', year: 'numeric',
                         })}
                       </span>
-                    </div>
-
-                    {/* Mobile: badge */}
-                    <div className="sm:hidden">
-                      <RoleBadge role={profile.role} />
                     </div>
 
                     {/* Actions */}
@@ -616,14 +536,6 @@ export default function GerenciarUsuarios() {
           )}
         </div>
 
-        {/* Legend */}
-        <div className="flex flex-wrap gap-1 text-xs text-muted-foreground justify-center">
-          <span><strong>Admin</strong> — acesso total à plataforma</span>
-          <span>·</span>
-          <span><strong>Operador</strong> — cria tarefas e clientes, sem configurações</span>
-          <span>·</span>
-          <span><strong>Observador</strong> — somente leitura em páginas operacionais</span>
-        </div>
       </div>
 
       <InviteDialog open={inviteOpen} onClose={() => setInviteOpen(false)} />

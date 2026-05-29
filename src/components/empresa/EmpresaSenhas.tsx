@@ -61,6 +61,7 @@ export function EmpresaSenhas({ workspaceId }: Props) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [revealedPasswords, setRevealedPasswords] = useState<Record<string, string>>({});
   const [revealingId, setRevealingId] = useState<string | null>(null);
+  const [showFormPassword, setShowFormPassword] = useState(false);
 
   const openAdd = () => {
     setEditingItem(null);
@@ -281,12 +282,23 @@ export function EmpresaSenhas({ workspaceId }: Props) {
             </div>
             <div className="space-y-1.5">
               <Label>{editingItem ? "Nova senha (deixe em branco para não alterar)" : "Senha"}</Label>
-              <Input
-                type="password"
-                placeholder={editingItem ? "••••••••" : "Senha"}
-                value={formData.password}
-                onChange={(e) => setFormData((p) => ({ ...p, password: e.target.value }))}
-              />
+              <div className="relative">
+                <Input
+                  type={showFormPassword ? "text" : "password"}
+                  placeholder={editingItem ? "••••••••" : "Senha"}
+                  value={formData.password}
+                  onChange={(e) => setFormData((p) => ({ ...p, password: e.target.value }))}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowFormPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  tabIndex={-1}
+                >
+                  {showFormPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label>URL</Label>

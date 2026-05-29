@@ -1,0 +1,61 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { mapDbInternalTaskSubtask } from "@/lib/mappers";
+import { internalSubtaskKeys } from "@/hooks/useInternalTaskSubtasks";
+import type { DbInternalTaskSubtaskRow } from "@/types/db";
+import type { InternalTaskSubtask } from "@/types/data";
+import { toast } from "sonner";
+
+function errMsg(e: unknown) {
+  return e instanceof Error ? e.message : "Erro desconhecido";
+}
+
+export function useInternalSubtaskMutations(taskId: string) {
+  const qc = useQueryClient();
+
+  const addMutation = useMutation({
+    mutationFn: async (title: string): Promise<InternalTaskSubtask> => {
+      const { data: existing } = await supabase
+        .from("internal_task_subtasks")
+        .select("position")
+        .eq("task_id", taskId)
+        .order("position", { ascending: false })
+        .limit(1);
+      const nextPos = existing && existing.length > 0 ? (existing[0].position as number) + 1 : 0;
+      const { data, error } = await supabase
+        .from("internal_task_subtasks")
+        .insert({ task_id: taskId, title, position: nextPos })
+        .select()
+        .single();
+      if (error) throw new Error(error.message);
+      return mapDbInternalTaskSubtask(data as DbInternalTaskSubtaskRow);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: internalSubtaskKeys.byTask(taskId) }),
+    onError: (e) => toast.error(`Erro ao adicionar subtarefa: ${errMsg(e)}`),
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: async ({ id, done }: { id: string; done: boolean }) => {
+      const { error } = await supabase.from("internal_task_subtasks").update({ done }).eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: internalSubtaskKeys.byTask(taskId) }),
+    onError: (e) => toast.error(`Erro ao atualizar subtarefa: ${errMsg(e)}`),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("internal_task_subtasks").delete().eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: internalSubtaskKeys.byTask(taskId) }),
+    onError: (e) => toast.error(`Erro ao remover subtarefa: ${errMsg(e)}`),
+  });
+
+  return {
+    addSubtask: (title: string) => addMutation.mutate(title),
+    toggleSubtask: (id: string, done: boolean) => toggleMutation.mutate({ id, done }),
+    deleteSubtask: (id: string) => deleteMutation.mutate(id),
+    isAdding: addMutation.isPending,
+  };
+}

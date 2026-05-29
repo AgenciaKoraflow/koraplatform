@@ -1,5 +1,5 @@
 // Edge Function: admin-delete-user
-// Only callable by authenticated users with role = 'admin'.
+// Callable by any authenticated user.
 // Deletes a Supabase auth user (cascades to profiles via ON DELETE CASCADE).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -46,17 +46,6 @@ Deno.serve(async (req: Request) => {
   }
 
   const adminClient = createClient(supabaseUrl, serviceKey);
-
-  // Check that caller is an admin
-  const { data: callerProfile, error: profileError } = await adminClient
-    .from("profiles")
-    .select("role")
-    .eq("id", callerUser.id)
-    .single<{ role: string }>();
-
-  if (profileError || !callerProfile || callerProfile.role !== "admin") {
-    return err("Forbidden: admin access required", 403);
-  }
 
   let body: { user_id?: string };
   try {

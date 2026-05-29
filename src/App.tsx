@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, useQueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { lazy, Suspense, useEffect } from "react";
@@ -65,9 +65,6 @@ const persister = createSyncStoragePersister({
   key: "kora-query-cache",
 });
 
-// Routes accessible by Observers (limited access)
-const OBSERVER_ALLOWED_PATHS = ["/tarefas", "/projetos", "/sustentacao", "/buscar", "/perfil"];
-
 function CacheManager() {
   const qc = useQueryClient();
   useEffect(() => {
@@ -125,10 +122,8 @@ function usePreloadAllPages() {
   }, []);
 }
 
-// Requires authentication + applies observer route restrictions
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading, profile, profileLoading } = useAuth();
-  const location = useLocation();
+  const { user, loading, profileLoading } = useAuth();
 
   if (loading || (user && profileLoading)) {
     return <PageLoader />;
@@ -136,30 +131,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (!user) {
     return <Navigate to="/login" replace />;
-  }
-
-  // Observer role: only allowed on specific paths
-  if (profile?.role === "observador" && !OBSERVER_ALLOWED_PATHS.includes(location.pathname)) {
-    return <Navigate to="/tarefas" replace />;
-  }
-
-  return <>{children}</>;
-};
-
-// Requires admin role
-const AdminRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading, profile, profileLoading } = useAuth();
-
-  if (loading || (user && profileLoading)) {
-    return <PageLoader />;
-  }
-
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (profile?.role !== "admin") {
-    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;
@@ -198,7 +169,7 @@ function AppRoutes() {
           <Route path="/buscar" element={<ProtectedRoute><Buscar /></ProtectedRoute>} />
           <Route path="/perfil" element={<ProtectedRoute><PerfilPessoal /></ProtectedRoute>} />
           <Route path="/empresa" element={<ProtectedRoute><Empresa /></ProtectedRoute>} />
-          <Route path="/usuarios" element={<AdminRoute><GerenciarUsuarios /></AdminRoute>} />
+          <Route path="/usuarios" element={<ProtectedRoute><GerenciarUsuarios /></ProtectedRoute>} />
           <Route path="/login" element={<Login />} />
           <Route path="/sign/:token" element={<SignContract />} />
           <Route path="*" element={<NotFound />} />

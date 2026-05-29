@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NumberInput } from "@/components/ui/number-input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -32,6 +33,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useInternalTasks } from "@/hooks/useInternalTasks";
 import { useInternalTaskMutations } from "@/hooks/mutations/useInternalTaskMutations";
 import { usePermissions } from "@/hooks/usePermissions";
+import { InternalTaskDetailSheet } from "./InternalTaskDetailSheet";
 import type { InternalTask, InternalTaskStatus, InternalTaskPriority } from "@/types/data";
 
 const statusColumns = [
@@ -81,6 +83,7 @@ type FormData = {
   assignedTo: string;
   dueDate: string;
   blockedReason: string;
+  estimatedHours: string;
 };
 
 const EMPTY_FORM: FormData = {
@@ -91,6 +94,7 @@ const EMPTY_FORM: FormData = {
   assignedTo: "",
   dueDate: "",
   blockedReason: "",
+  estimatedHours: "",
 };
 
 interface Props {
@@ -116,6 +120,7 @@ export function EmpresaTarefas({ workspaceId }: Props) {
   const [editingItem, setEditingItem] = useState<InternalTask | null>(null);
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [viewingTask, setViewingTask] = useState<InternalTask | null>(null);
 
   // Drag-and-drop
   const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -142,13 +147,16 @@ export function EmpresaTarefas({ workspaceId }: Props) {
       priority: item.priority,
       assignedTo: item.assignedTo ?? "",
       dueDate: item.dueDate ? item.dueDate.substring(0, 10) : "",
-      blockedReason: "",
+      blockedReason: item.blockedReason ?? "",
+      estimatedHours: item.estimatedHours != null ? String(item.estimatedHours) : "",
     });
+    setViewingTask(null);
     setDialogOpen(true);
   }, []);
 
   const handleSubmit = useCallback(async () => {
     if (!formData.title.trim()) return;
+    const parsedHours = parseFloat(formData.estimatedHours);
     const data: Omit<InternalTask, "id"> = {
       workspaceId,
       title: formData.title,
@@ -157,6 +165,8 @@ export function EmpresaTarefas({ workspaceId }: Props) {
       priority: formData.priority,
       assignedTo: formData.assignedTo || undefined,
       dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
+      estimatedHours: !isNaN(parsedHours) && parsedHours > 0 ? parsedHours : undefined,
+      blockedReason: formData.status === "blocked" && formData.blockedReason ? formData.blockedReason : undefined,
       createdAt: "",
       updatedAt: "",
     };
@@ -268,8 +278,9 @@ export function EmpresaTarefas({ workspaceId }: Props) {
                       draggable={isAdmin}
                       onDragStart={(e) => handleDragStart(e, task.id)}
                       onDragEnd={handleDragEnd}
+                      onClick={() => setViewingTask(task)}
                       className={cn(
-                        "rounded-xl bg-card border border-border shadow-soft hover:shadow-medium transition-all duration-200 overflow-hidden",
+                        "rounded-xl bg-card border border-border shadow-soft hover:shadow-medium transition-all duration-200 overflow-hidden cursor-pointer",
                         isAdmin && "cursor-grab active:cursor-grabbing",
                         draggedId === task.id && "opacity-50",
                       )}
@@ -279,14 +290,15 @@ export function EmpresaTarefas({ workspaceId }: Props) {
                       <div className={cn("flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium", pCfg.flagColor)}>
                         <Flag className="w-3 h-3" />
                         {pCfg.label}
-                        {isAdmin && (
-                          <div className="ml-auto" onClick={(e) => e.stopPropagation()}>
-                            <ActionMenu items={[
+                        <div className="ml-auto" onClick={(e) => e.stopPropagation()}>
+                          <ActionMenu items={[
+                            { label: "Visualizar", icon: Eye, onClick: () => setViewingTask(task) },
+                            ...(isAdmin ? [
                               { label: "Editar", icon: Edit, onClick: () => openEdit(task) },
-                              { label: "Excluir", icon: Trash2, onClick: () => setDeleteId(task.id), variant: "destructive" },
-                            ]} />
-                          </div>
-                        )}
+                              { label: "Excluir", icon: Trash2, onClick: () => setDeleteId(task.id), variant: "destructive" as const },
+                            ] : []),
+                          ]} />
+                        </div>
                       </div>
 
                       {/* Card body */}
@@ -419,13 +431,29 @@ export function EmpresaTarefas({ workspaceId }: Props) {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5">
-              <Label>Data limite</Label>
-              <Input
-                type="date"
-                value={formData.dueDate}
-                onChange={(e) => setFormData((p) => ({ ...p, dueDate: e.target.value }))}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Data limite</Label>
+                <Input
+                  type="date"
+                  value={formData.dueDate}
+                  onChange={(e) => setFormData((p) => ({ ...p, dueDate: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Horas Estimadas</Label>
+                <div className="flex items-center gap-2">
+                  <NumberInput
+                    min="0"
+                    step="0.5"
+                    placeholder="Ex: 8"
+                    value={formData.estimatedHours}
+                    onChange={(e) => setFormData((p) => ({ ...p, estimatedHours: e.target.value }))}
+                    className="w-full"
+                  />
+                  <span className="text-sm text-muted-foreground flex-shrink-0">h</span>
+                </div>
+              </div>
             </div>
             {formData.status === "blocked" && (
               <div className="space-y-1.5">
@@ -449,6 +477,14 @@ export function EmpresaTarefas({ workspaceId }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <InternalTaskDetailSheet
+        task={viewingTask}
+        open={!!viewingTask}
+        onClose={() => setViewingTask(null)}
+        onEdit={(task) => openEdit(task)}
+        profileName={profileName}
+      />
 
       <ConfirmDialog
         open={!!deleteId}

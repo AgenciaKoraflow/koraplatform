@@ -23,6 +23,8 @@ export function useInternalTaskMutations() {
           priority: item.priority,
           assigned_to: item.assignedTo ?? null,
           due_date: item.dueDate ?? null,
+          estimated_hours: item.estimatedHours ?? null,
+          blocked_reason: item.blockedReason ?? null,
         })
         .select("*");
       if (error) throw new Error(error.message);
@@ -37,6 +39,8 @@ export function useInternalTaskMutations() {
         priority: r.priority as InternalTask["priority"],
         assignedTo: r.assigned_to ?? undefined,
         dueDate: r.due_date ?? undefined,
+        estimatedHours: r.estimated_hours ?? undefined,
+        blockedReason: r.blocked_reason ?? undefined,
         createdAt: r.created_at,
         updatedAt: r.updated_at,
       };
@@ -57,6 +61,8 @@ export function useInternalTaskMutations() {
       if (data.priority !== undefined) dbData.priority = data.priority;
       if (data.assignedTo !== undefined) dbData.assigned_to = data.assignedTo ?? null;
       if (data.dueDate !== undefined) dbData.due_date = data.dueDate ?? null;
+      if (data.estimatedHours !== undefined) dbData.estimated_hours = data.estimatedHours ?? null;
+      if (data.blockedReason !== undefined) dbData.blocked_reason = data.blockedReason ?? null;
       if (Object.keys(dbData).length === 0) return;
       const { error } = await supabase.from("internal_tasks").update(dbData).eq("id", id);
       if (error) throw new Error(error.message);

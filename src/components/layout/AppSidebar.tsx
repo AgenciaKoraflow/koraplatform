@@ -22,28 +22,25 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { KoraSystemLogo, KoraSystemLogoIcon } from "@/components/shared/KoraSystemLogo";
-import { usePermissions } from "@/hooks/usePermissions";
 
 type NavItem = {
   name: string;
   href: string;
   icon: typeof Filter;
   bu: BU;
-  adminOnly?: boolean;
-  hiddenForObserver?: boolean;
 };
 
 const navigation: NavItem[] = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard, bu: "kora-corp", hiddenForObserver: true },
-  { name: "Funil", href: "/funil", icon: Filter, bu: "kora-agents", hiddenForObserver: true },
-  { name: "Clientes", href: "/clientes", icon: Heart, bu: "kora-agents", hiddenForObserver: true },
-  { name: "Contratos", href: "/contratos", icon: FileSignature, bu: "kora-agents", hiddenForObserver: true },
+  { name: "Dashboard", href: "/", icon: LayoutDashboard, bu: "kora-corp" },
+  { name: "Funil", href: "/funil", icon: Filter, bu: "kora-agents" },
+  { name: "Clientes", href: "/clientes", icon: Heart, bu: "kora-agents" },
+  { name: "Contratos", href: "/contratos", icon: FileSignature, bu: "kora-agents" },
   { name: "Projetos", href: "/projetos", icon: FolderKanban, bu: "kora-dev" },
   { name: "Tarefas", href: "/tarefas", icon: CheckSquare, bu: "kora-dev" },
   { name: "Sustentação", href: "/sustentacao", icon: HeadphonesIcon, bu: "kora-dev" },
-  { name: "Observabilidade", href: "/observabilidade", icon: Activity, bu: "kora-dev", hiddenForObserver: true },
-  { name: "Conhecimento", href: "/conhecimento", icon: BookOpen, bu: "kora-studio", hiddenForObserver: true },
-  { name: "Indicadores", href: "/indicadores", icon: BarChart3, bu: "kora-corp", hiddenForObserver: true },
+  { name: "Observabilidade", href: "/observabilidade", icon: Activity, bu: "kora-dev" },
+  { name: "Conhecimento", href: "/conhecimento", icon: BookOpen, bu: "kora-studio" },
+  { name: "Indicadores", href: "/indicadores", icon: BarChart3, bu: "kora-corp" },
 ];
 
 interface AppSidebarProps {
@@ -53,12 +50,6 @@ interface AppSidebarProps {
 
 export function AppSidebar({ onNavigate, collapsed = false }: AppSidebarProps) {
   const location = useLocation();
-  const { isAdmin, isObservador } = usePermissions();
-
-  const visibleNavItems = navigation.filter((item) => {
-    if (isObservador && item.hiddenForObserver) return false;
-    return true;
-  });
 
   const handleNavClick = () => {
     if (onNavigate) onNavigate();
@@ -87,7 +78,7 @@ export function AppSidebar({ onNavigate, collapsed = false }: AppSidebarProps) {
 
         {/* Navigation */}
         <nav className="flex-1 py-3 space-y-0.5 overflow-y-auto px-2">
-          {visibleNavItems.map((item) => {
+          {navigation.map((item) => {
             const isActive = location.pathname === item.href;
             const navLink = (
               <NavLink
@@ -119,43 +110,41 @@ export function AppSidebar({ onNavigate, collapsed = false }: AppSidebarProps) {
           })}
 
           {/* Empresa + Admin items */}
-          {!isObservador && (
-            <>
-              <div className={cn("my-1 border-t border-sidebar-border", collapsed ? "mx-2" : "mx-1")} />
+          <>
+            <div className={cn("my-1 border-t border-sidebar-border", collapsed ? "mx-2" : "mx-1")} />
 
-              {[
-                { href: "/empresa", label: "Empresa", Icon: Building2, show: true },
-                { href: "/usuarios", label: "Usuários", Icon: Users, show: isAdmin },
-              ].filter(({ show }) => show).map(({ href, label, Icon }) => {
-                const isActive = location.pathname === href;
-                return (
-                  <Tooltip key={href}>
-                    <TooltipTrigger asChild>
-                      <NavLink
-                        to={href}
-                        onClick={handleNavClick}
-                        className={cn(
-                          "relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 overflow-hidden",
-                          collapsed ? "justify-center" : "",
-                          isActive
-                            ? "bg-sidebar-accent text-sidebar-accent-foreground before:content-[''] before:absolute before:left-0 before:inset-y-1.5 before:w-[3px] before:bg-primary before:rounded-r-full"
-                            : "text-sidebar-foreground hover:bg-sidebar-accent/50"
-                        )}
-                      >
-                        <Icon className={cn("w-5 h-5 flex-shrink-0", isActive && "text-primary")} />
-                        {!collapsed && <span>{label}</span>}
-                      </NavLink>
-                    </TooltipTrigger>
-                    {collapsed && (
-                      <TooltipContent side="right" className="bg-popover text-popover-foreground">
-                        <p>{label}</p>
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
-                );
-              })}
-            </>
-          )}
+            {[
+              { href: "/empresa", label: "Empresa", Icon: Building2 },
+              { href: "/usuarios", label: "Usuários", Icon: Users },
+            ].map(({ href, label, Icon }) => {
+              const isActive = location.pathname === href;
+              return (
+                <Tooltip key={href}>
+                  <TooltipTrigger asChild>
+                    <NavLink
+                      to={href}
+                      onClick={handleNavClick}
+                      className={cn(
+                        "relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 overflow-hidden",
+                        collapsed ? "justify-center" : "",
+                        isActive
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground before:content-[''] before:absolute before:left-0 before:inset-y-1.5 before:w-[3px] before:bg-primary before:rounded-r-full"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+                      )}
+                    >
+                      <Icon className={cn("w-5 h-5 flex-shrink-0", isActive && "text-primary")} />
+                      {!collapsed && <span>{label}</span>}
+                    </NavLink>
+                  </TooltipTrigger>
+                  {collapsed && (
+                    <TooltipContent side="right" className="bg-popover text-popover-foreground">
+                      <p>{label}</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              );
+            })}
+          </>
         </nav>
 
       </aside>

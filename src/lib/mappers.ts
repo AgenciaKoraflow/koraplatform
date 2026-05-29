@@ -1,4 +1,4 @@
-import { Client, Project, Task, Contract, KnowledgeItem, SupportTicket, Service, TaskSubtask, TaskComment, TaskAttachment, TaskTimeEntry, InternalWorkspace, InternalCredential, InternalInsight, InternalTask, InternalDocument } from "@/types/data";
+import { Client, Project, Task, Contract, KnowledgeItem, SupportTicket, Service, TaskSubtask, TaskComment, TaskAttachment, TaskTimeEntry, InternalWorkspace, InternalCredential, InternalInsight, InternalTask, InternalDocument, InternalTaskSubtask, InternalTaskTimeEntry } from "@/types/data";
 import { parseCurrencyToNumber } from "@/lib/currency";
 import type { BU } from "@/types/bu";
 import type {
@@ -18,6 +18,8 @@ import type {
   DbInternalInsightRow,
   DbInternalTaskRow,
   DbInternalDocumentRow,
+  DbInternalTaskSubtaskRow,
+  DbInternalTaskTimeEntryRow,
 } from "@/types/db";
 
 const VALID_BUS = new Set(["kora-agents", "kora-dev", "kora-studio", "kora-corp"]);
@@ -385,8 +387,32 @@ export function mapDbInternalTask(db: DbInternalTaskRow): InternalTask {
     priority: (db.priority as InternalTask["priority"]) ?? "medium",
     assignedTo: db.assigned_to ?? undefined,
     dueDate: db.due_date ?? undefined,
+    estimatedHours: db.estimated_hours ?? undefined,
+    blockedReason: db.blocked_reason ?? undefined,
     createdAt: db.created_at,
     updatedAt: db.updated_at,
+  };
+}
+
+export function mapDbInternalTaskSubtask(db: DbInternalTaskSubtaskRow): InternalTaskSubtask {
+  return {
+    id: db.id,
+    taskId: db.task_id,
+    title: db.title,
+    done: db.done,
+    position: db.position,
+    createdAt: db.created_at,
+  };
+}
+
+export function mapDbInternalTaskTimeEntry(db: DbInternalTaskTimeEntryRow): InternalTaskTimeEntry {
+  return {
+    id: db.id,
+    taskId: db.task_id,
+    description: db.description,
+    hours: db.hours,
+    author: db.author,
+    createdAt: db.created_at,
   };
 }
 
