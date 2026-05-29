@@ -429,6 +429,7 @@ export interface InternalTask {
   status: InternalTaskStatus;
   priority: InternalTaskPriority;
   assignedTo?: string;
+  allInvolved?: boolean;
   dueDate?: string;
   estimatedHours?: number;
   blockedReason?: string;

@@ -386,6 +386,7 @@ export function mapDbInternalTask(db: DbInternalTaskRow): InternalTask {
     status: (db.status as InternalTask["status"]) ?? "todo",
     priority: (db.priority as InternalTask["priority"]) ?? "medium",
     assignedTo: db.assigned_to ?? undefined,
+    allInvolved: db.all_involved ?? false,
     dueDate: db.due_date ?? undefined,
     estimatedHours: db.estimated_hours ?? undefined,
     blockedReason: db.blocked_reason ?? undefined,

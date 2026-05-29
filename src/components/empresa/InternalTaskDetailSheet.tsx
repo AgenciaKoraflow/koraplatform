@@ -14,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import {
   Circle, Clock, Eye, Ban, CheckCircle2, Flag,
-  Calendar, AlertTriangle, User, Timer, Trash2, Plus, ChevronRight,
+  Calendar, AlertTriangle, User, Users, Timer, Trash2, Plus, ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, differenceInDays, parse, isValid } from "date-fns";
@@ -179,8 +179,10 @@ export function InternalTaskDetailSheet({ task, open, onClose, onEdit, profileNa
                 <div>
                   <p className="text-xs text-muted-foreground mb-0.5">Responsável</p>
                   <span className="text-sm flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                    {profileName(task.assignedTo) ?? "Não definido"}
+                    {task.allInvolved
+                      ? <Users className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                      : <User className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
+                    {task.allInvolved ? "Todos Envolvidos" : (profileName(task.assignedTo) ?? "Não definido")}
                   </span>
                 </div>
                 <div>

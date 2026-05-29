@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import {
   Plus, CheckSquare, Edit, Trash2, Circle, Clock, Ban, Eye, CheckCircle2,
-  Flag, Calendar, AlertTriangle, User,
+  Flag, Calendar, AlertTriangle, User, Users,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { differenceInDays, parse, isValid } from "date-fns";
@@ -75,12 +75,15 @@ function getDeadlineStatus(dueDate: string | undefined, status: InternalTaskStat
   return { label: `${days}d restantes`, color: "text-green-500" };
 }
 
+const ALL_INVOLVED_VALUE = "__all__";
+
 type FormData = {
   title: string;
   description: string;
   status: InternalTaskStatus;
   priority: InternalTaskPriority;
   assignedTo: string;
+  allInvolved: boolean;
   dueDate: string;
   blockedReason: string;
   estimatedHours: string;
@@ -92,6 +95,7 @@ const EMPTY_FORM: FormData = {
   status: "todo",
   priority: "medium",
   assignedTo: "",
+  allInvolved: false,
   dueDate: "",
   blockedReason: "",
   estimatedHours: "",
@@ -146,6 +150,7 @@ export function EmpresaTarefas({ workspaceId }: Props) {
       status: item.status,
       priority: item.priority,
       assignedTo: item.assignedTo ?? "",
+      allInvolved: item.allInvolved ?? false,
       dueDate: item.dueDate ? item.dueDate.substring(0, 10) : "",
       blockedReason: item.blockedReason ?? "",
       estimatedHours: item.estimatedHours != null ? String(item.estimatedHours) : "",
@@ -163,7 +168,8 @@ export function EmpresaTarefas({ workspaceId }: Props) {
       description: formData.description || undefined,
       status: formData.status,
       priority: formData.priority,
-      assignedTo: formData.assignedTo || undefined,
+      assignedTo: formData.allInvolved ? undefined : (formData.assignedTo || undefined),
+      allInvolved: formData.allInvolved,
       dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
       estimatedHours: !isNaN(parsedHours) && parsedHours > 0 ? parsedHours : undefined,
       blockedReason: formData.status === "blocked" && formData.blockedReason ? formData.blockedReason : undefined,
@@ -270,7 +276,7 @@ export function EmpresaTarefas({ workspaceId }: Props) {
                 {columnTasks.map((task, index) => {
                   const pCfg = priorityConfig[task.priority] ?? priorityConfig.medium;
                   const deadline = getDeadlineStatus(task.dueDate, task.status);
-                  const assignee = profileName(task.assignedTo);
+                  const assigneeLabel = task.allInvolved ? "Todos Envolvidos" : profileName(task.assignedTo);
 
                   return (
                     <div
@@ -324,10 +330,12 @@ export function EmpresaTarefas({ workspaceId }: Props) {
                             <span>{deadline.label}</span>
                           </div>
                           {/* Assignee */}
-                          {assignee && (
+                          {assigneeLabel && (
                             <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <User className="w-3 h-3" />
-                              {assignee}
+                              {task.allInvolved
+                                ? <Users className="w-3 h-3" />
+                                : <User className="w-3 h-3" />}
+                              {assigneeLabel}
                             </span>
                           )}
                         </div>
@@ -415,14 +423,23 @@ export function EmpresaTarefas({ workspaceId }: Props) {
             <div className="space-y-1.5">
               <Label>Responsável</Label>
               <Select
-                value={formData.assignedTo || "none"}
-                onValueChange={(v) => setFormData((p) => ({ ...p, assignedTo: v === "none" ? "" : v }))}
+                value={formData.allInvolved ? ALL_INVOLVED_VALUE : (formData.assignedTo || "none")}
+                onValueChange={(v) => {
+                  if (v === ALL_INVOLVED_VALUE) {
+                    setFormData((p) => ({ ...p, assignedTo: "", allInvolved: true }));
+                  } else if (v === "none") {
+                    setFormData((p) => ({ ...p, assignedTo: "", allInvolved: false }));
+                  } else {
+                    setFormData((p) => ({ ...p, assignedTo: v, allInvolved: false }));
+                  }
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Sem responsável" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Sem responsável</SelectItem>
+                  <SelectItem value={ALL_INVOLVED_VALUE}>Todos Envolvidos</SelectItem>
                   {profiles.map((profile) => (
                     <SelectItem key={profile.id} value={profile.id}>
                       {profile.full_name ?? profile.id}

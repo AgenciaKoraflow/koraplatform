@@ -22,6 +22,7 @@ export function useInternalTaskMutations() {
           status: item.status,
           priority: item.priority,
           assigned_to: item.assignedTo ?? null,
+          all_involved: item.allInvolved ?? false,
           due_date: item.dueDate ?? null,
           estimated_hours: item.estimatedHours ?? null,
           blocked_reason: item.blockedReason ?? null,
@@ -38,6 +39,7 @@ export function useInternalTaskMutations() {
         status: r.status as InternalTask["status"],
         priority: r.priority as InternalTask["priority"],
         assignedTo: r.assigned_to ?? undefined,
+        allInvolved: r.all_involved ?? false,
         dueDate: r.due_date ?? undefined,
         estimatedHours: r.estimated_hours ?? undefined,
         blockedReason: r.blocked_reason ?? undefined,
@@ -60,6 +62,7 @@ export function useInternalTaskMutations() {
       if (data.status !== undefined) dbData.status = data.status;
       if (data.priority !== undefined) dbData.priority = data.priority;
       if (data.assignedTo !== undefined) dbData.assigned_to = data.assignedTo ?? null;
+      if (data.allInvolved !== undefined) dbData.all_involved = data.allInvolved;
       if (data.dueDate !== undefined) dbData.due_date = data.dueDate ?? null;
       if (data.estimatedHours !== undefined) dbData.estimated_hours = data.estimatedHours ?? null;
       if (data.blockedReason !== undefined) dbData.blocked_reason = data.blockedReason ?? null;

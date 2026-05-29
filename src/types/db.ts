@@ -239,6 +239,7 @@ export interface DbInternalTaskRow {
   status: string;
   priority: string;
   assigned_to: string | null;
+  all_involved: boolean;
   due_date: string | null;
   estimated_hours: number | null;
   blocked_reason: string | null;
