@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import {
   Plus, CheckSquare, Edit, Trash2, Circle, Clock, Ban, Eye, CheckCircle2,
-  Flag, Calendar, AlertTriangle, User, Users,
+  Flag, Calendar, AlertTriangle, User, Users, Search, X as XIcon,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { differenceInDays, parse, isValid } from "date-fns";
@@ -33,6 +33,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useInternalTasks } from "@/hooks/useInternalTasks";
 import { useInternalTaskMutations } from "@/hooks/mutations/useInternalTaskMutations";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useDebounce } from "@/hooks/useDebounce";
 import { InternalTaskDetailSheet } from "./InternalTaskDetailSheet";
 import type { InternalTask, InternalTaskStatus, InternalTaskPriority } from "@/types/data";
 
@@ -126,15 +127,41 @@ export function EmpresaTarefas({ workspaceId }: Props) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [viewingTask, setViewingTask] = useState<InternalTask | null>(null);
 
+  // Filtros
+  const [searchInput, setSearchInput] = useState("");
+  const searchQuery = useDebounce(searchInput, 300);
+  const [filterPriority, setFilterPriority] = useState<InternalTaskPriority[]>([]);
+  const [filterAssignee, setFilterAssignee] = useState<string>("");
+
   // Drag-and-drop
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
 
+  const filteredTasks = useMemo(() => {
+    let result = tasks;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter((t) =>
+        t.title.toLowerCase().includes(q) ||
+        (t.description ?? "").toLowerCase().includes(q)
+      );
+    }
+    if (filterPriority.length > 0) result = result.filter((t) => filterPriority.includes(t.priority));
+    if (filterAssignee) {
+      if (filterAssignee === ALL_INVOLVED_VALUE) {
+        result = result.filter((t) => t.allInvolved);
+      } else {
+        result = result.filter((t) => t.assignedTo === filterAssignee);
+      }
+    }
+    return result;
+  }, [tasks, searchQuery, filterPriority, filterAssignee]);
+
   const tasksByStatus = useMemo(() => {
     const map: Record<string, InternalTask[]> = {};
-    for (const t of tasks) (map[t.status] ??= []).push(t);
+    for (const t of filteredTasks) (map[t.status] ??= []).push(t);
     return map;
-  }, [tasks]);
+  }, [filteredTasks]);
 
   const openAdd = useCallback((status: InternalTaskStatus = "todo") => {
     setEditingItem(null);
@@ -219,20 +246,84 @@ export function EmpresaTarefas({ workspaceId }: Props) {
   const profileName = (id?: string) =>
     id ? (profiles.find((p) => p.id === id)?.full_name ?? "—") : null;
 
+  const assigneeOptions = useMemo(() => {
+    const seen = new Set<string>();
+    const options: { id: string; label: string }[] = [];
+    for (const t of tasks) {
+      if (t.allInvolved && !seen.has(ALL_INVOLVED_VALUE)) {
+        seen.add(ALL_INVOLVED_VALUE);
+        options.push({ id: ALL_INVOLVED_VALUE, label: "Todos Envolvidos" });
+      } else if (t.assignedTo && !seen.has(t.assignedTo)) {
+        seen.add(t.assignedTo);
+        options.push({ id: t.assignedTo, label: profileName(t.assignedTo) ?? t.assignedTo });
+      }
+    }
+    return options;
+  }, [tasks, profiles]);
+
   if (isLoading) {
     return <div className="text-muted-foreground text-sm">Carregando...</div>;
   }
 
   return (
     <div className="space-y-4">
-      {isAdmin && (
-        <div className="flex justify-end">
-          <Button size="sm" onClick={() => openAdd()}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nova Tarefa
-          </Button>
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Search */}
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Buscar tarefas..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="w-full h-9 pl-10 pr-4 rounded-lg bg-input border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+          />
         </div>
-      )}
+        {/* Priority chips */}
+        <div className="flex items-center gap-1.5">
+          {(Object.entries(priorityConfig) as [InternalTaskPriority, typeof priorityConfig.low][]).map(([key, cfg]) => (
+            <button
+              key={key}
+              onClick={() => setFilterPriority((prev) => prev.includes(key) ? prev.filter((p) => p !== key) : [...prev, key])}
+              className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all", filterPriority.includes(key) ? cfg.flagColor : "bg-muted/50 text-muted-foreground border-border hover:bg-muted")}
+            >
+              <Flag className="w-2.5 h-2.5" />
+              {cfg.label}
+            </button>
+          ))}
+        </div>
+        {/* Assignee filter */}
+        {assigneeOptions.length > 0 && (
+          <select
+            value={filterAssignee}
+            onChange={(e) => setFilterAssignee(e.target.value)}
+            className="h-9 px-3 rounded-lg bg-input border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+          >
+            <option value="">Todos os responsáveis</option>
+            {assigneeOptions.map((o) => (
+              <option key={o.id} value={o.id}>{o.label}</option>
+            ))}
+          </select>
+        )}
+        {/* Clear filters */}
+        {(searchInput || filterPriority.length > 0 || filterAssignee) && (
+          <button
+            onClick={() => { setSearchInput(""); setFilterPriority([]); setFilterAssignee(""); }}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <XIcon className="w-3.5 h-3.5" />
+            Limpar filtros
+          </button>
+        )}
+        {isAdmin && (
+          <div className="ml-auto">
+            <Button size="sm" onClick={() => openAdd()}>
+              <Plus className="w-4 h-4 mr-2" />
+              Nova Tarefa
+            </Button>
+          </div>
+        )}
+      </div>
 
       {tasks.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
