@@ -74,6 +74,7 @@ export function useTaskMutations() {
       if (data.bu !== undefined) dbData.bu = data.bu;
       if (data.blockedReason !== undefined) dbData.blocked_reason = data.blockedReason ?? null;
       if (data.clientApproved !== undefined) dbData.client_approved = data.clientApproved;
+      if (data.clientApprovalCount !== undefined) dbData.client_approval_count = data.clientApprovalCount;
       if (data.estimatedHours !== undefined) dbData.estimated_hours = data.estimatedHours ?? null;
       const { error } = await supabase.from("tasks").update(dbData).eq("id", id);
       if (error) throw new Error(error.message);

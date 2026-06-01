@@ -783,7 +783,7 @@ export default function Tarefas() {
 
       {/* Task Detail Sheet */}
       <TaskDetailSheet
-        task={viewingTask}
+        task={tasks.find((t) => t.id === viewingTask?.id) ?? viewingTask}
         open={isDetailSheetOpen}
         onClose={() => setIsDetailSheetOpen(false)}
         onEdit={(task) => { setIsDetailSheetOpen(false); openEditDialog(task); }}

@@ -17,7 +17,7 @@ import {
   Paperclip, Trash2, Upload, Download,
   AlertTriangle, User, Folder, ThumbsUp, Timer, X, Plus, ChevronRight, ChevronDown,
 } from "lucide-react";
-import { CommentComposer, sanitizeCommentHtml } from "@/components/shared/CommentComposer";
+import { CommentComposer, sanitizeCommentHtml, type CommentComposerHandle } from "@/components/shared/CommentComposer";
 import { cn } from "@/lib/utils";
 import { format, parseISO, differenceInDays, parse, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -169,8 +169,11 @@ export function TaskDetailSheet({
   const [entryDescription, setEntryDescription] = useState("");
   const [entryHours, setEntryHours] = useState("");
   const [selectedSubtask, setSelectedSubtask] = useState<TaskSubtask | null>(null);
+  const [pendingApproval, setPendingApproval] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const composerRef = useRef<CommentComposerHandle>(null);
+  const commentSectionRef = useRef<HTMLDivElement>(null);
 
   const handleAddSubtask = useCallback(() => {
     if (!newSubtaskTitle.trim() || !task) return;
@@ -181,8 +184,17 @@ export function TaskDetailSheet({
   const handleAddComment = useCallback(({ html, mentionedUserIds, files }: { html: string; mentionedUserIds: string[]; isPrivate: boolean; files: File[] }) => {
     if (!task) return;
     for (const file of files) uploadAttachment(file);
-    addComment(authorName, html, mentionedUserIds);
-  }, [task, uploadAttachment, addComment, authorName]);
+    if (pendingApproval) {
+      addComment(authorName, html, mentionedUserIds, true);
+      updateTask(task.id, {
+        clientApproved: true,
+        clientApprovalCount: (task.clientApprovalCount ?? 0) + 1,
+      });
+      setPendingApproval(false);
+    } else {
+      addComment(authorName, html, mentionedUserIds);
+    }
+  }, [task, pendingApproval, uploadAttachment, addComment, updateTask, authorName]);
 
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -214,7 +226,7 @@ export function TaskDetailSheet({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <Dialog open={open} onOpenChange={(v) => { if (!v) { setPendingApproval(false); onClose(); } }}>
         <DialogContent className="max-w-2xl w-[calc(100%-2rem)] sm:w-full h-[85vh]">
           <Tabs defaultValue="detalhes" className="flex flex-col flex-1 min-h-0">
 
@@ -250,18 +262,26 @@ export function TaskDetailSheet({
                     })}
                   </DropdownMenuContent>
                 </DropdownMenu>
-                {task.clientApproved && (
+                {(task.clientApprovalCount ?? 0) > 0 && (
                   <span className="px-2 py-0.5 rounded text-xs font-medium flex items-center gap-1 bg-green-500/20 text-green-400 border border-green-500/30">
                     <ThumbsUp className="w-3 h-3" />
-                    Aprovado
+                    Aprovado · {task.clientApprovalCount}
                   </span>
                 )}
                 <div className="ml-auto flex items-center gap-2 flex-shrink-0">
-                  {task.status === "client_review" && !task.clientApproved && (
-                    <Button size="sm" className="h-7 text-xs bg-purple-600 hover:bg-purple-500"
-                      onClick={() => onApproveClient(task.id)}>
+                  {task.status === "client_review" && (
+                    <Button size="sm"
+                      className="h-7 text-xs bg-purple-600 hover:bg-purple-500 disabled:opacity-60"
+                      disabled={pendingApproval}
+                      onClick={() => {
+                        setPendingApproval(true);
+                        setTimeout(() => {
+                          commentSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                          composerRef.current?.focus();
+                        }, 50);
+                      }}>
                       <ThumbsUp className="w-3 h-3 mr-1" />
-                      Marcar Aprovado
+                      {pendingApproval ? "Aguardando evidência…" : "Marcar Aprovado"}
                     </Button>
                   )}
                   {task.clientApproved && task.status === "client_review" && (
@@ -472,7 +492,7 @@ export function TaskDetailSheet({
                 </div>
 
                 {/* ── Comentários ── */}
-                <div>
+                <div ref={commentSectionRef}>
                   <div className="flex items-center gap-3 mb-3">
                     <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                       Comentários
@@ -482,6 +502,16 @@ export function TaskDetailSheet({
                       <span className="text-xs text-muted-foreground shrink-0">{comments.length}</span>
                     )}
                   </div>
+
+                  {pendingApproval && (
+                    <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-400 flex items-center gap-2 mb-3">
+                      <ThumbsUp className="w-3.5 h-3.5 shrink-0" />
+                      Adicione um comentário como evidência para confirmar a aprovação do cliente.
+                      <button className="ml-auto shrink-0 hover:opacity-70 transition-opacity" onClick={() => setPendingApproval(false)}>
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
 
                   <div className="space-y-4 mb-4">
                     {comments.length === 0 && (
@@ -500,12 +530,20 @@ export function TaskDetailSheet({
                             <span className="text-xs text-muted-foreground">
                               {format(parseISO(c.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}
                             </span>
-                            <button
-                              onClick={() => deleteComment(c.id)}
-                              className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive ml-auto"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </button>
+                            {c.isApprovalEvidence && (
+                              <span className="text-xs px-1.5 py-0.5 rounded bg-green-500/15 text-green-400 border border-green-500/25 flex items-center gap-1">
+                                <ThumbsUp className="w-2.5 h-2.5" />
+                                Aprovado pelo cliente
+                              </span>
+                            )}
+                            {!c.isApprovalEvidence && (
+                              <button
+                                onClick={() => deleteComment(c.id)}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive ml-auto"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            )}
                           </div>
                           <div
                             className="text-sm text-foreground/90 leading-relaxed break-words prose prose-invert prose-sm max-w-none"
@@ -518,10 +556,12 @@ export function TaskDetailSheet({
 
                   {/* Composer */}
                   <CommentComposer
+                    ref={composerRef}
                     profiles={profiles}
                     avatarUrl={getAvatarUrl}
                     onSubmit={handleAddComment}
                     isSubmitting={isAddingComment}
+                    requireEvidence={pendingApproval}
                   />
                 </div>
               </TabsContent>

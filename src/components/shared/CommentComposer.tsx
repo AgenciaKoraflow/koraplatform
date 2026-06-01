@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useState, useRef, useCallback, useMemo, forwardRef, useImperativeHandle } from "react";
 import DOMPurify from "dompurify";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -29,6 +29,10 @@ export function sanitizeCommentHtml(html: string): string {
   return DOMPurify.sanitize(html, PURIFY_CONFIG) as string;
 }
 
+export interface CommentComposerHandle {
+  focus(): void;
+}
+
 interface CommentComposerProps {
   profiles: Profile[];
   avatarUrl: (name: string) => string;
@@ -39,9 +43,11 @@ interface CommentComposerProps {
     files: File[];
   }) => void;
   isSubmitting: boolean;
+  requireEvidence?: boolean;
 }
 
-export function CommentComposer({ profiles, avatarUrl, onSubmit, isSubmitting }: CommentComposerProps) {
+export const CommentComposer = forwardRef<CommentComposerHandle, CommentComposerProps>(
+function CommentComposer({ profiles, avatarUrl, onSubmit, isSubmitting, requireEvidence }, ref) {
   const [editorEmpty, setEditorEmpty] = useState(true);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionFrom, setMentionFrom] = useState<number | null>(null);
@@ -78,6 +84,10 @@ export function CommentComposer({ profiles, avatarUrl, onSubmit, isSubmitting }:
       }
     },
   });
+
+  useImperativeHandle(ref, () => ({
+    focus() { editor?.commands.focus(); },
+  }), [editor]);
 
   const filteredMentions = useMemo(() => {
     if (mentionQuery === null) return [];
@@ -199,7 +209,9 @@ export function CommentComposer({ profiles, avatarUrl, onSubmit, isSubmitting }:
 
         {editorEmpty && (
           <p className="absolute top-3 left-3 text-sm text-muted-foreground pointer-events-none select-none">
-            Escreva um comentário... Use @ para mencionar alguém
+            {requireEvidence
+              ? "Descreva a evidência da aprovação (texto, print, etc.)..."
+              : "Escreva um comentário... Use @ para mencionar alguém"}
           </p>
         )}
       </div>
@@ -240,9 +252,11 @@ export function CommentComposer({ profiles, avatarUrl, onSubmit, isSubmitting }:
           className="h-8 text-xs gap-1.5 shrink-0"
         >
           <Send className="w-3.5 h-3.5" />
-          Adicionar Comentário
+          {requireEvidence ? "Confirmar Aprovação" : "Adicionar Comentário"}
         </Button>
       </div>
     </div>
   );
-}
+});
+
+CommentComposer.displayName = "CommentComposer";

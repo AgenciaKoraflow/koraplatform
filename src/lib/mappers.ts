@@ -127,6 +127,7 @@ export function mapDbTask(db: DbTaskRow): Task {
     bu: sanitizeBU(db.bu),
     blockedReason: db.blocked_reason ?? undefined,
     clientApproved: db.client_approved ?? false,
+    clientApprovalCount: db.client_approval_count ?? 0,
     estimatedHours: db.estimated_hours ?? undefined,
   };
 }
@@ -150,6 +151,7 @@ export function mapDbComment(db: DbTaskCommentRow): TaskComment {
     author: db.author,
     content: db.content,
     mentionedUsers: db.mentioned_users ?? [],
+    isApprovalEvidence: db.is_approval_evidence ?? false,
     createdAt: db.created_at,
   };
 }

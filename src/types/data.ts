@@ -68,6 +68,7 @@ export interface Task {
   bu?: BU[];
   blockedReason?: string;
   clientApproved?: boolean;
+  clientApprovalCount?: number;
   estimatedHours?: number;
 }
 
@@ -87,6 +88,7 @@ export interface TaskComment {
   author: string;
   content: string;
   mentionedUsers: string[];
+  isApprovalEvidence?: boolean;
   createdAt: string;
 }
 

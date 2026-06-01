@@ -26,10 +26,12 @@ export function useCommentMutations(taskId: string, subtaskId?: string) {
       author,
       content,
       mentionedUsers,
+      isApprovalEvidence,
     }: {
       author: string;
       content: string;
       mentionedUsers?: string[];
+      isApprovalEvidence?: boolean;
     }): Promise<TaskComment> => {
       const { data, error } = await supabase
         .from("task_comments")
@@ -39,6 +41,7 @@ export function useCommentMutations(taskId: string, subtaskId?: string) {
           author,
           content,
           mentioned_users: mentionedUsers ?? [],
+          is_approval_evidence: isApprovalEvidence ?? false,
         })
         .select()
         .single();
@@ -59,8 +62,8 @@ export function useCommentMutations(taskId: string, subtaskId?: string) {
   });
 
   return {
-    addComment: (author: string, content: string, mentionedUsers?: string[]) =>
-      addMutation.mutate({ author, content, mentionedUsers }),
+    addComment: (author: string, content: string, mentionedUsers?: string[], isApprovalEvidence?: boolean) =>
+      addMutation.mutate({ author, content, mentionedUsers, isApprovalEvidence }),
     deleteComment: (id: string) => deleteMutation.mutate(id),
     isAdding: addMutation.isPending,
   };
