@@ -29,6 +29,7 @@ import { useProjectTasks } from "@/hooks/useTasks";
 import { useAllClients } from "@/hooks/useClients";
 import { useDebounce } from "@/hooks/useDebounce";
 import { ProjectGantt } from "@/components/shared/ProjectGantt";
+import { ProjectDocuments } from "@/components/projetos/ProjectDocuments";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CreateTaskDialog } from "@/components/tarefas/CreateTaskDialog";
 import { taskStatus } from "@/lib/colors";
@@ -122,7 +123,7 @@ export default function Projetos() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isCreateTaskDialogOpen, setIsCreateTaskDialogOpen] = useState(false);
-  const [viewDialogTab, setViewDialogTab] = useState<"resumo" | "gantt">("resumo");
+  const [viewDialogTab, setViewDialogTab] = useState<"resumo" | "gantt" | "documentacao">("resumo");
   const [showNoDueDateTasks, setShowNoDueDateTasks] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -939,10 +940,11 @@ export default function Projetos() {
                 </div>
               </div>
 
-              <Tabs value={viewDialogTab} onValueChange={(v) => setViewDialogTab(v as "resumo" | "gantt")}>
+              <Tabs value={viewDialogTab} onValueChange={(v) => setViewDialogTab(v as "resumo" | "gantt" | "documentacao")}>
                 <TabsList className="mb-4">
                   <TabsTrigger value="resumo">Resumo</TabsTrigger>
                   <TabsTrigger value="gantt">Gantt</TabsTrigger>
+                  <TabsTrigger value="documentacao">Documentação</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="resumo" className="space-y-4 mt-0">
@@ -1108,6 +1110,13 @@ export default function Projetos() {
 
                 <TabsContent value="gantt" className="mt-0">
                   <ProjectGantt project={viewingProject} tasks={viewingProjectTasks} />
+                </TabsContent>
+
+                <TabsContent value="documentacao" className="mt-0 min-h-[300px]">
+                  <ProjectDocuments
+                    projectId={viewingProject.id}
+                    projectName={viewingProject.name}
+                  />
                 </TabsContent>
               </Tabs>
             </DialogBody>

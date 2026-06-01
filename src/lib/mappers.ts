@@ -1,4 +1,4 @@
-import { Client, Project, Task, Contract, KnowledgeItem, SupportTicket, Service, TaskSubtask, TaskComment, TaskAttachment, TaskTimeEntry, InternalWorkspace, InternalCredential, InternalInsight, InternalTask, InternalDocument, InternalDocumentFolder, InternalTaskSubtask, InternalTaskTimeEntry } from "@/types/data";
+import { Client, Project, Task, Contract, KnowledgeItem, SupportTicket, Service, TaskSubtask, TaskComment, TaskAttachment, TaskTimeEntry, InternalWorkspace, InternalCredential, InternalInsight, InternalTask, InternalDocument, InternalDocumentFolder, InternalTaskSubtask, InternalTaskTimeEntry, ProjectDocument } from "@/types/data";
 import { parseCurrencyToNumber } from "@/lib/currency";
 import type { BU } from "@/types/bu";
 import type {
@@ -21,6 +21,7 @@ import type {
   DbInternalDocumentFolderRow,
   DbInternalTaskSubtaskRow,
   DbInternalTaskTimeEntryRow,
+  DbProjectDocumentRow,
 } from "@/types/db";
 
 const VALID_BUS = new Set(["kora-agents", "kora-dev", "kora-studio", "kora-corp"]);
@@ -178,6 +179,20 @@ export function mapDbAttachment(db: DbTaskAttachmentRow): TaskAttachment {
     mimeType: db.mime_type ?? undefined,
     fileSize: db.file_size ?? undefined,
     createdAt: db.created_at,
+  };
+}
+
+export function mapDbProjectDocument(db: DbProjectDocumentRow): ProjectDocument {
+  return {
+    id: db.id,
+    projectId: db.project_id,
+    type: db.type,
+    fileName: db.file_name,
+    storagePath: db.storage_path,
+    mimeType: db.mime_type ?? undefined,
+    fileSize: db.file_size ?? undefined,
+    createdAt: db.created_at,
+    updatedAt: db.updated_at,
   };
 }
 

@@ -101,6 +101,18 @@ export interface DbTaskAttachmentRow {
   created_at: string;
 }
 
+export interface DbProjectDocumentRow {
+  id: string;
+  project_id: string;
+  type: "planejamento" | "tecnico";
+  file_name: string;
+  storage_path: string;
+  mime_type: string | null;
+  file_size: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface DbContractRow {
   id: string;
   client_id: string;

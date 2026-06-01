@@ -113,6 +113,20 @@ export interface TaskAttachment {
   createdAt: string;
 }
 
+export type ProjectDocumentType = "planejamento" | "tecnico";
+
+export interface ProjectDocument {
+  id: string;
+  projectId: string;
+  type: ProjectDocumentType;
+  fileName: string;
+  storagePath: string;
+  mimeType?: string;
+  fileSize?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Contract {
   id: string;
   clientId: string;
