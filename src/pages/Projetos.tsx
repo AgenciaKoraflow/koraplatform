@@ -25,7 +25,7 @@ import { UserAvatar } from "@/components/shared/UserAvatar";
 import { useProfileAvatarMap, useTeamOptions } from "@/hooks/useProfile";
 import { differenceInDays, isValid } from "date-fns";
 import { useProjects } from "@/hooks/useProjects";
-import { useProjectTasks } from "@/hooks/useTasks";
+import { useProjectTasks, useProjectSubtasksMap } from "@/hooks/useTasks";
 import { useAllClients } from "@/hooks/useClients";
 import { useDebounce } from "@/hooks/useDebounce";
 import { ProjectGantt } from "@/components/shared/ProjectGantt";
@@ -120,6 +120,8 @@ export default function Projetos() {
   // Tasks for viewing project (loaded on-demand when view dialog opens)
   const [viewingProject, setViewingProject] = useState<Project | null>(null);
   const { data: viewingProjectTasks = [] } = useProjectTasks(viewingProject?.id);
+  const taskIds = useMemo(() => viewingProjectTasks.map((t) => t.id), [viewingProjectTasks]);
+  const { data: subtasksMap = {} } = useProjectSubtasksMap(taskIds);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isCreateTaskDialogOpen, setIsCreateTaskDialogOpen] = useState(false);
@@ -1038,31 +1040,57 @@ export default function Projetos() {
 
                     const renderTaskRow = (task: (typeof sorted)[0]) => {
                       const cfg = taskStatusConfig[task.status];
+                      const subs = subtasksMap[task.id] ?? [];
                       return (
-                        <div key={task.id} className="flex items-start gap-3">
-                          <div className={cn("w-3.5 h-3.5 rounded-full border-2 border-card mt-0.5 shrink-0 z-10", cfg.dot)} />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-sm font-medium text-foreground truncate">{task.title}</span>
-                              <span className={cn("px-1.5 py-0.5 rounded text-xs font-medium", cfg.bg, cfg.color)}>
-                                {cfg.label}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
-                              {task.dueDate && task.dueDate !== "A definir" && (
-                                <span className="flex items-center gap-1">
-                                  <Calendar className="w-3 h-3" />
-                                  {task.dueDate}
+                        <div key={task.id}>
+                          <div className="flex items-start gap-3">
+                            <div className={cn("w-3.5 h-3.5 rounded-full border-2 border-card mt-0.5 shrink-0 z-10", cfg.dot)} />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-sm font-medium text-foreground truncate">{task.title}</span>
+                                <span className={cn("px-1.5 py-0.5 rounded text-xs font-medium", cfg.bg, cfg.color)}>
+                                  {cfg.label}
                                 </span>
-                              )}
-                              {task.assignees.length > 0 && (
-                                <span>
-                                  {task.assignees.slice(0, 2).join(", ")}
-                                  {task.assignees.length > 2 ? ` +${task.assignees.length - 2}` : ""}
-                                </span>
-                              )}
+                                {subs.length > 0 && (
+                                  <span className="text-xs text-muted-foreground">
+                                    {subs.filter(s => s.substatus === "done").length}/{subs.length} subtarefas
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
+                                {task.dueDate && task.dueDate !== "A definir" && (
+                                  <span className="flex items-center gap-1">
+                                    <Calendar className="w-3 h-3" />
+                                    {task.dueDate}
+                                  </span>
+                                )}
+                                {task.assignees.length > 0 && (
+                                  <span>
+                                    {task.assignees.slice(0, 2).join(", ")}
+                                    {task.assignees.length > 2 ? ` +${task.assignees.length - 2}` : ""}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
+                          {subs.length > 0 && (
+                            <div className="ml-6 mt-1.5 pl-3 border-l border-border space-y-1.5">
+                              {subs.map((sub) => {
+                                const subCfg = taskStatusConfig[sub.substatus as keyof typeof taskStatusConfig] ?? taskStatusConfig.todo;
+                                return (
+                                  <div key={sub.id} className="flex items-center gap-2">
+                                    <div className={cn("w-2.5 h-2.5 rounded-full border border-card shrink-0", sub.substatus === "done" ? "bg-green-500" : subCfg.dot)} />
+                                    <span className={cn("text-xs truncate", sub.substatus === "done" ? "line-through text-muted-foreground" : "text-foreground")}>
+                                      {sub.title}
+                                    </span>
+                                    <span className={cn("ml-auto px-1.5 py-0.5 rounded text-xs font-medium shrink-0", subCfg.bg, subCfg.color)}>
+                                      {subCfg.label}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       );
                     };

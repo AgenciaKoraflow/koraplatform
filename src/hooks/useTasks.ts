@@ -1,7 +1,8 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { mapDbTask } from "@/lib/mappers";
-import type { DbTaskRow } from "@/types/db";
+import { mapDbTask, mapDbSubtask } from "@/lib/mappers";
+import type { DbTaskRow, DbTaskSubtaskRow } from "@/types/db";
+import type { TaskSubtask } from "@/types/data";
 
 export interface TaskListParams {
   page?: number;
@@ -93,6 +94,30 @@ export function useProjectTasks(projectId: string | null | undefined) {
       return (data ?? []).map((row) => mapDbTask(row as DbTaskRow));
     },
     enabled: !!projectId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/** All subtasks for a set of task IDs — keyed by taskId. */
+export function useProjectSubtasksMap(taskIds: string[]) {
+  const key = taskIds.slice().sort().join(",");
+  return useQuery<Record<string, TaskSubtask[]>>({
+    queryKey: ["project_subtasks_map", key],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("task_subtasks")
+        .select("*")
+        .in("task_id", taskIds)
+        .order("position", { ascending: true });
+      if (error) throw new Error(error.message);
+      const grouped: Record<string, TaskSubtask[]> = {};
+      for (const row of data ?? []) {
+        const sub = mapDbSubtask(row as DbTaskSubtaskRow);
+        (grouped[sub.taskId] ??= []).push(sub);
+      }
+      return grouped;
+    },
+    enabled: taskIds.length > 0,
     staleTime: 5 * 60 * 1000,
   });
 }
