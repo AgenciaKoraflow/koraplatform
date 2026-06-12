@@ -2,7 +2,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Plus, Search, Calendar, CheckCircle2, Circle, Clock, Eye, Edit, Trash2, AlertTriangle, User, ListChecks, Ban, UserCheck, Flag, ThumbsUp, X as XIcon, Copy } from "lucide-react";
+import { Plus, Search, Calendar, CheckCircle2, Circle, Clock, Eye, Edit, Trash2, AlertTriangle, User, ListChecks, Ban, UserCheck, Flag, ThumbsUp, X as XIcon, Copy, FolderX } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Dialog, DialogContent, DialogHeader, DialogBody, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -148,6 +148,7 @@ export default function Tarefas() {
   const [filterClientId, setFilterClientId] = useState<string>("");
   const [filterProjectId, setFilterProjectId] = useState<string>(() => searchParams.get("project") ?? "");
   const [filterHead, setFilterHead] = useState<string>("");
+  const [filterNoProject, setFilterNoProject] = useState(false);
 
   // Sync URL param on mount (from navigate from Projetos)
   useEffect(() => {
@@ -201,8 +202,16 @@ export default function Tarefas() {
     return Array.from(heads).sort();
   }, [projects]);
 
+  const tasksWithoutProject = useMemo(
+    () => tasks.filter((t) => !t.projectId),
+    [tasks],
+  );
+
   const filteredTasks = useMemo(() => {
     let result = tasks;
+    if (filterNoProject) {
+      return result.filter((t) => !t.projectId);
+    }
     // Hide tasks from paused projects unless the user is explicitly filtering by that project
     if (!filterProjectId) {
       result = result.filter((t) => !t.projectId || !pausedProjectIds.has(t.projectId));
@@ -216,7 +225,7 @@ export default function Tarefas() {
       return project?.head === filterHead;
     });
     return result;
-  }, [tasks, pausedProjectIds, filterPriority, filterAssignees, filterClientId, filterProjectId, filterHead, projects]);
+  }, [tasks, filterNoProject, pausedProjectIds, filterPriority, filterAssignees, filterClientId, filterProjectId, filterHead, projects]);
 
   const pausedProjectIds = useMemo(
     () => new Set(projects.filter((p) => p.status === "on_hold").map((p) => p.id)),
@@ -310,6 +319,15 @@ export default function Tarefas() {
       toast.error("Preencha os campos obrigatórios");
       return;
     }
+    if (!formData.projectId) {
+      const clientProjects = projects.filter((p) => p.clientId === formData.clientId);
+      if (clientProjects.length === 0) {
+        toast.error("Este cliente não tem projetos cadastrados. Crie um projeto antes.");
+      } else {
+        toast.error("Selecione um projeto para a tarefa");
+      }
+      return;
+    }
     if (!editingTask) return;
     updateTask(editingTask.id, {
       title: formData.title,
@@ -393,6 +411,35 @@ export default function Tarefas() {
           }
         />
 
+        {/* Banner: tarefas sem projeto */}
+        {tasksWithoutProject.length > 0 && (
+          <div className={cn(
+            "flex items-center gap-3 px-4 py-3 rounded-xl border text-sm transition-all",
+            filterNoProject
+              ? "bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300"
+              : "bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400"
+          )}>
+            <FolderX className="w-4 h-4 flex-shrink-0" />
+            <span className="flex-1">
+              <strong>{tasksWithoutProject.length} tarefa{tasksWithoutProject.length !== 1 ? "s" : ""}</strong> sem projeto associado — edite-{tasksWithoutProject.length !== 1 ? "as" : "a"} e vincule a um projeto.
+            </span>
+            <button
+              onClick={() => {
+                setFilterNoProject((prev) => !prev);
+                setFilterPriority([]);
+                setFilterAssignees([]);
+                setFilterClientId("");
+                setFilterProjectId("");
+                setFilterHead("");
+              }}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 font-medium transition-colors text-xs whitespace-nowrap"
+            >
+              {filterNoProject ? <XIcon className="w-3 h-3" /> : null}
+              {filterNoProject ? "Mostrar todas" : "Ver tarefas sem projeto"}
+            </button>
+          </div>
+        )}
+
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative flex-1 max-w-sm">
@@ -446,9 +493,9 @@ export default function Tarefas() {
             </select>
           )}
           {/* Clear filters */}
-          {(filterPriority.length > 0 || filterAssignees.length > 0 || filterClientId || filterProjectId || filterHead) && (
+          {(filterPriority.length > 0 || filterAssignees.length > 0 || filterClientId || filterProjectId || filterHead || filterNoProject) && (
             <button
-              onClick={() => { setFilterPriority([]); setFilterAssignees([]); setFilterClientId(""); setFilterProjectId(""); setFilterHead(""); }}
+              onClick={() => { setFilterPriority([]); setFilterAssignees([]); setFilterClientId(""); setFilterProjectId(""); setFilterHead(""); setFilterNoProject(false); }}
               className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               <XIcon className="w-3.5 h-3.5" />
@@ -695,18 +742,23 @@ export default function Tarefas() {
             </div>
             {formData.clientId && (
               <div className="space-y-2">
-                <Label htmlFor="project">Projeto</Label>
-                <Select value={formData.projectId || "none"} onValueChange={(value) => setFormData({ ...formData, projectId: value === "none" ? "" : value })}>
-                  <SelectTrigger className="bg-input border-border">
-                    <SelectValue placeholder={availableProjects.length > 0 ? "Selecione um projeto" : "Nenhum projeto disponível"} />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border-border z-50">
-                    <SelectItem value="none">Nenhum projeto</SelectItem>
-                    {availableProjects.map(project => (
-                      <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="project">Projeto *</Label>
+                {availableProjects.length === 0 ? (
+                  <div className="h-10 px-3 flex items-center rounded-md bg-amber-500/10 border border-amber-500/30 text-sm text-amber-600 dark:text-amber-400">
+                    Nenhum projeto disponível — crie um projeto para este cliente primeiro
+                  </div>
+                ) : (
+                  <Select value={formData.projectId || "none"} onValueChange={(value) => setFormData({ ...formData, projectId: value === "none" ? "" : value })}>
+                    <SelectTrigger className="bg-input border-border">
+                      <SelectValue placeholder="Selecione um projeto" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover border-border z-50">
+                      {availableProjects.map(project => (
+                        <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             )}
             <div className="grid grid-cols-2 gap-4">
