@@ -2,7 +2,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Plus, Calendar, Clock, Search, Eye, Edit, Trash2, AlertTriangle, CheckCircle, Timer, FolderKanban, ListChecks, ExternalLink, Circle, Ban, UserCheck, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Calendar, Clock, Search, Eye, Edit, Trash2, AlertTriangle, CheckCircle, Timer, FolderKanban, ListChecks, ExternalLink, Circle, Ban, UserCheck, CheckCircle2, ChevronDown, ChevronUp, Pause, Play } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Dialog, DialogContent, DialogHeader, DialogBody, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -45,7 +45,7 @@ const statusConfig = {
   in_progress: { label: "Em Andamento", color: "bg-primary/10 text-primary", dot: "bg-primary" },
   review: { label: "Em Validação Interna", color: "bg-amber-500/10 text-amber-500", dot: "bg-amber-500" },
   completed: { label: "Concluído", color: "bg-green-500/10 text-green-500", dot: "bg-green-500" },
-  on_hold: { label: "Em Espera", color: "bg-slate-500/10 text-slate-500", dot: "bg-slate-500" },
+  on_hold: { label: "Pausado", color: "bg-slate-500/10 text-slate-500", dot: "bg-slate-500" },
 };
 
 const statusOrder: (keyof typeof statusConfig)[] = ["planning", "in_progress", "review", "completed", "on_hold"];
@@ -126,8 +126,10 @@ export default function Projetos() {
   const [viewDialogTab, setViewDialogTab] = useState<"resumo" | "gantt" | "documentacao">("resumo");
   const [showNoDueDateTasks, setShowNoDueDateTasks] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isPauseDialogOpen, setIsPauseDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
+  const [pausingProject, setPausingProject] = useState<Project | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     clientId: "",
@@ -256,6 +258,15 @@ export default function Projetos() {
       setDeletingProjectId(null);
     }
   }, [deletingProjectId, deleteProject]);
+
+  const handlePauseConfirm = useCallback(() => {
+    if (pausingProject) {
+      const newStatus = pausingProject.status === "on_hold" ? "in_progress" : "on_hold";
+      updateProject(pausingProject.id, { status: newStatus });
+      setIsPauseDialogOpen(false);
+      setPausingProject(null);
+    }
+  }, [pausingProject, updateProject]);
 
   const projectsByStatus = useMemo(() => {
     const map: Record<string, typeof filteredProjects> = {};
@@ -479,6 +490,9 @@ export default function Projetos() {
                         items={[
                           { label: "Visualizar", icon: Eye, onClick: () => openViewDialog(project) },
                           { label: "Editar", icon: Edit, onClick: () => openEditDialog(project) },
+                          project.status !== "on_hold"
+                            ? { label: "Pausar", icon: Pause, onClick: () => { setPausingProject(project); setIsPauseDialogOpen(true); } }
+                            : { label: "Retomar", icon: Play, onClick: () => { setPausingProject(project); setIsPauseDialogOpen(true); } },
                           { label: "Excluir", icon: Trash2, onClick: () => { setDeletingProjectId(project.id); setIsDeleteDialogOpen(true); }, variant: "destructive" },
                         ]}
                       />
@@ -732,6 +746,9 @@ export default function Projetos() {
                           items={[
                             { label: "Visualizar", icon: Eye, onClick: () => openViewDialog(project) },
                             { label: "Editar", icon: Edit, onClick: () => openEditDialog(project) },
+                            project.status !== "on_hold"
+                              ? { label: "Pausar", icon: Pause, onClick: () => { setPausingProject(project); setIsPauseDialogOpen(true); } }
+                              : { label: "Retomar", icon: Play, onClick: () => { setPausingProject(project); setIsPauseDialogOpen(true); } },
                             { label: "Excluir", icon: Trash2, onClick: () => { setDeletingProjectId(project.id); setIsDeleteDialogOpen(true); }, variant: "destructive" },
                           ]}
                         />
@@ -1143,6 +1160,19 @@ export default function Projetos() {
           defaultProjectId={viewingProject.id}
         />
       )}
+
+      {/* Pause/Resume Confirmation */}
+      <ConfirmDialog
+        open={isPauseDialogOpen}
+        onOpenChange={setIsPauseDialogOpen}
+        title={pausingProject?.status === "on_hold" ? "Retomar Projeto" : "Pausar Projeto"}
+        description={
+          pausingProject?.status === "on_hold"
+            ? `Deseja retomar o projeto "${pausingProject?.name}"? As tarefas voltarão a aparecer na lista de tarefas.`
+            : `Deseja pausar o projeto "${pausingProject?.name}"? As tarefas associadas serão ocultadas da lista de tarefas enquanto o projeto estiver pausado.`
+        }
+        onConfirm={handlePauseConfirm}
+      />
 
       {/* Delete Confirmation */}
       <ConfirmDialog

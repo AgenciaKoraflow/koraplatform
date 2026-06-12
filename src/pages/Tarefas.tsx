@@ -203,6 +203,10 @@ export default function Tarefas() {
 
   const filteredTasks = useMemo(() => {
     let result = tasks;
+    // Hide tasks from paused projects unless the user is explicitly filtering by that project
+    if (!filterProjectId) {
+      result = result.filter((t) => !t.projectId || !pausedProjectIds.has(t.projectId));
+    }
     if (filterPriority.length > 0) result = result.filter((t) => filterPriority.includes(t.priority));
     if (filterAssignees.length > 0) result = result.filter((t) => t.assignees.some((a) => filterAssignees.includes(a)));
     if (filterClientId) result = result.filter((t) => t.clientId === filterClientId);
@@ -212,7 +216,12 @@ export default function Tarefas() {
       return project?.head === filterHead;
     });
     return result;
-  }, [tasks, filterPriority, filterAssignees, filterClientId, filterProjectId, filterHead, projects]);
+  }, [tasks, pausedProjectIds, filterPriority, filterAssignees, filterClientId, filterProjectId, filterHead, projects]);
+
+  const pausedProjectIds = useMemo(
+    () => new Set(projects.filter((p) => p.status === "on_hold").map((p) => p.id)),
+    [projects],
+  );
 
   const filterableProjects = useMemo(
     () => filterClientId ? projects.filter((p) => p.clientId === filterClientId) : projects,
