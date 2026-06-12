@@ -13,6 +13,7 @@ import { EmpresaSenhas } from "@/components/empresa/EmpresaSenhas";
 import { InsightsManager } from "@/components/insights/InsightsManager";
 import { EmpresaTarefas } from "@/components/empresa/EmpresaTarefas";
 import { EmpresaDocumentos } from "@/components/empresa/EmpresaDocumentos";
+import { EmpresaGantt } from "@/components/empresa/EmpresaGantt";
 
 export default function Empresa() {
   const { data: workspace, isLoading } = useInternalWorkspace();
@@ -47,6 +48,7 @@ export default function Empresa() {
               <TabsTrigger value="insights">Insights</TabsTrigger>
               <TabsTrigger value="tarefas">Tarefas</TabsTrigger>
               <TabsTrigger value="documentacao">Documentação</TabsTrigger>
+              <TabsTrigger value="gantt">Gantt</TabsTrigger>
             </TabsList>
 
             <TabsContent value="geral">
@@ -87,6 +89,10 @@ export default function Empresa() {
 
             <TabsContent value="documentacao">
               <EmpresaDocumentos workspaceId={workspace.id} />
+            </TabsContent>
+
+            <TabsContent value="gantt">
+              <EmpresaGantt workspaceId={workspace.id} />
             </TabsContent>
           </Tabs>
         )}
