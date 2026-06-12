@@ -72,12 +72,15 @@ export interface Task {
   estimatedHours?: number;
 }
 
+export type SubtaskStatus = "todo" | "in_progress" | "review" | "done" | "blocked";
+
 export interface TaskSubtask {
   id: string;
   taskId: string;
   title: string;
   done: boolean;
   position: number;
+  substatus: SubtaskStatus;
   createdAt: string;
 }
 

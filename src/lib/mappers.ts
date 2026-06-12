@@ -134,12 +134,17 @@ export function mapDbTask(db: DbTaskRow): Task {
 }
 
 export function mapDbSubtask(db: DbTaskSubtaskRow): TaskSubtask {
+  const validStatuses = ["todo", "in_progress", "review", "done", "blocked"] as const;
+  const substatus = validStatuses.includes(db.substatus as typeof validStatuses[number])
+    ? (db.substatus as TaskSubtask["substatus"])
+    : "todo";
   return {
     id: db.id,
     taskId: db.task_id,
     title: db.title,
     done: db.done,
     position: db.position,
+    substatus,
     createdAt: db.created_at,
   };
 }

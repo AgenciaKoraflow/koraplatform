@@ -66,6 +66,7 @@ export interface DbTaskSubtaskRow {
   title: string;
   done: boolean;
   position: number;
+  substatus: string;
   created_at: string;
 }
 

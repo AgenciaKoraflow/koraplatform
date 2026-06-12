@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { mapDbSubtask } from "@/lib/mappers";
 import { subtaskKeys } from "@/hooks/useTaskSubtasks";
 import type { DbTaskSubtaskRow } from "@/types/db";
-import type { TaskSubtask } from "@/types/data";
+import type { TaskSubtask, SubtaskStatus } from "@/types/data";
 import { toast } from "sonner";
 
 function errMsg(e: unknown) {
@@ -52,10 +52,24 @@ export function useSubtaskMutations(taskId: string) {
     onError: (e) => toast.error(`Erro ao remover subtarefa: ${errMsg(e)}`),
   });
 
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, substatus }: { id: string; substatus: SubtaskStatus }) => {
+      const done = substatus === "done";
+      const { error } = await supabase
+        .from("task_subtasks")
+        .update({ substatus, done })
+        .eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: subtaskKeys.byTask(taskId) }),
+    onError: (e) => toast.error(`Erro ao atualizar status: ${errMsg(e)}`),
+  });
+
   return {
     addSubtask: (title: string) => addMutation.mutate(title),
     toggleSubtask: (id: string, done: boolean) => toggleMutation.mutate({ id, done }),
     deleteSubtask: (id: string) => deleteMutation.mutate(id),
+    updateSubtaskStatus: (id: string, substatus: SubtaskStatus) => updateStatusMutation.mutate({ id, substatus }),
     isAdding: addMutation.isPending,
   };
 }

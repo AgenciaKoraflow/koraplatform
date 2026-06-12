@@ -11,16 +11,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NumberInput } from "@/components/ui/number-input";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Clock, Paperclip, MessageSquare, Trash2, Upload, Download,
-  Plus, CheckCircle2, Circle, X, Timer,
+  Plus, CheckCircle2, Circle, X, Timer, Eye, Ban, ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useAuth } from "@/hooks/useAuth";
 import { useAllProfiles, useProfileAvatarMap, type Profile } from "@/hooks/useProfile";
+import { taskStatus } from "@/lib/colors";
+import type { SubtaskStatus } from "@/types/data";
 import { UserAvatar } from "@/components/shared/UserAvatar";
 import { useSubtaskTimeEntries } from "@/hooks/useSubtaskTimeEntries";
 import { useSubtaskComments } from "@/hooks/useSubtaskComments";
@@ -31,6 +38,14 @@ import { useAttachmentMutations } from "@/hooks/mutations/useAttachmentMutations
 import { useSubtaskMutations } from "@/hooks/mutations/useSubtaskMutations";
 import { supabase } from "@/integrations/supabase/client";
 import type { TaskSubtask } from "@/types/data";
+
+const substatusConfig: Record<SubtaskStatus, { label: string; icon: React.ElementType; color: string }> = {
+  todo:        { label: "A Fazer",      icon: Circle,       color: taskStatus.todo.text },
+  in_progress: { label: "Em Andamento", icon: Clock,        color: taskStatus.in_progress.text },
+  blocked:     { label: "Impedida",     icon: Ban,          color: taskStatus.blocked.text },
+  review:      { label: "Em Validação", icon: Eye,          color: taskStatus.review.text },
+  done:        { label: "Concluída",    icon: CheckCircle2, color: taskStatus.done.text },
+};
 
 const BUCKET = "task-attachments";
 
@@ -74,7 +89,7 @@ export function SubtaskDetailDialog({
     useCommentMutations(parentTaskId, subtask?.id);
   const { uploadAttachment, deleteAttachment, isUploading } =
     useAttachmentMutations(parentTaskId, subtask?.id);
-  const { toggleSubtask } = useSubtaskMutations(parentTaskId);
+  const { updateSubtaskStatus } = useSubtaskMutations(parentTaskId);
 
   const [entryDescription, setEntryDescription] = useState("");
   const [entryHours, setEntryHours] = useState("");
@@ -161,21 +176,36 @@ export function SubtaskDetailDialog({
           {/* ── Header fixo ── */}
           <DialogHeader className="pb-3 border-b border-border">
             <div className="flex items-center gap-2.5 pr-8">
-              <Checkbox
-                checked={subtask.done}
-                onCheckedChange={(checked) => toggleSubtask(subtask.id, !!checked)}
-                className="shrink-0"
-              />
-              {subtask.done
-                ? <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0" />
-                : <Circle className="w-4 h-4 text-slate-400 shrink-0" />
-              }
-              <span className={cn(
-                "text-xs font-medium",
-                subtask.done ? "text-green-400" : "text-muted-foreground"
-              )}>
-                {subtask.done ? "Concluída" : "Pendente"}
-              </span>
+              {(() => {
+                const cfg = substatusConfig[subtask.substatus] ?? substatusConfig.todo;
+                const Icon = cfg.icon;
+                return (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className={cn("flex items-center gap-1.5 text-xs font-medium rounded px-2 py-1 hover:bg-muted/50 transition-colors", cfg.color)}>
+                        <Icon className="w-3.5 h-3.5" />
+                        {cfg.label}
+                        <ChevronDown className="w-3 h-3 opacity-60" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-44">
+                      {(Object.entries(substatusConfig) as [SubtaskStatus, typeof substatusConfig[SubtaskStatus]][]).map(([key, c]) => {
+                        const I = c.icon;
+                        return (
+                          <DropdownMenuItem
+                            key={key}
+                            onClick={() => updateSubtaskStatus(subtask.id, key)}
+                            className={cn("flex items-center gap-2 text-xs", subtask.substatus === key && "font-semibold")}
+                          >
+                            <I className={cn("w-3.5 h-3.5", c.color)} />
+                            {c.label}
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                );
+              })()}
             </div>
             <DialogTitle className="text-base font-semibold leading-snug mt-1.5 pr-8">
               {subtask.title}

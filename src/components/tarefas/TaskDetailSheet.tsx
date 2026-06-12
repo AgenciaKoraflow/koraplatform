@@ -40,7 +40,7 @@ import { useCommentMutations } from "@/hooks/mutations/useCommentMutations";
 import { useAttachmentMutations } from "@/hooks/mutations/useAttachmentMutations";
 import { useTimeEntryMutations } from "@/hooks/mutations/useTimeEntryMutations";
 import { supabase } from "@/integrations/supabase/client";
-import type { Task, TaskSubtask } from "@/types/data";
+import type { Task, TaskSubtask, SubtaskStatus } from "@/types/data";
 import { BUBadge } from "@/components/shared/BUBadge";
 import { SubtaskDetailDialog } from "./SubtaskDetailDialog";
 import { taskStatus, priority } from "@/lib/colors";
@@ -60,6 +60,14 @@ const priorityConfig: Record<string, { label: string; color: string }> = {
   low:    { label: "Baixa", color: priority.low.badge },
   medium: { label: "Média", color: priority.medium.badge },
   high:   { label: "Alta",  color: priority.high.badge },
+};
+
+const substatusConfig: Record<SubtaskStatus, { label: string; icon: React.ElementType; color: string; dot: string }> = {
+  todo:        { label: "A Fazer",        icon: Circle,       color: taskStatus.todo.text,        dot: taskStatus.todo.dot },
+  in_progress: { label: "Em Andamento",   icon: Clock,        color: taskStatus.in_progress.text, dot: taskStatus.in_progress.dot },
+  blocked:     { label: "Impedida",       icon: Ban,          color: taskStatus.blocked.text,     dot: taskStatus.blocked.dot },
+  review:      { label: "Em Validação",   icon: Eye,          color: taskStatus.review.text,      dot: taskStatus.review.dot },
+  done:        { label: "Concluída",      icon: CheckCircle2, color: taskStatus.done.text,        dot: taskStatus.done.dot },
 };
 
 function formatDisplayDate(isoOrFormatted: string): string {
@@ -156,7 +164,7 @@ export function TaskDetailSheet({
 
   const { updateTask } = useTaskMutations();
 
-  const { addSubtask, toggleSubtask, deleteSubtask, isAdding: isAddingSubtask } =
+  const { addSubtask, toggleSubtask, deleteSubtask, updateSubtaskStatus, isAdding: isAddingSubtask } =
     useSubtaskMutations(task?.id ?? "");
   const { addComment, deleteComment, isAdding: isAddingComment } =
     useCommentMutations(task?.id ?? "");
@@ -217,7 +225,7 @@ export function TaskDetailSheet({
   const statusInfo = statusConfig[task.status] ?? statusConfig.todo;
   const StatusIcon = statusInfo.icon;
   const priorityInfo = priorityConfig[task.priority] ?? priorityConfig.medium;
-  const doneCount = subtasks.filter((s) => s.done).length;
+  const doneCount = subtasks.filter((s) => s.substatus === "done").length;
   const subtaskProgress = subtasks.length > 0 ? Math.round((doneCount / subtasks.length) * 100) : 0;
 
   const estimated = task.estimatedHours ?? 0;
@@ -439,20 +447,43 @@ export function TaskDetailSheet({
                         Nenhuma subtarefa adicionada.
                       </p>
                     )}
-                    {subtasks.map((sub) => (
+                    {subtasks.map((sub) => {
+                      const ssCfg = substatusConfig[sub.substatus] ?? substatusConfig.todo;
+                      const SubstatusIcon = ssCfg.icon;
+                      return (
                       <div
                         key={sub.id}
                         className="flex items-center gap-3 group rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors"
                       >
-                        <Checkbox
-                          checked={sub.done}
-                          onCheckedChange={(checked) => toggleSubtask(sub.id, !!checked)}
-                          className="shrink-0"
-                        />
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              className={cn("shrink-0 flex items-center", ssCfg.color)}
+                              title={ssCfg.label}
+                            >
+                              <SubstatusIcon className="w-4 h-4" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="w-44">
+                            {(Object.entries(substatusConfig) as [SubtaskStatus, typeof substatusConfig[SubtaskStatus]][]).map(([key, cfg]) => {
+                              const Icon = cfg.icon;
+                              return (
+                                <DropdownMenuItem
+                                  key={key}
+                                  onClick={() => updateSubtaskStatus(sub.id, key)}
+                                  className={cn("flex items-center gap-2 text-xs", sub.substatus === key && "font-semibold")}
+                                >
+                                  <Icon className={cn("w-3.5 h-3.5", cfg.color)} />
+                                  {cfg.label}
+                                </DropdownMenuItem>
+                              );
+                            })}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                         <button
                           className={cn(
                             "flex-1 text-sm text-left min-w-0 truncate hover:text-primary transition-colors",
-                            sub.done && "line-through text-muted-foreground"
+                            sub.substatus === "done" && "line-through text-muted-foreground"
                           )}
                           onClick={() => setSelectedSubtask(sub)}
                         >
@@ -472,7 +503,8 @@ export function TaskDetailSheet({
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   <div className="flex gap-2">
@@ -741,7 +773,7 @@ export function TaskDetailSheet({
 
       {/* Dialog de subtarefa (aninhado) */}
       <SubtaskDetailDialog
-        subtask={selectedSubtask}
+        subtask={selectedSubtask ? (subtasks.find((s) => s.id === selectedSubtask.id) ?? selectedSubtask) : null}
         parentTaskId={task.id}
         open={!!selectedSubtask}
         onClose={() => setSelectedSubtask(null)}
