@@ -207,6 +207,11 @@ export default function Tarefas() {
     [tasks],
   );
 
+  const pausedProjectIds = useMemo(
+    () => new Set(projects.filter((p) => p.status === "on_hold").map((p) => p.id)),
+    [projects],
+  );
+
   const filteredTasks = useMemo(() => {
     let result = tasks;
     if (filterNoProject) {
@@ -226,11 +231,6 @@ export default function Tarefas() {
     });
     return result;
   }, [tasks, filterNoProject, pausedProjectIds, filterPriority, filterAssignees, filterClientId, filterProjectId, filterHead, projects]);
-
-  const pausedProjectIds = useMemo(
-    () => new Set(projects.filter((p) => p.status === "on_hold").map((p) => p.id)),
-    [projects],
-  );
 
   const filterableProjects = useMemo(
     () => filterClientId ? projects.filter((p) => p.clientId === filterClientId) : projects,
