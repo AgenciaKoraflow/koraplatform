@@ -15,6 +15,9 @@ import { DatePicker } from "@/components/shared/DatePicker";
 import { CurrencyInput } from "@/components/shared/CurrencyInput";
 import { ActionMenu } from "@/components/shared/ActionMenu";
 import { ClientFinancialSummary } from "@/components/financeiro/ClientFinancialSummary";
+import { FinancialTrendChart } from "@/components/financeiro/FinancialTrendChart";
+import { CategoryBreakdownChart } from "@/components/financeiro/CategoryBreakdownChart";
+import { UpcomingDueDates } from "@/components/financeiro/UpcomingDueDates";
 import { parseCurrencyToNumber } from "@/lib/currency";
 import { useFinancial } from "@/hooks/useFinancial";
 import { useAllClients } from "@/hooks/useClients";
@@ -34,8 +37,13 @@ import {
   Landmark,
   Edit,
   Trash2,
+  X,
+  CheckCircle2,
 } from "lucide-react";
 import { format } from "date-fns";
+
+const currentMonth = new Date().getMonth() + 1;
+const currentYear = new Date().getFullYear();
 
 export function EmpresaFinanceiro() {
   const { transactions, loading, addTransaction, updateTransaction, deleteTransaction } = useFinancial();
@@ -46,8 +54,8 @@ export function EmpresaFinanceiro() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<"all" | "receita" | "despesa">("all");
   const [filterStatus, setFilterStatus] = useState<"all" | "pendente" | "pago" | "atrasado">("all");
-  const [filterMonth, setFilterMonth] = useState<number | null>(null);
-  const [filterYear, setFilterYear] = useState<number | null>(null);
+  const [filterMonth, setFilterMonth] = useState<number | null>(currentMonth);
+  const [filterYear, setFilterYear] = useState<number | null>(currentYear);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<FinancialTransaction | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -161,6 +169,26 @@ export function EmpresaFinanceiro() {
     }
   };
 
+  const handleMarkAsPaid = async (id: string) => {
+    const today = format(new Date(), "yyyy-MM-dd");
+    await updateTransaction(id, { status: "pago", paidDate: today });
+  };
+
+  const clearFilters = () => {
+    setFilterMonth(null);
+    setFilterYear(null);
+    setFilterType("all");
+    setFilterStatus("all");
+    setSearchTerm("");
+  };
+
+  const hasActiveFilter =
+    filterMonth !== null ||
+    filterYear !== null ||
+    filterType !== "all" ||
+    filterStatus !== "all" ||
+    searchTerm !== "";
+
   const filteredTransactions = useMemo(() => {
     return transactions.filter((t) => {
       const matchesSearch =
@@ -187,21 +215,26 @@ export function EmpresaFinanceiro() {
     });
   }, [transactions, searchTerm, filterType, filterStatus, filterMonth, filterYear]);
 
+  // KPIs reflect the filtered period
   const summary = useMemo(() => {
-    const receitas = transactions
+    const receitas = filteredTransactions
       .filter((t) => t.type === "receita" && t.status === "pago")
       .reduce((sum, t) => sum + parseCurrencyToNumber(t.value), 0);
 
-    const despesas = transactions
+    const despesas = filteredTransactions
       .filter((t) => t.type === "despesa" && t.status === "pago")
       .reduce((sum, t) => sum + parseCurrencyToNumber(t.value), 0);
 
-    const pendentes = transactions
-      .filter((t) => t.status === "pendente" || t.status === "atrasado")
+    const aReceber = filteredTransactions
+      .filter((t) => t.type === "receita" && (t.status === "pendente" || t.status === "atrasado"))
       .reduce((sum, t) => sum + parseCurrencyToNumber(t.value), 0);
 
-    return { receitas, despesas, saldo: receitas - despesas, pendentes };
-  }, [transactions]);
+    const aPagar = filteredTransactions
+      .filter((t) => t.type === "despesa" && (t.status === "pendente" || t.status === "atrasado"))
+      .reduce((sum, t) => sum + parseCurrencyToNumber(t.value), 0);
+
+    return { receitas, despesas, saldo: receitas - despesas, aReceber, aPagar };
+  }, [filteredTransactions]);
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
@@ -215,6 +248,19 @@ export function EmpresaFinanceiro() {
       default: return "";
     }
   };
+
+  const periodLabel = useMemo(() => {
+    if (filterMonth && filterYear) {
+      const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+      return `${months[filterMonth - 1]}/${filterYear}`;
+    }
+    if (filterYear) return String(filterYear);
+    if (filterMonth) {
+      const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+      return months[filterMonth - 1];
+    }
+    return null;
+  }, [filterMonth, filterYear]);
 
   const categories = formData.type === "receita" ? REVENUE_CATEGORIES : EXPENSE_CATEGORIES;
 
@@ -541,11 +587,16 @@ export function EmpresaFinanceiro() {
           </div>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid gap-4 md:grid-cols-4">
+        {/* Summary Cards — 5 cards responsive to filtered period */}
+        <div className="grid gap-4 md:grid-cols-5">
           <Card className="bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-500/20">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Receitas</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Receitas
+                {periodLabel && (
+                  <Badge variant="outline" className="ml-2 text-xs font-normal">{periodLabel}</Badge>
+                )}
+              </CardTitle>
               <TrendingUp className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
@@ -556,11 +607,16 @@ export function EmpresaFinanceiro() {
 
           <Card className="bg-gradient-to-br from-red-500/10 to-red-600/5 border-red-500/20">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Despesas</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Despesas
+                {periodLabel && (
+                  <Badge variant="outline" className="ml-2 text-xs font-normal">{periodLabel}</Badge>
+                )}
+              </CardTitle>
               <TrendingDown className="h-4 w-4 text-red-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-500">{formatCurrency(summary.despesas)}</div>
+              <div className="text-xl font-bold text-red-500">{formatCurrency(summary.despesas)}</div>
               <p className="text-xs text-muted-foreground mt-1">Total pago</p>
             </CardContent>
           </Card>
@@ -571,32 +627,61 @@ export function EmpresaFinanceiro() {
               <Wallet className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${summary.saldo >= 0 ? "text-green-500" : "text-red-500"}`}>
+              <div className={`text-xl font-bold ${summary.saldo >= 0 ? "text-green-500" : "text-red-500"}`}>
                 {formatCurrency(summary.saldo)}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Receitas - Despesas</p>
+              <p className="text-xs text-muted-foreground mt-1">Receitas − Despesas</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-green-500/5 to-green-600/5 border-green-500/10">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">A Receber</CardTitle>
+              <ArrowUpCircle className="h-4 w-4 text-green-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-xl font-bold text-green-400">{formatCurrency(summary.aReceber)}</div>
+              <p className="text-xs text-muted-foreground mt-1">Pendente/Atrasado</p>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/5 border-yellow-500/20">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Pendentes</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">A Pagar</CardTitle>
               <Calendar className="h-4 w-4 text-yellow-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-yellow-500">{formatCurrency(summary.pendentes)}</div>
-              <p className="text-xs text-muted-foreground mt-1">A pagar/receber</p>
+              <div className="text-xl font-bold text-yellow-500">{formatCurrency(summary.aPagar)}</div>
+              <p className="text-xs text-muted-foreground mt-1">Pendente/Atrasado</p>
             </CardContent>
           </Card>
         </div>
 
+        {/* Charts row */}
+        <div className="grid gap-4 lg:grid-cols-5">
+          <div className="lg:col-span-3">
+            <FinancialTrendChart transactions={transactions} />
+          </div>
+          <div className="lg:col-span-2">
+            <CategoryBreakdownChart transactions={filteredTransactions} />
+          </div>
+        </div>
+
+        {/* Upcoming due dates */}
+        <UpcomingDueDates
+          transactions={transactions}
+          clients={clients}
+          onMarkAsPaid={handleMarkAsPaid}
+        />
+
+        {/* Client summary */}
         <ClientFinancialSummary clients={clients} contracts={contracts} transactions={transactions} />
 
         {/* Filters */}
         <Card>
           <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
+            <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+              <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
                   placeholder="Buscar transações..."
@@ -606,7 +691,7 @@ export function EmpresaFinanceiro() {
                 />
               </div>
               <Select value={filterType} onValueChange={(v) => setFilterType(v as typeof filterType)}>
-                <SelectTrigger className="w-[150px]">
+                <SelectTrigger className="w-[140px]">
                   <SelectValue placeholder="Tipo" />
                 </SelectTrigger>
                 <SelectContent>
@@ -616,7 +701,7 @@ export function EmpresaFinanceiro() {
                 </SelectContent>
               </Select>
               <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as typeof filterStatus)}>
-                <SelectTrigger className="w-[150px]">
+                <SelectTrigger className="w-[140px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -630,7 +715,7 @@ export function EmpresaFinanceiro() {
                 value={filterMonth?.toString() || ""}
                 onValueChange={(v) => setFilterMonth(v === "all" || v === "" ? null : parseInt(v))}
               >
-                <SelectTrigger className="w-[150px]">
+                <SelectTrigger className="w-[130px]">
                   <SelectValue placeholder="Mês" />
                 </SelectTrigger>
                 <SelectContent>
@@ -653,23 +738,26 @@ export function EmpresaFinanceiro() {
                 value={filterYear?.toString() || ""}
                 onValueChange={(v) => setFilterYear(v === "all" || v === "" ? null : parseInt(v))}
               >
-                <SelectTrigger className="w-[120px]">
+                <SelectTrigger className="w-[110px]">
                   <SelectValue placeholder="Ano" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
                   {(() => {
-                    const currentYear = new Date().getFullYear();
                     const years = [];
-                    for (let y = currentYear - 5; y <= currentYear + 2; y++) {
-                      years.push(y);
-                    }
+                    for (let y = currentYear - 5; y <= currentYear + 2; y++) years.push(y);
                     return years.map((year) => (
                       <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
                     ));
                   })()}
                 </SelectContent>
               </Select>
+              {hasActiveFilter && (
+                <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-muted-foreground">
+                  <X className="w-3 h-3" />
+                  Limpar
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -683,10 +771,10 @@ export function EmpresaFinanceiro() {
                   <TableHead>Tipo</TableHead>
                   <TableHead>Descrição</TableHead>
                   <TableHead>Categoria</TableHead>
+                  <TableHead>Cliente</TableHead>
                   <TableHead>Valor</TableHead>
                   <TableHead>Vencimento</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Parcelas</TableHead>
                   <TableHead>Recorrência</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
@@ -705,102 +793,105 @@ export function EmpresaFinanceiro() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredTransactions.map((transaction) => (
-                    <TableRow
-                      key={transaction.id}
-                      className="cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => handleEdit(transaction)}
-                    >
-                      <TableCell>
-                        {transaction.type === "receita" ? (
-                          <div className="flex items-center gap-2 text-green-500">
-                            <ArrowUpCircle className="w-4 h-4" />
-                            <span className="text-sm">Receita</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2 text-red-500">
-                            <ArrowDownCircle className="w-4 h-4" />
-                            <span className="text-sm">Despesa</span>
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell className="font-medium">{transaction.description}</TableCell>
-                      <TableCell>{transaction.category}</TableCell>
-                      <TableCell
-                        className={transaction.type === "receita" ? "text-green-500" : "text-red-500"}
+                  filteredTransactions.map((transaction) => {
+                    const client = clients.find((c) => c.id === transaction.clientId);
+                    const isPending = transaction.status === "pendente" || transaction.status === "atrasado";
+                    return (
+                      <TableRow
+                        key={transaction.id}
+                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => handleEdit(transaction)}
                       >
-                        {transaction.value.startsWith("R$") ? transaction.value : `R$ ${transaction.value}`}
-                      </TableCell>
-                      <TableCell>
-                        {transaction.isRecurring && transaction.dueDay ? (
-                          <span className="text-sm">Dia {transaction.dueDay}</span>
-                        ) : transaction.dueDate ? (
-                          format(new Date(transaction.dueDate), "dd/MM/yyyy")
-                        ) : (
-                          "-"
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
+                        <TableCell>
+                          {transaction.type === "receita" ? (
+                            <div className="flex items-center gap-2 text-green-500">
+                              <ArrowUpCircle className="w-4 h-4" />
+                              <span className="text-sm">Receita</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 text-red-500">
+                              <ArrowDownCircle className="w-4 h-4" />
+                              <span className="text-sm">Despesa</span>
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-medium">{transaction.description}</TableCell>
+                        <TableCell>{transaction.category}</TableCell>
+                        <TableCell>
+                          {client ? (
+                            <span className="text-sm">{client.name}</span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell
+                          className={transaction.type === "receita" ? "text-green-500 font-medium" : "text-red-500 font-medium"}
+                        >
+                          {transaction.value.startsWith("R$") ? transaction.value : `R$ ${transaction.value}`}
+                        </TableCell>
+                        <TableCell>
+                          {transaction.isRecurring && transaction.dueDay ? (
+                            <span className="text-sm">Dia {transaction.dueDay}</span>
+                          ) : transaction.dueDate ? (
+                            format(new Date(transaction.dueDate), "dd/MM/yyyy")
+                          ) : (
+                            "—"
+                          )}
+                        </TableCell>
+                        <TableCell>
                           <Badge variant="outline" className={getStatusColor(transaction.status)}>
                             {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
                           </Badge>
-                          {transaction.status === "pago" && (
-                            <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">✓ Pago</span>
+                        </TableCell>
+                        <TableCell>
+                          {transaction.isRecurring ? (
+                            <div className="flex flex-col gap-1">
+                              <Badge variant="outline" className="w-fit bg-primary/10 text-primary border-primary/30">
+                                <RefreshCw className="w-3 h-3 mr-1" />
+                                {transaction.recurrenceType}
+                              </Badge>
+                              {transaction.installmentCount && (
+                                <span className="text-xs text-muted-foreground">
+                                  {transaction.installmentCount}x
+                                </span>
+                              )}
+                              {transaction.isIndefinite && (
+                                <span className="text-xs text-muted-foreground italic">Sem prazo</span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
                           )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {transaction.isRecurring ? (
-                          <div className="flex flex-col gap-1">
-                            {transaction.dueDay && (
-                              <span className="text-xs text-muted-foreground">
-                                Venc: dia {transaction.dueDay}
-                              </span>
+                        </TableCell>
+                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-end gap-1">
+                            {isPending && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 px-2 text-green-500 hover:text-green-400 hover:bg-green-500/10"
+                                onClick={() => handleMarkAsPaid(transaction.id)}
+                                title="Marcar como pago"
+                              >
+                                <CheckCircle2 className="w-4 h-4" />
+                              </Button>
                             )}
-                            {transaction.installmentCount && (
-                              <span className="text-xs text-muted-foreground">
-                                {transaction.installmentCount} parcelas
-                              </span>
-                            )}
-                            {transaction.firstPaymentDate && (
-                              <span className="text-xs text-muted-foreground">
-                                Início: {format(new Date(transaction.firstPaymentDate), "dd/MM/yyyy")}
-                              </span>
-                            )}
-                            {transaction.isIndefinite && (
-                              <span className="text-xs text-muted-foreground italic">Sem prazo</span>
-                            )}
+                            <ActionMenu
+                              items={[
+                                { label: "Editar", icon: Edit, onClick: () => handleEdit(transaction) },
+                                {
+                                  label: "Excluir",
+                                  icon: Trash2,
+                                  onClick: () => setDeleteId(transaction.id),
+                                  variant: "destructive",
+                                },
+                              ]}
+                            />
                           </div>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {transaction.isRecurring ? (
-                          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
-                            <RefreshCw className="w-3 h-3 mr-1" />
-                            {transaction.recurrenceType}
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                        <ActionMenu
-                          items={[
-                            { label: "Editar", icon: Edit, onClick: () => handleEdit(transaction) },
-                            {
-                              label: "Excluir",
-                              icon: Trash2,
-                              onClick: () => setDeleteId(transaction.id),
-                              variant: "destructive",
-                            },
-                          ]}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
