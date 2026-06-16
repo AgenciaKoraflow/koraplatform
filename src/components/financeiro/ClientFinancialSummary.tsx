@@ -7,7 +7,7 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
-import { ArrowUpCircle, ArrowDownCircle, RefreshCw, Users } from "lucide-react";
+import { ArrowUpCircle, ArrowDownCircle, RefreshCw, Users, FolderOpen } from "lucide-react";
 import { parseCurrencyToNumber } from "@/lib/currency";
 import { format } from "date-fns";
 import type { Client, Contract } from "@/types/data";
@@ -53,20 +53,22 @@ export function ClientFinancialSummary({ clients, contracts, transactions }: Pro
           const receitas = clientTx.filter((t) => t.type === "receita");
           const despesas = clientTx.filter((t) => t.type === "despesa");
 
+          const receitasRecorrentes = receitas.filter((t) => t.isRecurring);
+          const receitasProjeto = receitas.filter((t) => !t.isRecurring);
+
           const paid = receitas
             .filter((t) => t.status === "pago")
             .reduce((sum, t) => sum + parseCurrencyToNumber(t.value), 0);
 
-          const pending = receitas
+          const pendingRecurring = receitasRecorrentes
+            .filter((t) => t.status === "pendente" || t.status === "atrasado")
+            .reduce((sum, t) => sum + parseCurrencyToNumber(t.value), 0);
+
+          const pendingProject = receitasProjeto
             .filter((t) => t.status === "pendente" || t.status === "atrasado")
             .reduce((sum, t) => sum + parseCurrencyToNumber(t.value), 0);
 
           const totalDespesas = despesas.reduce((sum, t) => sum + parseCurrencyToNumber(t.value), 0);
-
-          // MRR: receitas recorrentes mensais vinculadas ao cliente
-          const mrr = receitas
-            .filter((t) => t.isRecurring && t.recurrenceType === "mensal")
-            .reduce((sum, t) => sum + parseCurrencyToNumber(t.value), 0);
 
           const hasOverdue = clientTx.some((t) => t.status === "atrasado");
 
@@ -77,16 +79,24 @@ export function ClientFinancialSummary({ clients, contracts, transactions }: Pro
             contractsCount: clientContracts.length,
             contractsTotal,
             paid,
-            pending,
+            pendingRecurring,
+            pendingProject,
             totalDespesas,
-            mrr,
             hasOverdue,
             receitas,
             despesas,
+            receitasRecorrentes,
+            receitasProjeto,
           };
         })
         .filter(
-          (r) => r.contractsCount > 0 || r.paid > 0 || r.pending > 0 || r.receitas.length > 0 || r.despesas.length > 0
+          (r) =>
+            r.contractsCount > 0 ||
+            r.paid > 0 ||
+            r.pendingRecurring > 0 ||
+            r.pendingProject > 0 ||
+            r.receitas.length > 0 ||
+            r.despesas.length > 0
         )
         .sort((a, b) => b.contractsTotal - a.contractsTotal),
     [clients, contracts, transactions]
@@ -104,11 +114,11 @@ export function ClientFinancialSummary({ clients, contracts, transactions }: Pro
       </CardHeader>
       <CardContent className="p-0 pb-2">
         {/* Header row */}
-        <div className="grid grid-cols-[1fr_80px_100px_100px_100px_80px] gap-2 px-6 py-2 text-xs text-muted-foreground font-medium border-b">
+        <div className="grid grid-cols-[1fr_110px_110px_100px_100px_80px] gap-2 px-6 py-2 text-xs text-muted-foreground font-medium border-b">
           <span>Cliente</span>
-          <span className="text-right">MRR</span>
+          <span className="text-right">Recorrência</span>
+          <span className="text-right">Projeto</span>
           <span className="text-right">Pago</span>
-          <span className="text-right">Pendente</span>
           <span className="text-right">Contratado</span>
           <span className="text-right">Status</span>
         </div>
@@ -116,7 +126,7 @@ export function ClientFinancialSummary({ clients, contracts, transactions }: Pro
           {rows.map((r) => (
             <AccordionItem key={r.clientId} value={r.clientId} className="border-b last:border-0">
               <AccordionTrigger className="px-6 py-3 hover:no-underline hover:bg-muted/40 [&[data-state=open]]:bg-muted/30 transition-colors">
-                <div className="grid grid-cols-[1fr_80px_100px_100px_100px_80px] gap-2 w-full text-sm items-center">
+                <div className="grid grid-cols-[1fr_110px_110px_100px_100px_80px] gap-2 w-full text-sm items-center">
                   <div className="flex flex-col items-start text-left">
                     <span className="font-medium">{r.name}</span>
                     {r.company ? (
@@ -124,10 +134,12 @@ export function ClientFinancialSummary({ clients, contracts, transactions }: Pro
                     ) : null}
                   </div>
                   <span className="text-right text-primary font-medium">
-                    {r.mrr > 0 ? formatBRL(r.mrr) : <span className="text-muted-foreground">-</span>}
+                    {r.pendingRecurring > 0 ? formatBRL(r.pendingRecurring) : <span className="text-muted-foreground">-</span>}
+                  </span>
+                  <span className="text-right text-yellow-500">
+                    {r.pendingProject > 0 ? formatBRL(r.pendingProject) : <span className="text-muted-foreground">-</span>}
                   </span>
                   <span className="text-right text-green-500">{formatBRL(r.paid)}</span>
-                  <span className="text-right text-yellow-500">{r.pending > 0 ? formatBRL(r.pending) : "-"}</span>
                   <span className="text-right">{formatBRL(r.contractsTotal)}</span>
                   <div className="flex justify-end">
                     {r.hasOverdue ? (
@@ -144,34 +156,71 @@ export function ClientFinancialSummary({ clients, contracts, transactions }: Pro
               </AccordionTrigger>
               <AccordionContent>
                 <div className="px-6 space-y-4">
-                  {/* Receitas */}
-                  {r.receitas.length > 0 && (
+                  {/* Receitas Recorrentes */}
+                  {r.receitasRecorrentes.length > 0 && (
                     <div>
-                      <p className="text-xs font-semibold text-green-500 mb-2 flex items-center gap-1">
-                        <ArrowUpCircle className="w-3 h-3" />
-                        Receitas ({r.receitas.length})
+                      <p className="text-xs font-semibold text-primary mb-2 flex items-center gap-1">
+                        <RefreshCw className="w-3 h-3" />
+                        Recorrência ({r.receitasRecorrentes.length})
                       </p>
                       <div className="space-y-1">
-                        {r.receitas.map((t) => (
+                        {r.receitasRecorrentes.map((t) => (
                           <div
                             key={t.id}
                             className="flex items-center justify-between text-xs py-1.5 border-b last:border-0"
                           >
-                            <div className="flex items-center gap-2 min-w-0">
-                              {t.isRecurring && (
-                                <RefreshCw className="w-3 h-3 text-primary shrink-0" />
-                              )}
-                              <div className="min-w-0">
-                                <p className="font-medium truncate">{t.description}</p>
-                                <p className="text-muted-foreground">
-                                  {t.category}
-                                  {t.isRecurring && t.recurrenceType
-                                    ? ` · Recorrente ${t.recurrenceType}`
-                                    : ""}
-                                  {t.dueDate ? ` · Venc: ${formatDate(t.dueDate)}` : ""}
-                                  {t.paidDate ? ` · Pago: ${formatDate(t.paidDate)}` : ""}
-                                </p>
-                              </div>
+                            <div className="min-w-0">
+                              <p className="font-medium truncate">{t.description}</p>
+                              <p className="text-muted-foreground">
+                                {t.category}
+                                {t.recurrenceType ? ` · ${t.recurrenceType}` : ""}
+                                {t.dueDay ? ` · Dia ${t.dueDay}` : t.dueDate ? ` · Venc: ${formatDate(t.dueDate)}` : ""}
+                                {t.paidDate ? ` · Pago: ${formatDate(t.paidDate)}` : ""}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0 ml-2">
+                              <Badge
+                                variant="outline"
+                                className={
+                                  t.status === "pago"
+                                    ? "bg-green-500/20 text-green-400 border-green-500/30"
+                                    : t.status === "atrasado"
+                                    ? "bg-red-500/20 text-red-400 border-red-500/30"
+                                    : "bg-primary/20 text-primary border-primary/30"
+                                }
+                              >
+                                {t.status}
+                              </Badge>
+                              <span className="font-semibold text-green-500 min-w-[72px] text-right">
+                                {formatBRL(parseCurrencyToNumber(t.value))}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Receitas de Projeto */}
+                  {r.receitasProjeto.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold text-yellow-500 mb-2 flex items-center gap-1">
+                        <FolderOpen className="w-3 h-3" />
+                        Projeto ({r.receitasProjeto.length})
+                      </p>
+                      <div className="space-y-1">
+                        {r.receitasProjeto.map((t) => (
+                          <div
+                            key={t.id}
+                            className="flex items-center justify-between text-xs py-1.5 border-b last:border-0"
+                          >
+                            <div className="min-w-0">
+                              <p className="font-medium truncate">{t.description}</p>
+                              <p className="text-muted-foreground">
+                                {t.category}
+                                {t.dueDate ? ` · Venc: ${formatDate(t.dueDate)}` : ""}
+                                {t.paidDate ? ` · Pago: ${formatDate(t.paidDate)}` : ""}
+                              </p>
                             </div>
                             <div className="flex items-center gap-2 shrink-0 ml-2">
                               <Badge
@@ -239,7 +288,7 @@ export function ClientFinancialSummary({ clients, contracts, transactions }: Pro
                     </div>
                   )}
 
-                  {r.receitas.length === 0 && r.despesas.length === 0 && (
+                  {r.receitasRecorrentes.length === 0 && r.receitasProjeto.length === 0 && r.despesas.length === 0 && (
                     <p className="text-xs text-muted-foreground py-2">
                       Nenhuma transação registrada para este cliente.
                     </p>
