@@ -7,7 +7,6 @@ import { projectKeys } from "@/hooks/useProjects";
 import { taskKeys } from "@/hooks/useTasks";
 import { contractKeys } from "@/hooks/useContracts";
 import { knowledgeKeys } from "@/hooks/useKnowledgeItems";
-import { ticketKeys } from "@/hooks/useTickets";
 import type { DbClientRow } from "@/types/db";
 import { toast } from "sonner";
 
@@ -89,7 +88,7 @@ export function useClientMutations() {
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      [clientKeys.all, projectKeys.all, taskKeys.all, contractKeys.all, knowledgeKeys.all, ticketKeys.all]
+      [clientKeys.all, projectKeys.all, taskKeys.all, contractKeys.all, knowledgeKeys.all]
         .forEach((key) => qc.invalidateQueries({ queryKey: key }));
       toast.success("Cliente excluído com sucesso");
     },

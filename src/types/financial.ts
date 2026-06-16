@@ -36,7 +36,6 @@ export const EXPENSE_CATEGORIES = [
 export const REVENUE_CATEGORIES = [
   "Projeto",
   "Consultoria",
-  "Sustentação",
   "Recorrência",
   "Workshop",
   "Licenciamento",

@@ -56,7 +56,6 @@ const typeConfig = {
   prestacao_servico:     { label: "Prestação de Serviço", color: "bg-slate-500/10 text-slate-500" },
   projeto:               { label: "Projeto",              color: "bg-indigo-500/10 text-indigo-500" },
   projeto_unico:         { label: "Projeto Único",        color: "bg-violet-500/10 text-violet-500" },
-  sustentacao:           { label: "Sustentação",          color: "bg-muted/10 text-muted-foreground" },
   consultoria:           { label: "Consultoria",          color: "bg-amber-500/10 text-amber-500" },
   implantacao_recorrencia: { label: "Impl. + Recorrência", color: "bg-green-500/10 text-green-500" },
 };
@@ -918,7 +917,6 @@ export default function Contratos() {
                           const label = getContractTypeLabel(contract, projects);
                           if (label === "Impl. + Recorrência") return typeConfig.implantacao_recorrencia?.color;
                           if (label === "Projeto") return typeConfig.projeto?.color;
-                          if (label === "Sustentação") return typeConfig.sustentacao?.color;
                           if (label === "Consultoria") return typeConfig.consultoria?.color;
                           if (label === "Projeto + Impl. + Recorrência") return "bg-gradient-to-r from-indigo-500/10 to-green-500/10 text-indigo-500 border border-indigo-500/20";
                           return typeConfig.prestacao_servico?.color;

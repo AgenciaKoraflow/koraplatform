@@ -3,13 +3,11 @@ import { cn } from "@/lib/utils";
 import {
   BarChart3,
   Filter,
-  Activity,
   Heart,
   FolderKanban,
   CheckSquare,
   FileSignature,
   BookOpen,
-  HeadphonesIcon,
   LayoutDashboard,
   Users,
   Building2,
@@ -37,8 +35,6 @@ const navigation: NavItem[] = [
   { name: "Contratos", href: "/contratos", icon: FileSignature, bu: "kora-agents" },
   { name: "Projetos", href: "/projetos", icon: FolderKanban, bu: "kora-dev" },
   { name: "Tarefas", href: "/tarefas", icon: CheckSquare, bu: "kora-dev" },
-  { name: "Sustentação", href: "/sustentacao", icon: HeadphonesIcon, bu: "kora-dev" },
-  { name: "Observabilidade", href: "/observabilidade", icon: Activity, bu: "kora-dev" },
   { name: "Conhecimento", href: "/conhecimento", icon: BookOpen, bu: "kora-studio" },
   { name: "Indicadores", href: "/indicadores", icon: BarChart3, bu: "kora-corp" },
 ];

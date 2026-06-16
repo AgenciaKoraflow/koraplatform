@@ -21,8 +21,6 @@ const importProjetos = () => import("./pages/Projetos");
 const importTarefas = () => import("./pages/Tarefas");
 const importContratos = () => import("./pages/Contratos");
 const importConhecimento = () => import("./pages/Conhecimento");
-const importSustentacao = () => import("./pages/Sustentacao");
-const importObservabilidade = () => import("./pages/Observabilidade");
 const importIndicadores = () => import("./pages/Indicadores");
 const importSignContract = () => import("./pages/SignContract");
 const importNotFound = () => import("./pages/NotFound");
@@ -39,8 +37,6 @@ const Projetos = lazy(importProjetos);
 const Tarefas = lazy(importTarefas);
 const Contratos = lazy(importContratos);
 const Conhecimento = lazy(importConhecimento);
-const Sustentacao = lazy(importSustentacao);
-const Observabilidade = lazy(importObservabilidade);
 const Indicadores = lazy(importIndicadores);
 const SignContract = lazy(importSignContract);
 const NotFound = lazy(importNotFound);
@@ -96,8 +92,6 @@ function usePreloadAllPages() {
       importTarefas();
       importContratos();
       importConhecimento();
-      importSustentacao();
-      importObservabilidade();
       importIndicadores();
       importSignContract();
       importNotFound();
@@ -159,8 +153,6 @@ function AppRoutes() {
           <Route path="/tarefas" element={<ProtectedRoute><Tarefas /></ProtectedRoute>} />
           <Route path="/contratos" element={<ProtectedRoute><Contratos /></ProtectedRoute>} />
           <Route path="/conhecimento" element={<ProtectedRoute><Conhecimento /></ProtectedRoute>} />
-          <Route path="/sustentacao" element={<ProtectedRoute><Sustentacao /></ProtectedRoute>} />
-          <Route path="/observabilidade" element={<ProtectedRoute><Observabilidade /></ProtectedRoute>} />
           <Route path="/financeiro" element={<Navigate to="/empresa" replace />} />
           <Route path="/servicos" element={<Navigate to="/empresa" replace />} />
           <Route path="/processos" element={<Navigate to="/empresa" replace />} />

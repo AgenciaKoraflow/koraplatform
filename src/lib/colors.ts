@@ -24,13 +24,3 @@ export const priority = {
   high:     { dot: "bg-red-500",     badge: "bg-red-500/20 text-red-400 border border-red-500/30" },
   critical: { dot: "bg-red-600",     badge: "bg-red-600/20 text-red-500 border border-red-600/30" },
 } as const;
-
-// Support ticket statuses (Sustentacao) — different flow from task statuses
-
-export const ticketStatus = {
-  open:        { badge: "bg-primary/10 text-primary border border-primary/20" },
-  in_progress: { badge: "bg-primary/10 text-primary border border-primary/20" },
-  waiting:     { badge: "bg-slate-500/10 text-slate-500 border border-slate-500/20" },
-  resolved:    { badge: "bg-green-500/10 text-green-500 border border-green-500/20" },
-  closed:      { badge: "bg-slate-500/10 text-slate-400 border border-slate-500/20" },
-} as const;

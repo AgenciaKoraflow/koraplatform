@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { Notification } from "@/types/notifications";
 import { useAllTasks } from "@/hooks/useTasks";
 import { useAllContracts } from "@/hooks/useContracts";
-import { useAllTickets } from "@/hooks/useTickets";
 import { useAllClients } from "@/hooks/useClients";
 import { useAuth } from "@/hooks/useAuth";
 import { useInternalWorkspace } from "@/hooks/useInternalWorkspace";
@@ -58,7 +57,6 @@ function isAssignedToUser(assignees: string[], userName: string | null): boolean
 export function useNotifications() {
   const { data: tasks = [] } = useAllTasks();
   const { data: contracts = [] } = useAllContracts();
-  const { data: tickets = [] } = useAllTickets();
   const { data: clients = [] } = useAllClients();
   const { profile } = useAuth();
   const { data: workspace } = useInternalWorkspace();
@@ -219,28 +217,6 @@ export function useNotifications() {
         }
       });
 
-    // New tickets
-    tickets
-      .filter((t) => t.status === "open" || t.status === "in_progress")
-      .forEach((ticket) => {
-        const createdAt = parseDate(ticket.createdAt);
-        if (createdAt) {
-          const daysSinceCreation = differenceInDays(new Date(), createdAt);
-          if (daysSinceCreation <= 7) {
-            notifs.push({
-              id: `ticket-${ticket.id}`,
-              type: "new_ticket",
-              title: "Novo ticket de suporte",
-              message: ticket.title,
-              timestamp: createdAt,
-              read: false,
-              actionUrl: `/sustentacao?ticket=${ticket.id}`,
-              priority: ticket.priority === "critical" ? "critical" : ticket.priority === "high" ? "high" : "medium",
-              metadata: { ticketId: ticket.id, title: ticket.title },
-            });
-          }
-        }
-      });
 
     // Client anniversaries (if anniversary date exists)
     clients
@@ -311,7 +287,7 @@ export function useNotifications() {
     const notifPrefs = profile?.preferences?.notifications;
     if (!notifPrefs) return sorted;
     return sorted.filter((n) => notifPrefs[n.type] !== false);
-  }, [tasks, contracts, tickets, clients, profile, internalTasks]);
+  }, [tasks, contracts, clients, profile, internalTasks]);
 
   useEffect(() => {
     setIsLoading(true);

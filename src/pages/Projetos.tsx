@@ -36,7 +36,6 @@ import { taskStatus } from "@/lib/colors";
 
 const typeConfig = {
   projeto: { label: "Projeto", color: "bg-primary/10 text-primary" },
-  sustentacao: { label: "Sustentação", color: "bg-primary/10 text-primary" },
   consultoria: { label: "Consultoria", color: "bg-muted/10 text-muted-foreground" },
 };
 
@@ -142,7 +141,7 @@ export default function Projetos() {
     head: "",
     value: "",
     billingType: "projeto" as "projeto" | "implantacao_recorrencia",
-    type: "projeto" as "projeto" | "sustentacao" | "consultoria",
+    type: "projeto" as "projeto" | "consultoria",
     recurrenceValue: "",
     recurrenceStartDate: "",
     bu: [] as BU[],

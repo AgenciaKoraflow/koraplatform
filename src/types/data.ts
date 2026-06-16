@@ -48,7 +48,7 @@ export interface Project {
   head?: string;
   value?: string;
   billingType?: "projeto" | "implantacao_recorrencia";
-  type?: "projeto" | "sustentacao" | "consultoria";
+  type?: "projeto" | "consultoria";
   recurrenceValue?: string;
   recurrenceStartDate?: string;
   bu?: BU[];
@@ -273,80 +273,6 @@ export interface KnowledgeItem {
   updatedAt: string;
 }
 
-// Observability Types
-export type IntegrationType =
-  | 'supabase'
-  | 'coolify';
-
-export type IntegrationStatus = 'active' | 'inactive' | 'error' | 'pending_setup';
-
-export type MetricType = 'api_calls' | 'errors' | 'latency' | 'usage_quota' | 'cost' | 'uptime' | 'custom';
-
-export type LogSeverity = 'info' | 'warning' | 'error' | 'critical';
-
-export interface ClientIntegration {
-  id: string;
-  client_id: string;
-  integration_type: IntegrationType;
-  status: IntegrationStatus;
-  display_name?: string;
-  description?: string;
-  base_url?: string;
-  api_key?: string;
-  config?: Record<string, unknown>; // Configurações adicionais (ex: project_id, region, etc.)
-  is_enabled: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface IntegrationCredential {
-  id: string;
-  integration_id: string;
-  credential_key: string;
-  credential_value: string;
-  is_encrypted: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface IntegrationMetric {
-  id: string;
-  integration_id: string;
-  metric_type: MetricType;
-  metric_value?: number;
-  metric_unit?: string;
-  recorded_at: string;
-  metadata?: Record<string, unknown>;
-}
-
-export interface IntegrationLog {
-  id: string;
-  integration_id: string;
-  severity: LogSeverity;
-  message: string;
-  context?: Record<string, unknown>;
-  created_at: string;
-}
-
-export interface IntegrationHealth {
-  id: string;
-  integration_id: string;
-  is_healthy: boolean;
-  response_time_ms?: number;
-  error_message?: string;
-  checked_at: string;
-}
-
-export interface ClientObservabilitySummary {
-  client_id: string;
-  client_name: string;
-  total_integrations: number;
-  active_integrations: number;
-  error_integrations: number;
-  last_health_check?: string;
-  total_logs_7d: number;
-  errors_7d: number;
-}
 
 // Integration credentials for different services (for UI forms)
 export interface IntegrationCredentialsConfig {
