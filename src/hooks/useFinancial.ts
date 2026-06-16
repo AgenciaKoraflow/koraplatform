@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { FinancialTransaction } from "@/types/financial";
@@ -51,34 +51,30 @@ function mapDbTransaction(db: FinancialTransactionRow): FinancialTransaction {
   };
 }
 
-export function useFinancial() {
-  const [transactions, setTransactions] = useState<FinancialTransaction[]>([]);
-  const [loading, setLoading] = useState(true);
+export const financialKeys = {
+  all: ["financial_transactions"] as const,
+};
 
-  const loadTransactions = async () => {
-    setLoading(true);
-    try {
+export function useFinancial() {
+  const queryClient = useQueryClient();
+
+  const { data: transactions = [], isLoading: loading } = useQuery({
+    queryKey: financialKeys.all,
+    queryFn: async () => {
       const { data, error } = await supabase
         .from("financial_transactions")
         .select("*")
         .order("created_at", { ascending: false });
+      if (error) throw new Error(error.message);
+      return (data ?? []).map(mapDbTransaction);
+    },
+    staleTime: 60 * 1000,
+  });
 
-      if (error) throw error;
-      setTransactions((data ?? []).map(mapDbTransaction));
-    } catch (error) {
-      logger.error("Error loading transactions:", error instanceof Error ? error : undefined);
-      toast.error("Erro ao carregar transações");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: financialKeys.all });
 
-  useEffect(() => {
-    loadTransactions();
-  }, []);
-
-  const addTransaction = async (transaction: Omit<FinancialTransaction, "id">): Promise<FinancialTransaction | null> => {
-    try {
+  const addMutation = useMutation({
+    mutationFn: async (transaction: Omit<FinancialTransaction, "id">): Promise<FinancialTransaction | null> => {
       const dbData = {
         type: transaction.type,
         category: transaction.category,
@@ -104,24 +100,21 @@ export function useFinancial() {
         .insert(dbData)
         .select();
 
-      if (error) throw error;
-
-      if (result?.[0]) {
-        const newTransaction = mapDbTransaction(result[0]);
-        setTransactions((prev) => [newTransaction, ...prev]);
-        toast.success("Transação adicionada com sucesso");
-        return newTransaction;
-      }
-      return null;
-    } catch (error) {
+      if (error) throw new Error(error.message);
+      return result?.[0] ? mapDbTransaction(result[0]) : null;
+    },
+    onSuccess: () => {
+      invalidate();
+      toast.success("Transação adicionada com sucesso");
+    },
+    onError: (error) => {
       logger.error("Error adding transaction:", error instanceof Error ? error : undefined);
       toast.error("Erro ao adicionar transação");
-      return null;
-    }
-  };
+    },
+  });
 
-  const updateTransaction = async (id: string, transaction: Partial<FinancialTransaction>) => {
-    try {
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data: transaction }: { id: string; data: Partial<FinancialTransaction> }) => {
       const dbData: Record<string, unknown> = {};
       if (transaction.type) dbData.type = transaction.type;
       if (transaction.category) dbData.category = transaction.category;
@@ -146,34 +139,57 @@ export function useFinancial() {
         .update(dbData)
         .eq("id", id);
 
-      if (error) throw error;
-
-      setTransactions((prev) => prev.map((t) => (t.id === id ? { ...t, ...transaction } : t)));
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      invalidate();
       toast.success("Transação atualizada com sucesso");
-    } catch (error) {
+    },
+    onError: (error) => {
       logger.error("Error updating transaction:", error instanceof Error ? error : undefined);
       toast.error("Erro ao atualizar transação");
-    }
-  };
+    },
+  });
 
-  const deleteTransaction = async (id: string) => {
-    try {
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
       const { error } = await supabase.from("financial_transactions").delete().eq("id", id);
-      if (error) throw error;
-      setTransactions((prev) => prev.filter((t) => t.id !== id));
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      invalidate();
       toast.success("Transação excluída com sucesso");
-    } catch (error) {
+    },
+    onError: (error) => {
       logger.error("Error deleting transaction:", error instanceof Error ? error : undefined);
       toast.error("Erro ao excluir transação");
-    }
-  };
+    },
+  });
 
   return {
     transactions,
     loading,
-    addTransaction,
-    updateTransaction,
-    deleteTransaction,
-    refreshTransactions: loadTransactions,
+    addTransaction: async (t: Omit<FinancialTransaction, "id">): Promise<FinancialTransaction | null> => {
+      try {
+        return await addMutation.mutateAsync(t);
+      } catch {
+        return null;
+      }
+    },
+    updateTransaction: async (id: string, data: Partial<FinancialTransaction>) => {
+      try {
+        await updateMutation.mutateAsync({ id, data });
+      } catch {
+        // error handled in onError
+      }
+    },
+    deleteTransaction: async (id: string) => {
+      try {
+        await deleteMutation.mutateAsync(id);
+      } catch {
+        // error handled in onError
+      }
+    },
+    refreshTransactions: invalidate,
   };
 }

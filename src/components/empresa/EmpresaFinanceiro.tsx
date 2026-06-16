@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,11 +39,13 @@ import {
   Trash2,
   X,
   CheckCircle2,
+  Download,
 } from "lucide-react";
 import { format } from "date-fns";
 
 const currentMonth = new Date().getMonth() + 1;
 const currentYear = new Date().getFullYear();
+const ITEMS_PER_PAGE = 25;
 
 export function EmpresaFinanceiro() {
   const { transactions, loading, addTransaction, updateTransaction, deleteTransaction } = useFinancial();
@@ -59,6 +61,7 @@ export function EmpresaFinanceiro() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<FinancialTransaction | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [formData, setFormData] = useState({
     type: "despesa" as "receita" | "despesa",
@@ -79,6 +82,10 @@ export function EmpresaFinanceiro() {
     firstPaymentDate: "",
     isIndefinite: false,
   });
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterType, filterStatus, filterMonth, filterYear]);
 
   const resetForm = () => {
     setFormData({
@@ -235,6 +242,66 @@ export function EmpresaFinanceiro() {
 
     return { receitas, despesas, saldo: receitas - despesas, aReceber, aPagar };
   }, [filteredTransactions]);
+
+  const paginatedTransactions = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredTransactions.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredTransactions, currentPage]);
+
+  const exportCSV = () => {
+    const MONTHS_PT = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+
+    const escape = (val: string) => {
+      if (val.includes(",") || val.includes('"') || val.includes("\n")) {
+        return `"${val.replace(/"/g, '""')}"`;
+      }
+      return val;
+    };
+
+    const formatDateForCSV = (dateStr: string | undefined) => {
+      if (!dateStr) return "";
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+    };
+
+    const headers = ["Tipo", "Descrição", "Categoria", "Cliente", "Valor", "Vencimento", "Status", "Recorrência", "Pago em"];
+
+    const rows = filteredTransactions.map((t) => {
+      const client = clients.find((c) => c.id === t.clientId);
+      const vencimento = t.isRecurring && t.dueDay ? `Dia ${t.dueDay}` : formatDateForCSV(t.dueDate);
+      return [
+        escape(t.type === "receita" ? "Receita" : "Despesa"),
+        escape(t.description),
+        escape(t.category),
+        escape(client?.name ?? ""),
+        parseCurrencyToNumber(t.value).toString(),
+        escape(vencimento),
+        escape(t.status),
+        escape(t.isRecurring ? (t.recurrenceType ?? "") : ""),
+        escape(formatDateForCSV(t.paidDate)),
+      ].join(",");
+    });
+
+    const csvContent = "﻿" + [headers.join(","), ...rows].join("\n");
+
+    let filename = "financeiro-completo.csv";
+    if (filterMonth && filterYear) {
+      filename = `financeiro-${MONTHS_PT[filterMonth - 1]}-${filterYear}.csv`;
+    } else if (filterYear) {
+      filename = `financeiro-${filterYear}.csv`;
+    } else if (filterMonth) {
+      filename = `financeiro-${MONTHS_PT[filterMonth - 1]}.csv`;
+    }
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
@@ -758,6 +825,16 @@ export function EmpresaFinanceiro() {
                   Limpar
                 </Button>
               )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={exportCSV}
+                disabled={filteredTransactions.length === 0}
+                className="gap-2 ml-auto"
+              >
+                <Download className="w-4 h-4" />
+                Exportar CSV
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -793,7 +870,7 @@ export function EmpresaFinanceiro() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredTransactions.map((transaction) => {
+                  paginatedTransactions.map((transaction) => {
                     const client = clients.find((c) => c.id === transaction.clientId);
                     const isPending = transaction.status === "pendente" || transaction.status === "atrasado";
                     return (
@@ -895,6 +972,33 @@ export function EmpresaFinanceiro() {
                 )}
               </TableBody>
             </Table>
+            {filteredTransactions.length > 0 && (
+              <div className="flex items-center justify-between px-4 py-3 border-t">
+                <span className="text-sm text-muted-foreground">
+                  Mostrando {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredTransactions.length)} de {filteredTransactions.length} transações
+                </span>
+                {filteredTransactions.length > ITEMS_PER_PAGE && (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Anterior
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((p) => Math.min(Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE), p + 1))}
+                      disabled={currentPage >= Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE)}
+                    >
+                      Próximo
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
