@@ -60,6 +60,13 @@ const typeConfig = {
   implantacao_recorrencia: { label: "Impl. + Recorrência", color: "bg-green-500/10 text-green-500" },
 };
 
+const recurrenceTypeLabel: Record<string, string> = {
+  monthly: "Mensal",
+  quarterly: "Trimestral",
+  semi_annual: "Semestral",
+  annual: "Anual",
+};
+
 // ===== Contract vigência helpers =====
 type VigenciaStatus = "active" | "expiring_soon" | "critical" | "expired" | "not_set";
 
@@ -1273,6 +1280,16 @@ export default function Contratos() {
             {formData.recurrenceType && (
               <>
                 <div className="space-y-2">
+                  <Label htmlFor="recurrenceValue">Valor da Recorrência *</Label>
+                  <CurrencyInput
+                    id="recurrenceValue"
+                    value={formData.recurrenceValue}
+                    onChange={(value) => setFormData({ ...formData, recurrenceValue: value })}
+                    placeholder="R$ 0,00"
+                  />
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="recurrenceStartDate">Data de Início da Recorrência</Label>
                   <DatePicker
                     value={formData.recurrenceStartDate}
@@ -1501,6 +1518,37 @@ export default function Contratos() {
                       Expira em: {new Date(viewingContract.signatureLinkExpiresAt).toLocaleDateString("pt-BR")}
                     </p>
                   )}
+                </div>
+              )}
+
+              {/* Recorrência */}
+              {viewingContract.recurrenceType && (
+                <div className="pt-4 border-t border-border space-y-3">
+                  <h4 className="font-medium text-foreground">Recorrência</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Tipo</p>
+                      <p className="font-medium">{recurrenceTypeLabel[viewingContract.recurrenceType] || viewingContract.recurrenceType}</p>
+                    </div>
+                    {viewingContract.recurrenceValue && (
+                      <div>
+                        <p className="text-muted-foreground">Valor</p>
+                        <p className="font-medium">{viewingContract.recurrenceValue}</p>
+                      </div>
+                    )}
+                    {viewingContract.recurrenceStartDate && (
+                      <div>
+                        <p className="text-muted-foreground">Início</p>
+                        <p className="font-medium">{viewingContract.recurrenceStartDate}</p>
+                      </div>
+                    )}
+                    {viewingContract.recurrenceEndDate && (
+                      <div>
+                        <p className="text-muted-foreground">Término</p>
+                        <p className="font-medium">{viewingContract.recurrenceEndDate}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
