@@ -23,7 +23,7 @@ import { useFinancial } from "@/hooks/useFinancial";
 import { useAllClients } from "@/hooks/useClients";
 import { useAllProjects } from "@/hooks/useProjects";
 import { useAllContracts } from "@/hooks/useContracts";
-import { FinancialTransaction, EXPENSE_CATEGORIES, REVENUE_CATEGORIES } from "@/types/financial";
+import { FinancialTransaction, EXPENSE_CATEGORIES, REVENUE_CATEGORIES, PROJECT_EXPENSE_TYPES } from "@/types/financial";
 import {
   Plus,
   Search,
@@ -83,6 +83,7 @@ export function EmpresaFinanceiro() {
     firstPaymentDate: "",
     isIndefinite: false,
     contractId: "",
+    projectExpenseType: "" as "" | "extra" | "recorrente" | "projeto",
   });
 
   useEffect(() => {
@@ -109,6 +110,7 @@ export function EmpresaFinanceiro() {
       firstPaymentDate: "",
       isIndefinite: false,
       contractId: "",
+      projectExpenseType: "",
     });
     setEditingTransaction(null);
   };
@@ -130,6 +132,7 @@ export function EmpresaFinanceiro() {
       clientId: formData.clientId || undefined,
       projectId: formData.projectId || undefined,
       contractId: formData.contractId || undefined,
+      projectExpenseType: (formData.projectExpenseType || undefined) as "extra" | "recorrente" | "projeto" | undefined,
       notes: formData.notes || undefined,
       otherCategoryNote: formData.otherCategoryNote || undefined,
       installmentCount: formData.installmentCount,
@@ -170,6 +173,7 @@ export function EmpresaFinanceiro() {
       installmentCount: transaction.installmentCount ?? null,
       firstPaymentDate: transaction.firstPaymentDate || "",
       isIndefinite: transaction.isIndefinite || false,
+      projectExpenseType: (transaction.projectExpenseType || "") as "" | "extra" | "recorrente" | "projeto",
     });
     setIsDialogOpen(true);
   };
@@ -629,7 +633,14 @@ export function EmpresaFinanceiro() {
                         <Label>Projeto (opcional)</Label>
                         <Select
                           value={formData.projectId || "none"}
-                          onValueChange={(v) => setFormData({ ...formData, projectId: v === "none" ? "" : v })}
+                          onValueChange={(v) =>
+                            setFormData({
+                              ...formData,
+                              projectId: v === "none" ? "" : v,
+                              contractId: "",
+                              projectExpenseType: "",
+                            })
+                          }
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione..." />
@@ -666,6 +677,71 @@ export function EmpresaFinanceiro() {
                           </SelectContent>
                         </Select>
                       </div>
+                    )}
+
+                    {formData.type === "despesa" && formData.projectId && (
+                      <>
+                        <div className="space-y-2">
+                          <Label>Contrato do projeto (opcional)</Label>
+                          <Select
+                            value={formData.contractId || "none"}
+                            onValueChange={(v) => {
+                              const selectedContract = contracts.find((c) => c.id === v);
+                              const inferredType =
+                                selectedContract?.billingType === "implantacao_recorrencia"
+                                  ? "recorrente"
+                                  : selectedContract?.billingType === "projeto"
+                                  ? "projeto"
+                                  : formData.projectExpenseType;
+                              setFormData({
+                                ...formData,
+                                contractId: v === "none" ? "" : v,
+                                projectExpenseType: (v === "none" ? formData.projectExpenseType : inferredType) as "" | "extra" | "recorrente" | "projeto",
+                              });
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Vincular a um contrato..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Nenhum</SelectItem>
+                              {contracts
+                                .filter((c) => c.projectIds?.includes(formData.projectId))
+                                .map((contract) => (
+                                  <SelectItem key={contract.id} value={contract.id}>
+                                    {contract.title || "Contrato sem título"}
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Tipo de despesa do projeto</Label>
+                          <Select
+                            value={formData.projectExpenseType || "none"}
+                            onValueChange={(v) =>
+                              setFormData({
+                                ...formData,
+                                projectExpenseType: v === "none" ? "" : (v as "extra" | "recorrente" | "projeto"),
+                              })
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o tipo..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Não especificado</SelectItem>
+                              {PROJECT_EXPENSE_TYPES.map((t) => (
+                                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <p className="text-xs text-muted-foreground">
+                            Inferido automaticamente do contrato, mas pode ser alterado
+                          </p>
+                        </div>
+                      </>
                     )}
 
                     <div className="space-y-2">

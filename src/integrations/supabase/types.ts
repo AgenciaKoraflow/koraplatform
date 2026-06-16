@@ -422,6 +422,7 @@ export type Database = {
           paid_by: string | null
           paid_date: string | null
           payment_method: string | null
+          project_expense_type: string | null
           project_id: string | null
           recurrence_type: string | null
           status: string
@@ -450,6 +451,7 @@ export type Database = {
           paid_by?: string | null
           paid_date?: string | null
           payment_method?: string | null
+          project_expense_type?: string | null
           project_id?: string | null
           recurrence_type?: string | null
           status?: string
@@ -478,6 +480,7 @@ export type Database = {
           paid_by?: string | null
           paid_date?: string | null
           payment_method?: string | null
+          project_expense_type?: string | null
           project_id?: string | null
           recurrence_type?: string | null
           status?: string

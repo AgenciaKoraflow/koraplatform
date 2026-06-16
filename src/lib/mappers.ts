@@ -244,7 +244,12 @@ export function mapDbContract(db: DbContractRow): Contract {
     recurrenceValue: db.recurrence_value
       ? formatContractValue(db.recurrence_value)
       : undefined,
+    recurrenceType: db.recurrence_type ?? undefined,
     recurrenceStartDate: db.recurrence_start_date ?? undefined,
+    recurrenceEndDate: db.recurrence_end_date ?? undefined,
+    implementationValue: db.implementation_value
+      ? formatContractValue(db.implementation_value)
+      : undefined,
     createdAt: db.created_at ? formatDate(db.created_at) : "",
     signedAt: db.signed_at ? formatDate(db.signed_at) : undefined,
     expiresAt: db.end_date

@@ -281,13 +281,17 @@ export default function Contratos() {
   const openEditDialog = (contractId: string) => {
     const contract = contracts.find(c => c.id === contractId);
     if (contract) {
+      if (contract.status === "signed" || contract.fullySignedAt) {
+        toast.error("Contratos totalmente assinados não podem ser editados");
+        return;
+      }
       setEditingContractId(contractId);
       setFormData({
         title: contract.title,
         clientId: contract.clientId,
         projectIds: contract.projectIds || [],
-        value: contract.value,
-        implementationValue: contract.implementationValue || "",
+        value: contract.implementationValue || contract.value,
+        implementationValue: contract.implementationValue || contract.value || "",
         status: contract.status,
         type: contract.type,
         billingType: contract.billingType || "projeto",
@@ -890,6 +894,7 @@ export default function Contratos() {
                   <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Assinaturas</th>
                   <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Vigência</th>
                   <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Valor</th>
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Recorrência</th>
                   <th className="text-right px-6 py-4"></th>
                 </tr>
               </thead>
@@ -941,22 +946,19 @@ export default function Contratos() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center gap-1">
-                            <div className={cn(
-                              "w-6 h-6 rounded-full flex items-center justify-center text-xs",
-                              (contract.koraflowSignedAt || contract.contractorSignedAt) ? "bg-green-500/10 text-green-500" : "bg-slate-500/10 text-slate-500"
-                            )} title={(contract.koraflowSignedAt || contract.contractorSignedAt) ? `Koraflow: ${contract.koraflowSignerName || contract.contractorSignerName}` : "Koraflow: Pendente"}>
-                              {(contract.koraflowSignedAt || contract.contractorSignedAt) ? <Check className="w-4 h-4" /> : <Building2 className="w-3 h-3" />}
-                            </div>
-                            <div className={cn(
-                              "w-6 h-6 rounded-full flex items-center justify-center text-xs",
-                              contract.clientSignedAt ? "bg-green-500/10 text-green-500" : "bg-slate-500/10 text-slate-500"
-                            )} title={contract.clientSignedAt ? `Cliente: ${contract.clientSignerName}` : "Cliente: Pendente"}>
-                              {contract.clientSignedAt ? <Check className="w-4 h-4" /> : <User className="w-3 h-3" />}
-                            </div>
+                        <div className="flex items-center gap-1">
+                          <div className={cn(
+                            "w-6 h-6 rounded-full flex items-center justify-center text-xs",
+                            (contract.koraflowSignedAt || contract.contractorSignedAt) ? "bg-green-500/10 text-green-500" : "bg-slate-500/10 text-slate-500"
+                          )} title={(contract.koraflowSignedAt || contract.contractorSignedAt) ? `Koraflow: ${contract.koraflowSignerName || contract.contractorSignerName}` : "Koraflow: Pendente"}>
+                            {(contract.koraflowSignedAt || contract.contractorSignedAt) ? <Check className="w-4 h-4" /> : <Building2 className="w-3 h-3" />}
                           </div>
-                          <span className={cn("text-xs", sigStatus.color)}>{sigStatus.label}</span>
+                          <div className={cn(
+                            "w-6 h-6 rounded-full flex items-center justify-center text-xs",
+                            contract.clientSignedAt ? "bg-green-500/10 text-green-500" : "bg-slate-500/10 text-slate-500"
+                          )} title={contract.clientSignedAt ? `Cliente: ${contract.clientSignerName}` : "Cliente: Pendente"}>
+                            {contract.clientSignedAt ? <Check className="w-4 h-4" /> : <User className="w-3 h-3" />}
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -998,6 +1000,13 @@ export default function Contratos() {
                           return contract.value;
                         })()}
                       </td>
+                      <td className="px-6 py-4">
+                        {contract.recurrenceValue ? (
+                          <span className="text-sm font-medium text-primary">{contract.recurrenceValue}</span>
+                        ) : (
+                          <X className="w-4 h-4 text-muted-foreground" />
+                        )}
+                      </td>
                       <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
                           {/* Koraflow sign button - must sign before sending to client */}
@@ -1027,7 +1036,9 @@ export default function Contratos() {
                             </button>
                           )}
                           <ActionMenu items={[
-                            { label: "Editar", icon: Edit, onClick: () => openEditDialog(contract.id) },
+                            ...(contract.status !== "signed" && !contract.fullySignedAt
+                              ? [{ label: "Editar", icon: Edit, onClick: () => openEditDialog(contract.id) }]
+                              : []),
                             { label: "Excluir", icon: Trash2, onClick: () => { setDeletingContractId(contract.id); setIsDeleteDialogOpen(true); }, variant: "destructive" },
                           ]} />
                         </div>
@@ -1061,7 +1072,9 @@ export default function Contratos() {
                     <div onClick={(e) => e.stopPropagation()}>
                       <ActionMenu items={[
                         { label: "Visualizar", icon: Eye, onClick: () => openViewDialog(contract.id) },
-                        { label: "Editar", icon: Edit, onClick: () => openEditDialog(contract.id) },
+                        ...(contract.status !== "signed" && !contract.fullySignedAt
+                          ? [{ label: "Editar", icon: Edit, onClick: () => openEditDialog(contract.id) }]
+                          : []),
                         { label: "Excluir", icon: Trash2, onClick: () => { setDeletingContractId(contract.id); setIsDeleteDialogOpen(true); }, variant: "destructive" },
                       ]} />
                     </div>

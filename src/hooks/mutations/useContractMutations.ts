@@ -25,8 +25,15 @@ export function useContractMutations() {
         recurrence_value: contract.recurrenceValue
           ? parseValue(contract.recurrenceValue)
           : null,
+        recurrence_type: contract.recurrenceType ?? null,
         recurrence_start_date: contract.recurrenceStartDate
           ? toISODate(contract.recurrenceStartDate)
+          : null,
+        recurrence_end_date: contract.recurrenceEndDate
+          ? toISODate(contract.recurrenceEndDate)
+          : null,
+        implementation_value: contract.implementationValue
+          ? parseValue(contract.implementationValue)
           : null,
         created_at: toISODate(contract.createdAt),
         document_name: contract.documentName,
@@ -67,9 +74,19 @@ export function useContractMutations() {
       if (data.billingType !== undefined) dbData.billing_type = data.billingType;
       if (data.recurrenceValue !== undefined)
         dbData.recurrence_value = data.recurrenceValue ? parseValue(data.recurrenceValue) : null;
+      if (data.recurrenceType !== undefined)
+        dbData.recurrence_type = data.recurrenceType || null;
       if (data.recurrenceStartDate !== undefined)
         dbData.recurrence_start_date = data.recurrenceStartDate
           ? toISODate(data.recurrenceStartDate)
+          : null;
+      if (data.recurrenceEndDate !== undefined)
+        dbData.recurrence_end_date = data.recurrenceEndDate
+          ? toISODate(data.recurrenceEndDate)
+          : null;
+      if (data.implementationValue !== undefined)
+        dbData.implementation_value = data.implementationValue
+          ? parseValue(data.implementationValue)
           : null;
       if (data.title) dbData.title = data.title;
       if (data.value) dbData.value = parseValue(data.value);

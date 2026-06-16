@@ -49,6 +49,7 @@ function mapDbTransaction(db: FinancialTransactionRow): FinancialTransaction {
     firstPaymentDate: db.first_payment_date ?? undefined,
     isIndefinite: db.is_indefinite,
     contractId: db.contract_id ?? undefined,
+    projectExpenseType: (db.project_expense_type as FinancialTransaction["projectExpenseType"]) ?? undefined,
   };
 }
 
@@ -95,6 +96,7 @@ export function useFinancial() {
         installment_count: transaction.installmentCount ?? null,
         first_payment_date: toISODate(transaction.firstPaymentDate),
         is_indefinite: transaction.isIndefinite ?? false,
+        project_expense_type: transaction.projectExpenseType ?? null,
       };
 
       const { data: result, error } = await supabase
@@ -136,6 +138,7 @@ export function useFinancial() {
       if (transaction.installmentCount !== undefined) dbData.installment_count = transaction.installmentCount ?? null;
       if (transaction.firstPaymentDate !== undefined) dbData.first_payment_date = toISODate(transaction.firstPaymentDate);
       if (transaction.isIndefinite !== undefined) dbData.is_indefinite = transaction.isIndefinite;
+      if (transaction.projectExpenseType !== undefined) dbData.project_expense_type = transaction.projectExpenseType ?? null;
 
       const { error } = await supabase
         .from("financial_transactions")

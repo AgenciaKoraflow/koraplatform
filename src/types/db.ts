@@ -125,7 +125,10 @@ export interface DbContractRow {
   type: string | null;
   billing_type: string | null;
   recurrence_value: number | string | null;
+  recurrence_type: string | null;
   recurrence_start_date: string | null;
+  recurrence_end_date: string | null;
+  implementation_value: number | string | null;
   created_at: string | null;
   signed_at: string | null;
   end_date: string | null;

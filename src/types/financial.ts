@@ -21,7 +21,14 @@ export interface FinancialTransaction {
   firstPaymentDate?: string;
   isIndefinite?: boolean;
   contractId?: string;
+  projectExpenseType?: "extra" | "recorrente" | "projeto";
 }
+
+export const PROJECT_EXPENSE_TYPES = [
+  { value: "extra" as const,      label: "Despesa Extra" },
+  { value: "recorrente" as const, label: "Recorrência"   },
+  { value: "projeto" as const,    label: "Do Projeto"    },
+];
 
 export const EXPENSE_CATEGORIES = [
   "Ferramenta",
