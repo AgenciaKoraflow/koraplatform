@@ -53,10 +53,10 @@ const statusConfig = {
 };
 
 const typeConfig = {
-  prestacao_servico:     { label: "Prestação de Serviço", color: "bg-slate-500/10 text-slate-500" },
-  projeto:               { label: "Projeto",              color: "bg-indigo-500/10 text-indigo-500" },
-  projeto_unico:         { label: "Projeto Único",        color: "bg-violet-500/10 text-violet-500" },
-  consultoria:           { label: "Consultoria",          color: "bg-amber-500/10 text-amber-500" },
+  prestacao_servico: { label: "Prestação de Serviço", color: "bg-slate-500/10 text-slate-500" },
+  projeto: { label: "Projeto", color: "bg-indigo-500/10 text-indigo-500" },
+  projeto_unico: { label: "Projeto Único", color: "bg-violet-500/10 text-violet-500" },
+  consultoria: { label: "Consultoria", color: "bg-amber-500/10 text-amber-500" },
   implantacao_recorrencia: { label: "Impl. + Recorrência", color: "bg-green-500/10 text-green-500" },
 };
 
@@ -137,15 +137,15 @@ function getSignatureStatus(contract: Contract): {
   if (contract.fullySignedAt || contract.status === "signed") {
     return { status: "fully_signed", label: "Totalmente Assinado", color: "text-green-500", icon: CheckCircle };
   }
-  
+
   if (contract.status === "expired") {
     return { status: "expired", label: "Link Expirado", color: "text-red-500", icon: AlertCircle };
   }
-  
+
   // Use koraflow fields or fallback to contractor fields (legacy)
   const koraflowSigned = !!contract.koraflowSignedAt || !!contract.contractorSignedAt;
   const clientSigned = !!contract.clientSignedAt;
-  
+
   if (!koraflowSigned && !clientSigned) {
     // Check if has document to determine if awaiting signature
     if (contract.documentData || contract.documentStoragePath) {
@@ -153,11 +153,11 @@ function getSignatureStatus(contract: Contract): {
     }
     return { status: "draft", label: "Rascunho", color: "text-slate-500", icon: FileSignature };
   }
-  
+
   if (koraflowSigned && !clientSigned) {
     return { status: "awaiting_client", label: "Aguardando Cliente", color: "text-blue-500", icon: Send };
   }
-  
+
   return { status: "draft", label: "Rascunho", color: "text-slate-500", icon: FileSignature };
 }
 
@@ -166,11 +166,11 @@ function getContractTypeLabel(contract: Contract, allProjects: Project[]): strin
   if (!contract.projectIds || contract.projectIds.length === 0) {
     return typeConfig[contract.type]?.label || "Contrato";
   }
-  
+
   const projects = contract.projectIds.map(id => allProjects.find(p => p.id === id)).filter(Boolean) as Project[];
-  
+
   const billingTypes = new Set(projects.map(p => p.billingType || "projeto"));
-  
+
   if (billingTypes.size === 1) {
     const billingType = Array.from(billingTypes)[0];
     if (billingType === "implantacao_recorrencia") {
@@ -179,7 +179,7 @@ function getContractTypeLabel(contract: Contract, allProjects: Project[]): strin
     const projectType = projects[0]?.type || "projeto";
     return typeConfig[projectType]?.label || "Projeto";
   }
-  
+
   return "Projeto + Impl. + Recorrência";
 }
 
@@ -211,17 +211,17 @@ export default function Contratos() {
   const [pendingDocumentFile, setPendingDocumentFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   // Koraflow signature form state
   const [koraflowSignerName, setKoraflowSignerName] = useState("");
   const [koraflowSignerEmail, setKoraflowSignerEmail] = useState("");
   const [koraflowSignatureData, setKoraflowSignatureData] = useState<string | null>(null);
-  
+
   // Send to client form state
   const [clientEmail, setClientEmail] = useState("");
   const [linkExpirationDays, setLinkExpirationDays] = useState(7);
   const [isSending, setIsSending] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     title: "",
     clientId: "",
@@ -313,7 +313,7 @@ export default function Contratos() {
     if (!contractId || contracts.length === 0) return;
     const exists = contracts.find((c) => c.id === contractId);
     if (exists) openViewDialog(contractId);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [searchParams, contracts]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -561,20 +561,20 @@ export default function Contratos() {
       toast.error("Por favor, adicione sua assinatura");
       return;
     }
-    
+
     if (!signingContract) return;
-    
+
     const now = new Date().toISOString();
-    
+
     // Update contract with signature data
-    await updateContract(signingContract.id, { 
+    await updateContract(signingContract.id, {
       status: "awaiting_client_signature",
       koraflowSignedAt: now,
       koraflowSignatureData: koraflowSignatureData,
       koraflowSignerName: koraflowSignerName,
       koraflowSignerEmail: koraflowSignerEmail,
     });
-    
+
     toast.success("Contrato assinado pela Koraflow!");
     setIsKoraflowSignDialogOpen(false);
     setSigningContractId(null);
@@ -586,28 +586,28 @@ export default function Contratos() {
       toast.error("Informe o e-mail do cliente");
       return;
     }
-    
+
     if (!sendingContract) return;
-    
+
     setIsSending(true);
-    
+
     try {
       // Generate token if not exists
       let token = sendingContract.signatureLinkToken;
       if (!token) {
         token = crypto.randomUUID();
       }
-      
+
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + linkExpirationDays);
-      
+
       // Update contract with token and expiration
       await updateContract(sendingContract.id, {
         signatureLinkToken: token,
         signatureLinkExpiresAt: expiresAt.toISOString(),
         signatureSentAt: new Date().toISOString(),
       });
-      
+
       // Call edge function to send email
       const { error } = await supabase.functions.invoke("signature-notifications", {
         body: {
@@ -618,7 +618,7 @@ export default function Contratos() {
           signatureLink: generateSignatureLink({ ...sendingContract, signatureLinkToken: token }),
         },
       });
-      
+
       if (error) {
         logger.error("Error sending email:", error instanceof Error ? error : undefined);
         // Still show success as the contract was updated
@@ -626,7 +626,7 @@ export default function Contratos() {
       } else {
         toast.success("E-mail enviado para o cliente!");
       }
-      
+
       setIsSendToClientDialogOpen(false);
       setSendingContractId(null);
     } catch (error) {
@@ -638,45 +638,45 @@ export default function Contratos() {
   };
 
   const clientProjects = formData.clientId ? projects.filter(p => p.clientId === formData.clientId) : [];
-  
+
   const selectedProjects = formData.projectIds.map(id => projects.find(p => p.id === id)).filter(Boolean) as Project[];
   const totalProjectValue = selectedProjects.reduce((sum, p) => {
     const value = p.value ? parseCurrencyToNumber(p.value) : 0;
     return sum + value;
   }, 0);
-  
+
   const totalRecurrenceProjected = React.useMemo(() => {
     if (!formData.expiresAt) return 0;
-    
+
     return selectedProjects.reduce((sum, project) => {
       if (!project.recurrenceValue || !project.recurrenceStartDate) return sum;
-      
+
       const recurrenceTotal = calculateRecurrenceTotal(
         project.recurrenceValue,
         project.recurrenceStartDate,
         formData.expiresAt
       );
-      
+
       return sum + recurrenceTotal;
     }, 0);
   }, [selectedProjects, formData.expiresAt]);
-  
+
   const totalContractValue = totalProjectValue + totalRecurrenceProjected;
-  
+
   React.useEffect(() => {
     if (selectedProjects.length > 0) {
       const formattedValue = formatCurrency(totalContractValue);
       const firstProjectBillingType = selectedProjects[0]?.billingType || "projeto";
-      
-      setFormData(prev => ({ 
-        ...prev, 
+
+      setFormData(prev => ({
+        ...prev,
         value: formattedValue,
         type: "projeto_unico",
         billingType: firstProjectBillingType
       }));
     } else {
-      setFormData(prev => ({ 
-        ...prev, 
+      setFormData(prev => ({
+        ...prev,
         value: "",
         type: "prestacao_servico",
         billingType: "projeto"
@@ -689,9 +689,9 @@ export default function Contratos() {
     .reduce((sum, c) => {
       const v = c.projectIds && c.projectIds.length > 0
         ? c.projectIds.reduce((s, pid) => {
-            const proj = projects.find(p => p.id === pid);
-            return s + (proj?.value ? parseCurrencyToNumber(proj.value) : 0);
-          }, 0)
+          const proj = projects.find(p => p.id === pid);
+          return s + (proj?.value ? parseCurrencyToNumber(proj.value) : 0);
+        }, 0)
         : parseCurrencyToNumber(c.value || "0");
       return sum + v;
     }, 0);
@@ -1071,7 +1071,7 @@ export default function Contratos() {
                     </span>
                     {contract.bu?.[0] && <BUBadge bu={contract.bu[0]} />}
                   </div>
-                  
+
                   {/* Signature Status */}
                   <div className="flex items-center gap-2 mb-3 p-2 rounded-lg bg-muted/30">
                     <Users className="w-4 h-4 text-muted-foreground" />
@@ -1091,7 +1091,7 @@ export default function Contratos() {
                     </div>
                     <span className={cn("text-xs", sigStatus.color)}>{sigStatus.label}</span>
                   </div>
-                  
+
                   <p className="text-xl font-bold text-foreground mb-3">
                     {(() => {
                       if (contract.projectIds && contract.projectIds.length > 0) {
@@ -1104,7 +1104,7 @@ export default function Contratos() {
                       return contract.value;
                     })()}
                   </p>
-                  
+
                   <div className="pt-3 border-t border-border space-y-2">
                     {(() => {
                       const vigStatus = getVigenciaStatus(contract);
@@ -1147,7 +1147,7 @@ export default function Contratos() {
                       );
                     })()}
                   </div>
-                  
+
                   {/* Action buttons for grid view */}
                   <div className="pt-3 flex gap-2" onClick={(e) => e.stopPropagation()}>
                     {!contract.koraflowSignedAt && !contract.contractorSignedAt && (
@@ -1196,7 +1196,7 @@ export default function Contratos() {
               <Label htmlFor="title">Título *</Label>
               <Input id="title" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="Título do contrato" className="bg-input border-border" />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="clientId">Cliente *</Label>
               <Select value={formData.clientId} onValueChange={(value) => setFormData({ ...formData, clientId: value, projectIds: [] })}>
@@ -1245,7 +1245,7 @@ export default function Contratos() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="implementationValue">Valor *</Label>
+              <Label htmlFor="implementationValue">Valor Fechado</Label>
               <CurrencyInput
                 id="implementationValue"
                 value={formData.implementationValue}
@@ -1673,7 +1673,7 @@ export default function Contratos() {
                 placeholder="email@cliente.com"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="expiration">Expiração do Link</Label>
               <Select value={linkExpirationDays.toString()} onValueChange={(v) => setLinkExpirationDays(parseInt(v))}>
@@ -1737,8 +1737,8 @@ export default function Contratos() {
           </DialogHeader>
           <div className="overflow-auto max-h-[70vh]">
             {documentPreview?.type.includes("pdf") ? (
-              <iframe 
-                src={documentPreview.data} 
+              <iframe
+                src={documentPreview.data}
                 className="w-full h-[70vh]"
                 title="Document Preview"
               />

@@ -48,6 +48,7 @@ function mapDbTransaction(db: FinancialTransactionRow): FinancialTransaction {
     installmentCount: db.installment_count ?? undefined,
     firstPaymentDate: db.first_payment_date ?? undefined,
     isIndefinite: db.is_indefinite,
+    contractId: db.contract_id ?? undefined,
   };
 }
 
@@ -88,6 +89,7 @@ export function useFinancial() {
         status: transaction.status,
         client_id: transaction.clientId ?? null,
         project_id: transaction.projectId ?? null,
+        contract_id: transaction.contractId ?? null,
         notes: transaction.notes ?? null,
         other_category_note: transaction.otherCategoryNote ?? null,
         installment_count: transaction.installmentCount ?? null,
@@ -128,6 +130,7 @@ export function useFinancial() {
       if (transaction.status) dbData.status = transaction.status;
       if (transaction.clientId !== undefined) dbData.client_id = transaction.clientId ?? null;
       if (transaction.projectId !== undefined) dbData.project_id = transaction.projectId ?? null;
+      if (transaction.contractId !== undefined) dbData.contract_id = transaction.contractId ?? null;
       if (transaction.notes !== undefined) dbData.notes = transaction.notes ?? null;
       if (transaction.otherCategoryNote !== undefined) dbData.other_category_note = transaction.otherCategoryNote ?? null;
       if (transaction.installmentCount !== undefined) dbData.installment_count = transaction.installmentCount ?? null;

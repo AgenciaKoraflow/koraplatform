@@ -20,6 +20,7 @@ export interface FinancialTransaction {
   installmentCount?: number | null; // null = unlimited/indefinite
   firstPaymentDate?: string;
   isIndefinite?: boolean;
+  contractId?: string;
 }
 
 export const EXPENSE_CATEGORIES = [

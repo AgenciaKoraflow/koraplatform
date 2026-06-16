@@ -404,6 +404,7 @@ export type Database = {
         Row: {
           category: string
           client_id: string | null
+          contract_id: string | null
           created_at: string | null
           description: string
           due_date: string | null
@@ -431,6 +432,7 @@ export type Database = {
         Insert: {
           category: string
           client_id?: string | null
+          contract_id?: string | null
           created_at?: string | null
           description: string
           due_date?: string | null
@@ -458,6 +460,7 @@ export type Database = {
         Update: {
           category?: string
           client_id?: string | null
+          contract_id?: string | null
           created_at?: string | null
           description?: string
           due_date?: string | null
@@ -488,6 +491,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
             referencedColumns: ["id"]
           },
           {

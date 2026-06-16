@@ -49,7 +49,8 @@ const ITEMS_PER_PAGE = 25;
 
 export function EmpresaFinanceiro() {
   const { transactions, loading, addTransaction, updateTransaction, deleteTransaction } = useFinancial();
-  const { data: clients = [] } = useAllClients();
+  const { data: allClients = [] } = useAllClients();
+  const clients = allClients.filter((c) => c.stage === "cliente");
   const { data: projects = [] } = useAllProjects();
   const { data: contracts = [] } = useAllContracts();
 
@@ -81,6 +82,7 @@ export function EmpresaFinanceiro() {
     installmentCount: null as number | null,
     firstPaymentDate: "",
     isIndefinite: false,
+    contractId: "",
   });
 
   useEffect(() => {
@@ -106,6 +108,7 @@ export function EmpresaFinanceiro() {
       installmentCount: null,
       firstPaymentDate: "",
       isIndefinite: false,
+      contractId: "",
     });
     setEditingTransaction(null);
   };
@@ -126,6 +129,7 @@ export function EmpresaFinanceiro() {
       status: formData.status,
       clientId: formData.clientId || undefined,
       projectId: formData.projectId || undefined,
+      contractId: formData.contractId || undefined,
       notes: formData.notes || undefined,
       otherCategoryNote: formData.otherCategoryNote || undefined,
       installmentCount: formData.installmentCount,
@@ -160,6 +164,7 @@ export function EmpresaFinanceiro() {
       status: transaction.status,
       clientId: transaction.clientId || "",
       projectId: transaction.projectId || "",
+      contractId: transaction.contractId || "",
       notes: transaction.notes || "",
       otherCategoryNote: transaction.otherCategoryNote || "",
       installmentCount: transaction.installmentCount ?? null,
@@ -179,6 +184,29 @@ export function EmpresaFinanceiro() {
   const handleMarkAsPaid = async (id: string) => {
     const today = format(new Date(), "yyyy-MM-dd");
     await updateTransaction(id, { status: "pago", paidDate: today });
+  };
+
+  const handleMarkRecurrencePaid = async (params: {
+    contractId: string;
+    clientId: string;
+    amount: string;
+    description: string;
+    referenceMonth: string;
+  }) => {
+    const today = format(new Date(), "yyyy-MM-dd");
+    await addTransaction({
+      type: "receita",
+      category: "Recorrência",
+      isRecurring: true,
+      contractId: params.contractId,
+      clientId: params.clientId,
+      value: params.amount,
+      status: "pago",
+      paidDate: today,
+      description: params.description,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
   };
 
   const clearFilters = () => {
@@ -268,7 +296,7 @@ export function EmpresaFinanceiro() {
     const headers = ["Tipo", "Descrição", "Categoria", "Cliente", "Valor", "Vencimento", "Status", "Recorrência", "Pago em"];
 
     const rows = filteredTransactions.map((t) => {
-      const client = clients.find((c) => c.id === t.clientId);
+      const client = allClients.find((c) => c.id === t.clientId);
       const vencimento = t.isRecurring && t.dueDay ? `Dia ${t.dueDay}` : formatDateForCSV(t.dueDate);
       return [
         escape(t.type === "receita" ? "Receita" : "Despesa"),
@@ -582,7 +610,9 @@ export function EmpresaFinanceiro() {
                         <Label>Cliente (opcional)</Label>
                         <Select
                           value={formData.clientId || "none"}
-                          onValueChange={(v) => setFormData({ ...formData, clientId: v === "none" ? "" : v })}
+                          onValueChange={(v) =>
+                            setFormData({ ...formData, clientId: v === "none" ? "" : v, contractId: "" })
+                          }
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione..." />
@@ -613,6 +643,30 @@ export function EmpresaFinanceiro() {
                         </Select>
                       </div>
                     </div>
+
+                    {formData.type === "receita" && formData.clientId && (
+                      <div className="space-y-2">
+                        <Label>Contrato (opcional)</Label>
+                        <Select
+                          value={formData.contractId || "none"}
+                          onValueChange={(v) => setFormData({ ...formData, contractId: v === "none" ? "" : v })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Vincular a um contrato..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Nenhum</SelectItem>
+                            {contracts
+                              .filter((c) => c.clientId === formData.clientId)
+                              .map((contract) => (
+                                <SelectItem key={contract.id} value={contract.id}>
+                                  {contract.title || "Contrato sem título"}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
 
                     <div className="space-y-2">
                       <Label>Observações</Label>
@@ -737,12 +791,17 @@ export function EmpresaFinanceiro() {
         {/* Upcoming due dates */}
         <UpcomingDueDates
           transactions={transactions}
-          clients={clients}
+          clients={allClients}
           onMarkAsPaid={handleMarkAsPaid}
         />
 
         {/* Client summary */}
-        <ClientFinancialSummary clients={clients} contracts={contracts} transactions={transactions} />
+        <ClientFinancialSummary
+          clients={allClients}
+          contracts={contracts}
+          transactions={transactions}
+          onMarkRecurrencePaid={handleMarkRecurrencePaid}
+        />
 
         {/* Filters */}
         <Card>
@@ -871,7 +930,7 @@ export function EmpresaFinanceiro() {
                   </TableRow>
                 ) : (
                   paginatedTransactions.map((transaction) => {
-                    const client = clients.find((c) => c.id === transaction.clientId);
+                    const client = allClients.find((c) => c.id === transaction.clientId);
                     const isPending = transaction.status === "pendente" || transaction.status === "atrasado";
                     return (
                       <TableRow
