@@ -9,7 +9,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogBody, DialogFooter, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { DatePicker } from "@/components/shared/DatePicker";
 import { CurrencyInput } from "@/components/shared/CurrencyInput";
@@ -45,7 +44,6 @@ import { format } from "date-fns";
 
 const currentMonth = new Date().getMonth() + 1;
 const currentYear = new Date().getFullYear();
-const ITEMS_PER_PAGE = 25;
 
 export function EmpresaFinanceiro() {
   const { transactions, loading, addTransaction, updateTransaction, deleteTransaction } = useFinancial();
@@ -62,7 +60,6 @@ export function EmpresaFinanceiro() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<FinancialTransaction | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
 
   const [formData, setFormData] = useState({
     type: "despesa" as "receita" | "despesa",
@@ -85,10 +82,6 @@ export function EmpresaFinanceiro() {
     contractId: "",
     projectExpenseType: "" as "" | "extra" | "recorrente" | "projeto",
   });
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, filterType, filterStatus, filterMonth, filterYear]);
 
   const resetForm = () => {
     setFormData({
@@ -240,11 +233,15 @@ export function EmpresaFinanceiro() {
       let matchesYear = true;
 
       if (filterMonth !== null || filterYear !== null) {
-        if (!t.dueDate) {
+        if (t.isRecurring && t.dueDay) {
+          // Transações recorrentes com dueDay se aplicam a todo mês — sempre incluir
+          matchesMonth = true;
+          matchesYear = true;
+        } else if (!t.dueDate) {
           matchesMonth = false;
           matchesYear = false;
         } else {
-          const date = new Date(t.dueDate);
+          const date = new Date(t.dueDate + "T00:00:00");
           if (filterMonth !== null) matchesMonth = date.getMonth() + 1 === filterMonth;
           if (filterYear !== null) matchesYear = date.getFullYear() === filterYear;
         }
@@ -275,10 +272,53 @@ export function EmpresaFinanceiro() {
     return { receitas, despesas, saldo: receitas - despesas, aReceber, aPagar };
   }, [filteredTransactions]);
 
-  const paginatedTransactions = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredTransactions.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredTransactions, currentPage]);
+  const statementGroups = useMemo(() => {
+    const m = filterMonth;
+    const y = filterYear;
+
+    const entries = filteredTransactions.map((t) => {
+      let sortKey: string;
+      let groupLabel: string;
+
+      if (t.isRecurring && t.dueDay) {
+        const day = String(t.dueDay).padStart(2, "0");
+        if (m && y) {
+          sortKey = `${y}-${String(m).padStart(2, "0")}-${day}`;
+          groupLabel = day;
+        } else {
+          sortKey = `zz-${day}`;
+          groupLabel = `Dia ${t.dueDay}`;
+        }
+      } else if (t.dueDate) {
+        const d = new Date(t.dueDate + "T00:00:00");
+        const day = String(d.getDate()).padStart(2, "0");
+        const mo = String(d.getMonth() + 1).padStart(2, "0");
+        const ye = d.getFullYear();
+        sortKey = `${ye}-${mo}-${day}`;
+        groupLabel = m && y ? day : `${day}/${mo}/${ye}`;
+      } else {
+        sortKey = "zzzz";
+        groupLabel = "Sem data";
+      }
+
+      return { t, sortKey, groupLabel };
+    });
+
+    entries.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+
+    const groups: { label: string; transactions: FinancialTransaction[] }[] = [];
+    const seen = new Map<string, FinancialTransaction[]>();
+    for (const { t, groupLabel } of entries) {
+      if (!seen.has(groupLabel)) {
+        const arr: FinancialTransaction[] = [];
+        seen.set(groupLabel, arr);
+        groups.push({ label: groupLabel, transactions: arr });
+      }
+      seen.get(groupLabel)!.push(t);
+    }
+
+    return groups;
+  }, [filteredTransactions, filterMonth, filterYear]);
 
   const exportCSV = () => {
     const MONTHS_PT = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
@@ -974,114 +1014,88 @@ export function EmpresaFinanceiro() {
           </CardContent>
         </Card>
 
-        {/* Transactions Table */}
+        {/* Statement View */}
         <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                {filterMonth && filterYear
+                  ? `Fatura — ${["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"][filterMonth - 1]} ${filterYear}`
+                  : "Todas as Transações"}
+              </CardTitle>
+              <div className="flex items-center gap-4 text-sm">
+                <span className="flex items-center gap-1.5 text-green-500 font-medium">
+                  <ArrowUpCircle className="w-3.5 h-3.5" />
+                  {formatCurrency(filteredTransactions.filter((t) => t.type === "receita").reduce((s, t) => s + parseCurrencyToNumber(t.value), 0))}
+                </span>
+                <span className="flex items-center gap-1.5 text-red-500 font-medium">
+                  <ArrowDownCircle className="w-3.5 h-3.5" />
+                  {formatCurrency(filteredTransactions.filter((t) => t.type === "despesa").reduce((s, t) => s + parseCurrencyToNumber(t.value), 0))}
+                </span>
+              </div>
+            </div>
+          </CardHeader>
           <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Valor</TableHead>
-                  <TableHead>Vencimento</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Recorrência</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                      Carregando...
-                    </TableCell>
-                  </TableRow>
-                ) : filteredTransactions.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                      Nenhuma transação encontrada
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  paginatedTransactions.map((transaction) => {
-                    const client = allClients.find((c) => c.id === transaction.clientId);
-                    const isPending = transaction.status === "pendente" || transaction.status === "atrasado";
-                    return (
-                      <TableRow
-                        key={transaction.id}
-                        className="cursor-pointer hover:bg-muted/50 transition-colors"
-                        onClick={() => handleEdit(transaction)}
-                      >
-                        <TableCell>
-                          {transaction.type === "receita" ? (
-                            <div className="flex items-center gap-2 text-green-500">
-                              <ArrowUpCircle className="w-4 h-4" />
-                              <span className="text-sm">Receita</span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-2 text-red-500">
-                              <ArrowDownCircle className="w-4 h-4" />
-                              <span className="text-sm">Despesa</span>
-                            </div>
-                          )}
-                        </TableCell>
-                        <TableCell className="font-medium">{transaction.description}</TableCell>
-                        <TableCell>{transaction.category}</TableCell>
-                        <TableCell>
-                          {client ? (
-                            <span className="text-sm">{client.name}</span>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell
-                          className={transaction.type === "receita" ? "text-green-500 font-medium" : "text-red-500 font-medium"}
+            {loading ? (
+              <div className="text-center py-12 text-muted-foreground">Carregando...</div>
+            ) : filteredTransactions.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">Nenhuma transação encontrada</div>
+            ) : (
+              <div className="divide-y">
+                {statementGroups.map(({ label, transactions: group }) => (
+                  <div key={label}>
+                    <div className="px-4 py-2 bg-muted/20 border-b">
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        {filterMonth && filterYear && label !== "Sem data" && !label.startsWith("Dia ")
+                          ? `${label} de ${["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"][filterMonth - 1]}`
+                          : label}
+                      </span>
+                    </div>
+                    {group.map((transaction) => {
+                      const client = allClients.find((c) => c.id === transaction.clientId);
+                      const isPending = transaction.status === "pendente" || transaction.status === "atrasado";
+                      const isReceita = transaction.type === "receita";
+                      return (
+                        <div
+                          key={transaction.id}
+                          className={`flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-muted/30 transition-colors border-l-2 ${
+                            isReceita ? "border-l-green-500/50" : "border-l-red-500/50"
+                          }`}
+                          onClick={() => handleEdit(transaction)}
                         >
-                          {transaction.value.startsWith("R$") ? transaction.value : `R$ ${transaction.value}`}
-                        </TableCell>
-                        <TableCell>
-                          {transaction.isRecurring && transaction.dueDay ? (
-                            <span className="text-sm">Dia {transaction.dueDay}</span>
-                          ) : transaction.dueDate ? (
-                            format(new Date(transaction.dueDate), "dd/MM/yyyy")
-                          ) : (
-                            "—"
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={getStatusColor(transaction.status)}>
+                          <div className={`flex-shrink-0 ${isReceita ? "text-green-500" : "text-red-500"}`}>
+                            {isReceita ? <ArrowUpCircle className="w-4 h-4" /> : <ArrowDownCircle className="w-4 h-4" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-sm truncate">{transaction.description}</span>
+                              {transaction.isRecurring && (
+                                <RefreshCw className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-xs text-muted-foreground">{transaction.category}</span>
+                              {client && (
+                                <>
+                                  <span className="text-xs text-muted-foreground">·</span>
+                                  <span className="text-xs text-muted-foreground">{client.name}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          <div className={`font-semibold text-sm flex-shrink-0 tabular-nums ${isReceita ? "text-green-500" : "text-red-500"}`}>
+                            {isReceita ? "+" : "−"} {transaction.value.replace(/^R\$\s*/, "")}
+                          </div>
+                          <Badge variant="outline" className={`flex-shrink-0 text-xs ${getStatusColor(transaction.status)}`}>
                             {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
                           </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {transaction.isRecurring ? (
-                            <div className="flex flex-col gap-1">
-                              <Badge variant="outline" className="w-fit bg-primary/10 text-primary border-primary/30">
-                                <RefreshCw className="w-3 h-3 mr-1" />
-                                {transaction.recurrenceType}
-                              </Badge>
-                              {transaction.installmentCount && (
-                                <span className="text-xs text-muted-foreground">
-                                  {transaction.installmentCount}x
-                                </span>
-                              )}
-                              {transaction.isIndefinite && (
-                                <span className="text-xs text-muted-foreground italic">Sem prazo</span>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-end gap-1">
+                          <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                             {isPending && (
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                className="h-7 px-2 text-green-500 hover:text-green-400 hover:bg-green-500/10"
+                                className="h-7 w-7 p-0 text-green-500 hover:text-green-400 hover:bg-green-500/10"
                                 onClick={() => handleMarkAsPaid(transaction.id)}
                                 title="Marcar como pago"
                               >
@@ -1100,38 +1114,14 @@ export function EmpresaFinanceiro() {
                               ]}
                             />
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-            {filteredTransactions.length > 0 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t">
-                <span className="text-sm text-muted-foreground">
-                  Mostrando {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredTransactions.length)} de {filteredTransactions.length} transações
-                </span>
-                {filteredTransactions.length > ITEMS_PER_PAGE && (
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                    >
-                      Anterior
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage((p) => Math.min(Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE), p + 1))}
-                      disabled={currentPage >= Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE)}
-                    >
-                      Próximo
-                    </Button>
+                        </div>
+                      );
+                    })}
                   </div>
-                )}
+                ))}
+                <div className="px-4 py-3 border-t bg-muted/10 text-sm text-muted-foreground">
+                  {filteredTransactions.length} transaç{filteredTransactions.length !== 1 ? "ões" : "ão"}
+                </div>
               </div>
             )}
           </CardContent>
