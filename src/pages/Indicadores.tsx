@@ -1,5 +1,6 @@
 import { logger } from "@/lib/logger";
 import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -674,8 +675,15 @@ function SummaryCard({
   );
 }
 
+const VALID_INDICATOR_TABS = ["all", "financial", "clients", "operations"];
+
 export default function Indicadores() {
-  const [activeTab, setActiveTab] = useState("all");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = VALID_INDICATOR_TABS.includes(searchParams.get("tab") ?? "") ? (searchParams.get("tab") as string) : "all";
+
+  function handleTabChange(value: string) {
+    setSearchParams({ tab: value }, { replace: true });
+  }
   const [selectedBenchmark, setSelectedBenchmark] = useState<Benchmark | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -806,7 +814,7 @@ export default function Indicadores() {
         </div>
 
         {/* Tabs and Benchmarks */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList className="mb-4">
             <TabsTrigger value="all" className="gap-2">
               <PieChart className="h-4 w-4" />

@@ -45,6 +45,41 @@ import { format } from "date-fns";
 const currentMonth = new Date().getMonth() + 1;
 const currentYear = new Date().getFullYear();
 
+function calcInstallmentNumber(
+  t: FinancialTransaction,
+  filterMonth: number | null,
+  filterYear: number | null
+): number | null {
+  if (!t.installmentCount || !t.firstPaymentDate) return null;
+
+  const first = new Date(t.firstPaymentDate + "T00:00:00");
+  let current: Date;
+
+  if (t.isRecurring && t.dueDay) {
+    const m = filterMonth ?? (new Date().getMonth() + 1);
+    const y = filterYear ?? new Date().getFullYear();
+    current = new Date(y, m - 1, 1);
+  } else if (t.dueDate) {
+    current = new Date(t.dueDate + "T00:00:00");
+  } else {
+    return null;
+  }
+
+  const monthsDiff =
+    (current.getFullYear() - first.getFullYear()) * 12 +
+    (current.getMonth() - first.getMonth());
+
+  let num: number;
+  switch (t.recurrenceType) {
+    case "trimestral": num = Math.floor(monthsDiff / 3) + 1; break;
+    case "semestral":  num = Math.floor(monthsDiff / 6) + 1; break;
+    case "anual":      num = Math.floor(monthsDiff / 12) + 1; break;
+    default:           num = monthsDiff + 1;
+  }
+
+  return Math.max(1, Math.min(num, t.installmentCount));
+}
+
 export function EmpresaFinanceiro() {
   const { transactions, loading, addTransaction, updateTransaction, deleteTransaction } = useFinancial();
   const { data: allClients = [] } = useAllClients();
@@ -234,9 +269,25 @@ export function EmpresaFinanceiro() {
 
       if (filterMonth !== null || filterYear !== null) {
         if (t.isRecurring && t.dueDay) {
-          // Transações recorrentes com dueDay se aplicam a todo mês — sempre incluir
-          matchesMonth = true;
-          matchesYear = true;
+          if (t.installmentCount && t.firstPaymentDate && filterMonth !== null && filterYear !== null) {
+            const checkDate = new Date(filterYear, filterMonth - 1, 1);
+            const firstDate = new Date(t.firstPaymentDate + "T00:00:00");
+            const monthsDiff =
+              (checkDate.getFullYear() - firstDate.getFullYear()) * 12 +
+              (checkDate.getMonth() - firstDate.getMonth());
+            let num: number;
+            switch (t.recurrenceType) {
+              case "trimestral": num = Math.floor(monthsDiff / 3) + 1; break;
+              case "semestral":  num = Math.floor(monthsDiff / 6) + 1; break;
+              case "anual":      num = Math.floor(monthsDiff / 12) + 1; break;
+              default:           num = monthsDiff + 1;
+            }
+            matchesMonth = num >= 1 && num <= t.installmentCount;
+            matchesYear = true;
+          } else {
+            matchesMonth = true;
+            matchesYear = true;
+          }
         } else if (!t.dueDate) {
           matchesMonth = false;
           matchesYear = false;
@@ -1076,6 +1127,14 @@ export function EmpresaFinanceiro() {
                             </div>
                             <div className="flex items-center gap-2 mt-0.5">
                               <span className="text-xs text-muted-foreground">{transaction.category}</span>
+                              {transaction.installmentCount && (
+                                <>
+                                  <span className="text-xs text-muted-foreground">·</span>
+                                  <span className="text-xs text-muted-foreground font-medium tabular-nums">
+                                    {calcInstallmentNumber(transaction, filterMonth, filterYear) ?? 1}/{transaction.installmentCount}
+                                  </span>
+                                </>
+                              )}
                               {client && (
                                 <>
                                   <span className="text-xs text-muted-foreground">·</span>

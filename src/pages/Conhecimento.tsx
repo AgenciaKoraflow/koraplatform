@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { BookOpen, LayoutGrid, Key, FileText, Link2, Lightbulb } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,8 +9,15 @@ import { ConhecimentoDocumentos } from "@/components/conhecimento/ConhecimentoDo
 import { ConhecimentoLinks } from "@/components/conhecimento/ConhecimentoLinks";
 import { InsightsManager } from "@/components/insights/InsightsManager";
 
+const VALID_TABS = ["geral", "senhas", "documentos", "links", "insights"];
+
 export default function Conhecimento() {
-  const [activeTab, setActiveTab] = useState("geral");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = VALID_TABS.includes(searchParams.get("tab") ?? "") ? (searchParams.get("tab") as string) : "geral";
+
+  function handleTabChange(value: string) {
+    setSearchParams({ tab: value }, { replace: true });
+  }
 
   return (
     <AppLayout>
@@ -21,7 +28,7 @@ export default function Conhecimento() {
           subtitle="Senhas, documentos, links e insights dos clientes"
         />
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="bg-input border border-border flex-wrap h-auto gap-1">
             <TabsTrigger value="geral" className="gap-2">
               <LayoutGrid className="w-4 h-4" />
@@ -54,7 +61,7 @@ export default function Conhecimento() {
           </TabsContent>
 
           <TabsContent value="documentos" className="mt-6">
-            <ConhecimentoDocumentos onSaved={() => setActiveTab("geral")} />
+            <ConhecimentoDocumentos onSaved={() => handleTabChange("geral")} />
           </TabsContent>
 
           <TabsContent value="links" className="mt-6">

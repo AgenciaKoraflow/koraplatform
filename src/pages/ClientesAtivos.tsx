@@ -53,7 +53,14 @@ const interactionTypeConfig = {
 };
 
 export default function ClientesAtivos() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const VALID_CLIENT_TABS = ["timeline", "tasks", "projects", "contracts", "notes"];
+  const activeClientTab = VALID_CLIENT_TABS.includes(searchParams.get("clientTab") ?? "") ? (searchParams.get("clientTab") as string) : "timeline";
+
+  function handleClientTabChange(value: string) {
+    setSearchParams((prev) => { prev.set("clientTab", value); return prev; }, { replace: true });
+  }
   const { data: clients = [] } = useAllClients();
   const { data: projects = [] } = useAllProjects();
   const { data: contracts = [] } = useAllContracts();
@@ -462,7 +469,7 @@ export default function ClientesAtivos() {
               </div>
 
               {/* Tabs for Client Details */}
-              <Tabs defaultValue="timeline" className="space-y-4">
+              <Tabs value={activeClientTab} onValueChange={handleClientTabChange} className="space-y-4">
                 <TabsList className="bg-input">
                   <TabsTrigger value="timeline">Timeline</TabsTrigger>
                   <TabsTrigger value="tasks">Tarefas</TabsTrigger>
