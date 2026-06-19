@@ -1,4 +1,5 @@
 import { Building2 } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,8 +16,16 @@ import { EmpresaTarefas } from "@/components/empresa/EmpresaTarefas";
 import { EmpresaDocumentos } from "@/components/empresa/EmpresaDocumentos";
 import { EmpresaGantt } from "@/components/empresa/EmpresaGantt";
 
+const VALID_TABS = ["geral", "okr", "financeiro", "servicos", "processos", "contratos", "senhas", "insights", "tarefas", "documentacao", "gantt"];
+
 export default function Empresa() {
   const { data: workspace, isLoading } = useInternalWorkspace();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = VALID_TABS.includes(searchParams.get("tab") ?? "") ? (searchParams.get("tab") as string) : "geral";
+
+  function handleTabChange(value: string) {
+    setSearchParams({ tab: value }, { replace: true });
+  }
 
   return (
     <AppLayout>
@@ -36,7 +45,7 @@ export default function Empresa() {
             Workspace interno não encontrado. Execute a migration do banco de dados.
           </div>
         ) : (
-          <Tabs defaultValue="geral">
+          <Tabs value={activeTab} onValueChange={handleTabChange}>
             <TabsList className="mb-4 flex-wrap h-auto gap-1">
               <TabsTrigger value="geral">Geral</TabsTrigger>
               <TabsTrigger value="okr">OKR</TabsTrigger>
