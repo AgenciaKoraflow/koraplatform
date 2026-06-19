@@ -12,6 +12,7 @@ import { RouteErrorBoundary } from "@/components/error-boundary";
 import { supabase } from "@/integrations/supabase/client";
 import { clearAllToasts } from "@/hooks/use-toast";
 import { ForcePasswordChangeModal } from "@/components/auth/ForcePasswordChangeModal";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 // Separate importers so we can preload them without re-creating the lazy component
 const importDashboard = () => import("./pages/Dashboard");
@@ -140,6 +141,7 @@ function GlobalModals() {
 
 function AppRoutes() {
   usePreloadAllPages();
+  useRealtimeSync();
 
   return (
     <RouteErrorBoundary>
