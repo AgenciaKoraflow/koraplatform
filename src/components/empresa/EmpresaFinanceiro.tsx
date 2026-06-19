@@ -39,11 +39,14 @@ import {
   X,
   CheckCircle2,
   Download,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { format } from "date-fns";
 
 const currentMonth = new Date().getMonth() + 1;
 const currentYear = new Date().getFullYear();
+const MONTH_NAMES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
 function calcInstallmentNumber(
   t: FinancialTransaction,
@@ -87,6 +90,15 @@ export function EmpresaFinanceiro() {
   const { data: projects = [] } = useAllProjects();
   const { data: contracts = [] } = useAllContracts();
 
+  const koraflowClientId = useMemo(
+    () => allClients.find((c) => c.name.toLowerCase().includes("koraflow"))?.id ?? "",
+    [allClients]
+  );
+  const koraflowProjectId = useMemo(
+    () => projects.find((p) => p.name.toLowerCase().includes("koraflow"))?.id ?? "",
+    [projects]
+  );
+
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<"all" | "receita" | "despesa">("all");
   const [filterStatus, setFilterStatus] = useState<"all" | "pendente" | "pago" | "atrasado">("all");
@@ -118,6 +130,20 @@ export function EmpresaFinanceiro() {
     projectExpenseType: "" as "" | "extra" | "recorrente" | "projeto",
   });
 
+  // Aplica defaults do Koraflow quando o dialog abre para nova despesa
+  useEffect(() => {
+    if (isDialogOpen && !editingTransaction) {
+      setFormData((prev) => {
+        if (prev.type !== "despesa") return prev;
+        return {
+          ...prev,
+          clientId: prev.clientId || koraflowClientId,
+          projectId: prev.projectId || koraflowProjectId,
+        };
+      });
+    }
+  }, [isDialogOpen, koraflowClientId, koraflowProjectId]);
+
   const resetForm = () => {
     setFormData({
       type: "despesa",
@@ -130,8 +156,8 @@ export function EmpresaFinanceiro() {
       dueDay: null,
       paidDate: "",
       status: "pendente",
-      clientId: "",
-      projectId: "",
+      clientId: koraflowClientId,
+      projectId: koraflowProjectId,
       notes: "",
       otherCategoryNote: "",
       installmentCount: null,
@@ -494,7 +520,7 @@ export function EmpresaFinanceiro() {
                         type="button"
                         variant={formData.type === "receita" ? "default" : "outline"}
                         className={`flex-1 gap-2 ${formData.type === "receita" ? "bg-green-600 hover:bg-green-700" : ""}`}
-                        onClick={() => setFormData({ ...formData, type: "receita", category: "" })}
+                        onClick={() => setFormData({ ...formData, type: "receita", category: "", clientId: "", projectId: "" })}
                       >
                         <ArrowUpCircle className="w-4 h-4" />
                         Receita
@@ -503,7 +529,7 @@ export function EmpresaFinanceiro() {
                         type="button"
                         variant={formData.type === "despesa" ? "default" : "outline"}
                         className={`flex-1 gap-2 ${formData.type === "despesa" ? "bg-red-600 hover:bg-red-700" : ""}`}
-                        onClick={() => setFormData({ ...formData, type: "despesa", category: "" })}
+                        onClick={() => setFormData({ ...formData, type: "despesa", category: "", clientId: formData.clientId || koraflowClientId, projectId: formData.projectId || koraflowProjectId })}
                       >
                         <ArrowDownCircle className="w-4 h-4" />
                         Despesa
@@ -705,15 +731,21 @@ export function EmpresaFinanceiro() {
                         <Label>Cliente (opcional)</Label>
                         <Select
                           value={formData.clientId || "none"}
-                          onValueChange={(v) =>
-                            setFormData({ ...formData, clientId: v === "none" ? "" : v, contractId: "" })
-                          }
+                          onValueChange={(v) => {
+                            const newClientId = v === "none" ? "" : v;
+                            setFormData({
+                              ...formData,
+                              clientId: newClientId,
+                              projectId: "",
+                              contractId: "",
+                            });
+                          }}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione..." />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="none">Nenhum</SelectItem>
+                            <SelectItem value="none">{formData.type === "despesa" ? "Koraflow" : "Nenhum"}</SelectItem>
                             {clients.map((client) => (
                               <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
                             ))}
@@ -724,6 +756,7 @@ export function EmpresaFinanceiro() {
                         <Label>Projeto (opcional)</Label>
                         <Select
                           value={formData.projectId || "none"}
+                          disabled={!formData.clientId}
                           onValueChange={(v) =>
                             setFormData({
                               ...formData,
@@ -734,13 +767,15 @@ export function EmpresaFinanceiro() {
                           }
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecione..." />
+                            <SelectValue placeholder={formData.clientId ? "Selecione..." : "Selecione um cliente primeiro"} />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="none">Nenhum</SelectItem>
-                            {projects.map((project) => (
-                              <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
-                            ))}
+                            {projects
+                              .filter((p) => p.clientId === formData.clientId)
+                              .map((project) => (
+                                <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
+                              ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -1004,47 +1039,53 @@ export function EmpresaFinanceiro() {
                   <SelectItem value="atrasado">Atrasado</SelectItem>
                 </SelectContent>
               </Select>
-              <Select
-                value={filterMonth?.toString() || ""}
-                onValueChange={(v) => setFilterMonth(v === "all" || v === "" ? null : parseInt(v))}
-              >
-                <SelectTrigger className="w-[130px]">
-                  <SelectValue placeholder="Mês" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="1">Janeiro</SelectItem>
-                  <SelectItem value="2">Fevereiro</SelectItem>
-                  <SelectItem value="3">Março</SelectItem>
-                  <SelectItem value="4">Abril</SelectItem>
-                  <SelectItem value="5">Maio</SelectItem>
-                  <SelectItem value="6">Junho</SelectItem>
-                  <SelectItem value="7">Julho</SelectItem>
-                  <SelectItem value="8">Agosto</SelectItem>
-                  <SelectItem value="9">Setembro</SelectItem>
-                  <SelectItem value="10">Outubro</SelectItem>
-                  <SelectItem value="11">Novembro</SelectItem>
-                  <SelectItem value="12">Dezembro</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select
-                value={filterYear?.toString() || ""}
-                onValueChange={(v) => setFilterYear(v === "all" || v === "" ? null : parseInt(v))}
-              >
-                <SelectTrigger className="w-[110px]">
-                  <SelectValue placeholder="Ano" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  {(() => {
-                    const years = [];
-                    for (let y = currentYear - 5; y <= currentYear + 2; y++) years.push(y);
-                    return years.map((year) => (
-                      <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                    ));
-                  })()}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9 shrink-0"
+                  onClick={() => {
+                    const m = filterMonth ?? currentMonth;
+                    const y = filterYear ?? currentYear;
+                    if (m === 1) {
+                      setFilterMonth(12);
+                      setFilterYear(y - 1);
+                    } else {
+                      setFilterMonth(m - 1);
+                      if (filterYear === null) setFilterYear(y);
+                    }
+                  }}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm font-medium w-[148px] text-center select-none">
+                  {filterMonth != null && filterYear != null
+                    ? `${MONTH_NAMES[filterMonth - 1]} ${filterYear}`
+                    : filterMonth != null
+                    ? MONTH_NAMES[filterMonth - 1]
+                    : filterYear != null
+                    ? String(filterYear)
+                    : "Todos os meses"}
+                </span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9 shrink-0"
+                  onClick={() => {
+                    const m = filterMonth ?? currentMonth;
+                    const y = filterYear ?? currentYear;
+                    if (m === 12) {
+                      setFilterMonth(1);
+                      setFilterYear(y + 1);
+                    } else {
+                      setFilterMonth(m + 1);
+                      if (filterYear === null) setFilterYear(y);
+                    }
+                  }}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
               {hasActiveFilter && (
                 <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-muted-foreground">
                   <X className="w-3 h-3" />
