@@ -1,5 +1,14 @@
-import { Settings, X } from "lucide-react";
+import { Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogBody,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { defaultAudience } from "./audience";
 import type { AudienceSegment } from "./audience";
 
@@ -19,29 +28,20 @@ const allSegments: AudienceSegment[] = [
 ];
 
 export function AudienceConfig({ isOpen, onClose }: Props) {
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
-      <div className="bg-card w-full max-w-2xl rounded-t-lg border-t border-border shadow-lg p-6 space-y-6 max-h-[80vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <h2 className="text-2xl font-bold flex items-center gap-2">
-              <Settings className="w-6 h-6" />
-              Configurar Audiência
-            </h2>
-            <p className="text-muted-foreground text-sm">
-              Personalize os hooks para seu público
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-secondary rounded-lg transition-all"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Settings className="w-5 h-5" />
+            Configurar Audiência
+          </DialogTitle>
+          <DialogDescription>
+            Personalize os hooks para seu público
+          </DialogDescription>
+        </DialogHeader>
+
+        <DialogBody className="space-y-6">
 
         {/* Current Audience */}
         <div className="bg-secondary/30 rounded-lg p-4 space-y-4">
@@ -136,16 +136,17 @@ export function AudienceConfig({ isOpen, onClose }: Props) {
           </ul>
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={onClose} className="flex-1">
+        </DialogBody>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
             Fechar
           </Button>
-          <Button className="flex-1 bg-primary hover:bg-primary/90">
+          <Button className="bg-primary hover:bg-primary/90">
             Salvar Configurações
           </Button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

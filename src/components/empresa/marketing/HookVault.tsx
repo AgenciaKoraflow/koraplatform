@@ -27,9 +27,11 @@ import { useHooksMutations } from "@/hooks/mutations/useHooksMutations";
 import { hookNiches, hookTypes, typeColors } from "./hooks";
 import { defaultAudience, calculateRelevance } from "./audience";
 import { AudienceConfig } from "./AudienceConfig";
+import { seedHooksToDatabase } from "@/lib/seedHooks";
 import type { HookNiche, HookType } from "./hooks";
 import type { CreateHookInput } from "@/types/hooks";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface Props {
   workspaceId: string;
@@ -131,6 +133,20 @@ export function HookVault({ workspaceId }: Props) {
     if (deleteId) {
       await deleteHook.mutateAsync(deleteId);
       setDeleteId(null);
+    }
+  };
+
+  const handleSeedHooks = async () => {
+    try {
+      const result = await seedHooksToDatabase(workspaceId);
+      if (result.success) {
+        toast.success(`${result.count} hooks adicionados com sucesso!`);
+      } else {
+        toast.info("Hooks já foram adicionados anteriormente");
+      }
+    } catch (error) {
+      toast.error("Erro ao adicionar hooks");
+      console.error(error);
     }
   };
 
@@ -422,6 +438,14 @@ export function HookVault({ workspaceId }: Props) {
               </div>
             </div>
           ))
+        ) : hooks.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground space-y-4">
+            <p>Nenhum hook no banco de dados</p>
+            <p className="text-xs">Adicione hooks manualmente ou importe nossos modelos</p>
+            <Button onClick={handleSeedHooks} className="mt-4">
+              + Importar 20 Hooks Iniciais
+            </Button>
+          </div>
         ) : (
           <div className="text-center py-12 text-muted-foreground">
             <p>Nenhum hook encontrado com esses filtros</p>
