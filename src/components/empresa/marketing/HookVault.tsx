@@ -421,34 +421,34 @@ ${hook.creator} (${hook.creatorHandle})
               key={hook.id}
               className="bg-card rounded-lg p-4 border border-border shadow-soft hover:shadow-medium transition-all"
             >
-              {/* 4 COLUNAS - MINIMALISTA */}
+              {/* 4 COLUNAS - MINIMALISTA COM CORES DISCRETAS */}
               <div className="space-y-4">
                 {/* LINHA 1: Hook + Dor */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Hook</p>
+                  <div className="pl-3 border-l border-primary/20">
+                    <p className="text-xs font-semibold text-primary/60 uppercase tracking-wide mb-2">Hook</p>
                     <p className="text-sm text-foreground leading-relaxed">"{hook.text}"</p>
                   </div>
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Dor que Resolve</p>
+                  <div className="pl-3 border-l border-red-500/20">
+                    <p className="text-xs font-semibold text-red-600/60 dark:text-red-400/60 uppercase tracking-wide mb-2">Dor que Resolve</p>
                     <p className="text-sm text-foreground">{hook.painPoint || "—"}</p>
                   </div>
                 </div>
 
                 {/* LINHA 2: Gatilho + Conteúdo */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Gatilho Emocional</p>
+                  <div className="pl-3 border-l border-orange-500/20">
+                    <p className="text-xs font-semibold text-orange-600/60 dark:text-orange-400/60 uppercase tracking-wide mb-2">Gatilho Emocional</p>
                     <p className="text-sm text-foreground">{hook.emotionalTrigger || "—"}</p>
                   </div>
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Descrição do Conteúdo</p>
+                  <div className="pl-3 border-l border-blue-500/20">
+                    <p className="text-xs font-semibold text-blue-600/60 dark:text-blue-400/60 uppercase tracking-wide mb-2">Descrição do Conteúdo</p>
                     <p className="text-sm text-foreground italic">{hook.template || "—"}</p>
                   </div>
                 </div>
 
                 {/* AÇÕES */}
-                <div className="flex gap-2 justify-start pt-2 border-t border-border">
+                <div className="flex gap-2 justify-start pt-3 border-t border-border/50">
                   <Button
                     size="sm"
                     onClick={() => handleUseHook(hook)}
