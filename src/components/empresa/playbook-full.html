@@ -240,10 +240,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 <nav id="sb">
   <div class="sb-logo"><div class="wm">KORAFLOW</div><div class="lbl">Playbook v2</div></div>
   <div class="sb-nav">
-    <div class="sb-sec-lbl">Geral</div>
-    <button class="ni active" data-pg="overview"><span class="dot dot-p"></span><span>Overview</span></button>
-    <div class="sb-sec-lbl">Verticais</div>
-    <button class="ni" data-pg="agent"><span class="dot dot-a"></span><span>KORA AGENT</span></button>
+    <div class="sb-sec-lbl">Servicos</div>
+    <button class="ni active" data-pg="agent"><span class="dot dot-a"></span><span>KORA AGENT</span></button>
     <button class="ni" data-pg="dev"><span class="dot dot-d"></span><span>KORA DEV</span></button>
     <button class="ni" data-pg="studio"><span class="dot dot-s"></span><span>KORA STUDIO</span></button>
   </div>
@@ -251,62 +249,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 </nav>
 <main id="main">
 
-<!-- OVERVIEW -->
-<div id="pg-overview" class="pg active">
-  <div class="topbar"><span class="topbar-title">KORAFLOW — Playbook Comercial 2026</span><span class="badge badge-i">INTERNO</span></div>
-  <div class="sec hero"><div style="max-width:820px;">
-    <div class="hero-ey">Playbook Comercial · Uso Interno</div>
-    <h1>Venda Resultado.<br><span style="color:var(--purple)">Nunca Features.</span></h1>
-    <p>Guia completo de precificacao, scripts, mentalidade de closer e quebra de objecoes para as 3 verticais da Koraflow. Clique em qualquer plano para ver tudo.</p>
-    <div class="pills">
-      <span class="pill pill-a">KORA AGENT</span><span class="pill pill-d">KORA DEV</span><span class="pill pill-s">KORA STUDIO</span>
-      <span class="pill pill-n">Scripts de Call</span><span class="pill pill-n">Ancoragem + Piso</span><span class="pill pill-n">1 Mes Gratis</span><span class="pill pill-n">Quebra de Objecoes</span>
-    </div>
-  </div></div>
-  <div class="sec">
-    <div class="ttl">A Mentalidade do Closer</div><div class="desc">Leia antes de qualquer call. Internalize.</div>
-    <div class="mental">"O cliente nao quer tecnologia — ele quer resultado. Ele quer parar de perder dinheiro em processos manuais, ter presenca visual que converte e sistemas que escalem sem contratar mais gente. Nossa tarefa nao e explicar o que fazemos — e fazer o cliente enxergar quanto esta custando NAO ter o que oferecemos."</div>
-    <div class="col3">
-      <div class="ic"><div class="ic-num" style="color:var(--agent)">IA</div><div class="ic-lbl">KORA AGENT — Agente que evolui como funcionario. Comeca como SDR, vai sendo promovido conforme prova valor.</div></div>
-      <div class="ic"><div class="ic-num" style="color:var(--dev)">DEV</div><div class="ic-lbl">KORA DEV — Engenharia senior sob demanda. Time completo por fracao do custo interno.</div></div>
-      <div class="ic"><div class="ic-num" style="color:var(--studio)">ART</div><div class="ic-lbl">KORA STUDIO — Criatividade com IA cinematica. Producao de agencia por preco acessivel.</div></div>
-    </div>
-    <div class="hr"><div class="hr-line"></div><div class="hr-lbl">Os 5 Principios Comerciais</div><div class="hr-line"></div></div>
-    <div class="col2">
-      <div class="cf">
-        <div class="cf-step"><div class="cf-hd"><div class="cf-ttl">1. Diagnostique Antes de Vender</div></div><div class="cf-desc">Toda call comeca com pergunta aberta. Encontre o gargalo antes de apresentar qualquer plano.</div></div>
-        <div class="cf-step"><div class="cf-hd"><div class="cf-ttl">2. Reframe para ROI</div></div><div class="cf-desc">Nunca fale de features. Fale do custo oculto que o cliente ja esta pagando hoje.</div></div>
-        <div class="cf-step"><div class="cf-hd"><div class="cf-ttl">3. Entre Pelo Menor Ticket</div></div><div class="cf-desc">Prova de valor em 30 dias converte mais do que tentar fechar tudo na primeira call.</div></div>
-        <div class="cf-step"><div class="cf-hd"><div class="cf-ttl">4. Upsell So Apos ROI Provado</div></div><div class="cf-desc">Proponha evolucao so quando o cliente viu resultado real. Nao force upgrade.</div></div>
-        <div class="cf-step"><div class="cf-hd"><div class="cf-ttl">5. Sempre Feche com Proximo Passo</div></div><div class="cf-desc">Nunca termine uma call sem data, acao e responsavel definidos.</div></div>
-      </div>
-      <div>
-        <div class="ttl2" style="margin-bottom:14px;">Resumo de Precos</div>
-        <table class="vtbl">
-          <thead><tr><th>Vertical</th><th>Entry</th><th>Recorrencia</th></tr></thead>
-          <tbody>
-            <tr><td class="td-h" style="color:var(--agent)">AGENT CHAT</td><td class="td-m">—</td><td class="td-m">R$97/user/mes</td></tr>
-            <tr><td class="td-h" style="color:var(--agent)">AGENT BASE</td><td class="td-m">R$1.470</td><td class="td-m">R$397/mes</td></tr>
-            <tr><td class="td-h" style="color:var(--agent)">AGENT PLUS &#9733;</td><td class="td-m">R$3.470</td><td class="td-m">R$647/mes</td></tr>
-            <tr><td class="td-h" style="color:var(--agent)">AGENT PRO &#9733;</td><td class="td-m">R$6.470</td><td class="td-m">R$897/mes</td></tr>
-            <tr><td colspan="3" style="padding:3px;background:var(--bg3);"></td></tr>
-            <tr><td class="td-h" style="color:var(--dev)">DEV START</td><td class="td-m">—</td><td class="td-m">R$970–1.200/mes</td></tr>
-            <tr><td class="td-h" style="color:var(--dev)">DEV PLUS</td><td class="td-m">R$1.870–2.500</td><td class="td-m">R$1.770–2.200/mes</td></tr>
-            <tr><td class="td-h" style="color:var(--dev)">DEV PRO</td><td class="td-m">R$13.470–16k+</td><td class="td-m">R$747–900/mes</td></tr>
-            <tr><td colspan="3" style="padding:3px;background:var(--bg3);"></td></tr>
-            <tr><td class="td-h" style="color:var(--studio)">STUDIO START</td><td class="td-m">R$947–1.200</td><td class="td-m">Venda unica</td></tr>
-            <tr><td class="td-h" style="color:var(--studio)">STUDIO PLUS</td><td class="td-m">—</td><td class="td-m">R$1.530–1.800/mes</td></tr>
-            <tr><td class="td-h" style="color:var(--studio)">STUDIO PRO</td><td class="td-m">—</td><td class="td-m">R$1.230–1.490/mes</td></tr>
-          </tbody>
-        </table>
-        <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);">&#9733; = 1 mes recorrencia gratis ao fechar</div>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- KORA AGENT -->
-<div id="pg-agent" class="pg">
+<div id="pg-agent" class="pg active">
   <div class="topbar"><span class="topbar-title">KORA AGENT — Inteligencia Artificial Comercial</span><span class="badge badge-a">AGENT</span></div>
   <div class="sec">
     <div class="vh">
