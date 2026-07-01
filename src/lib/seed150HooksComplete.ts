@@ -1818,6 +1818,12 @@ const hooks150Complete: CreateHookInput[] = [
 
 export async function seed150HooksComplete(workspaceId: string) {
   try {
+    // Get current user ID (required by RLS)
+    const { data } = await supabase.auth.getUser();
+    const userId = data?.user?.id;
+
+    if (!userId) throw new Error("User not authenticated");
+
     // Delete existing hooks
     const { error: deleteError } = await supabase
       .from("hooks")
@@ -1826,30 +1832,46 @@ export async function seed150HooksComplete(workspaceId: string) {
 
     if (deleteError) throw deleteError;
 
-    // Insert new hooks with random stats
-    const { error: insertError } = await supabase
-      .from("hooks")
-      .insert(
-        hooks150Complete.map((hook) => ({
-          workspace_id: workspaceId,
-          text: hook.text,
-          template: hook.template,
-          pain_point: hook.pain_point,
-          emotional_trigger: hook.emotional_trigger,
-          creator: hook.creator,
-          creator_handle: hook.creator_handle,
-          type: hook.type,
-          niche: hook.niche,
-          views: Math.floor(Math.random() * 8000) + 1000,
-          times_used: Math.floor(Math.random() * 25),
-        }))
-      );
+    // Insert new hooks in batches (like seedHooksToDatabase does)
+    const batchSize = 5;
+    let totalInserted = 0;
 
-    if (insertError) throw insertError;
+    for (let i = 0; i < hooks150Complete.length; i += batchSize) {
+      const batch = hooks150Complete.slice(i, i + batchSize);
+      const { data: inserted, error: insertError } = await supabase
+        .from("hooks")
+        .insert(
+          batch.map((hook) => ({
+            workspace_id: workspaceId,
+            created_by: userId,
+            text: hook.text,
+            template: hook.template,
+            pain_point: hook.pain_point,
+            emotional_trigger: hook.emotional_trigger,
+            creator: hook.creator,
+            creator_handle: hook.creator_handle,
+            type: hook.type,
+            niche: hook.niche,
+            content_type: hook.content_type || "Reel",
+            visual_mode: hook.visual_mode || "Clean",
+            views: Math.floor(Math.random() * 8000) + 1000,
+            times_used: Math.floor(Math.random() * 25),
+          }))
+        )
+        .select();
+
+      if (insertError) {
+        console.error(`❌ Erro no batch ${Math.floor(i / batchSize) + 1}:`, insertError);
+        throw insertError;
+      }
+
+      const batchCount = inserted?.length || 0;
+      totalInserted += batchCount;
+    }
 
     return {
       success: true,
-      count: hooks150Complete.length,
+      count: totalInserted,
       message: `150 hooks foram importados com sucesso! ✅`,
     };
   } catch (error) {
