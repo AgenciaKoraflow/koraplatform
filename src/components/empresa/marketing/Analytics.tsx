@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, LogOut, Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { fetchInstagramMetrics, fetchInstagramReels, validateInstagramToken, type InstagramReel } from "@/lib/instagram";
 
 interface Props {
   workspaceId: string;
@@ -14,53 +15,104 @@ interface MetricCard {
   changePositive: boolean;
 }
 
-const mockMetrics: MetricCard[] = [
-  { label: "VIEWS · 7D", value: "287.4K", change: "+162%", changePositive: true },
-  { label: "SAVES · 7D", value: "4.812", change: "+71%", changePositive: true },
-  { label: "COMENTÁRIOS · 7D", value: "892", change: "+44%", changePositive: true },
-  { label: "COMPARTILHAMENTOS · 7D", value: "1.2K", change: "+28%", changePositive: true },
-  { label: "NOVOS SEGUIDORES · 7D", value: "3.4K", change: "+18%", changePositive: true },
-  { label: "VISITAS PERFIL · 7D", value: "12.6K", change: "+89%", changePositive: true },
-];
-
-const mockHeaters = [
-  { rank: 1, title: "Você precisa de um painel de conteúdo", views: 287400, saves: 4812 },
-  { rank: 2, title: "Para de usar Notion pra conteúdo", views: 156800, saves: 3421 },
-  { rank: 3, title: "Como criei um comando /script", views: 98900, saves: 2103 },
-  { rank: 4, title: "A maioria dos criadores fica sem ideia", views: 76200, saves: 1892 },
-  { rank: 5, title: "Você não sabe quanto vale seu tempo", views: 54300, saves: 987 },
-];
-
 export function Analytics({ workspaceId }: Props) {
   const { toast } = useToast();
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [metrics, setMetrics] = useState<MetricCard[] | null>(null);
+  const [reels, setReels] = useState<InstagramReel[]>([]);
+
+  // Verificar se já tem token salvo
+  useEffect(() => {
+    const savedConnection = localStorage.getItem("ig_connected");
+    if (savedConnection === "true") {
+      setIsConnected(true);
+      loadInstagramData();
+    }
+  }, []);
+
+  const loadInstagramData = async () => {
+    try {
+      const isValid = await validateInstagramToken();
+      if (!isValid) {
+        toast({
+          title: "Token expirado",
+          description: "Reconecte sua conta do Instagram",
+          variant: "destructive",
+        });
+        handleDisconnect();
+        return;
+      }
+
+      // Buscar métricas
+      const igMetrics = await fetchInstagramMetrics();
+      if (igMetrics) {
+        setMetrics([
+          { label: "VIEWS · 7D", value: `${(igMetrics.reelsViews / 1000).toFixed(1)}K`, change: "+162%", changePositive: true },
+          { label: "SAVES · 7D", value: `${igMetrics.saves.toLocaleString()}`, change: "+71%", changePositive: true },
+          { label: "COMENTÁRIOS · 7D", value: `${igMetrics.comments.toLocaleString()}`, change: "+44%", changePositive: true },
+          { label: "COMPARTILHAMENTOS · 7D", value: `${(igMetrics.shares / 1000).toFixed(1)}K`, change: "+28%", changePositive: true },
+          { label: "NOVOS SEGUIDORES · 7D", value: `${(igMetrics.growth7d / 1000).toFixed(1)}K`, change: "+18%", changePositive: true },
+          { label: "VISITAS PERFIL · 7D", value: `${(igMetrics.profileVisits / 1000).toFixed(1)}K`, change: "+89%", changePositive: true },
+        ]);
+      }
+
+      // Buscar reels
+      const igReels = await fetchInstagramReels(5);
+      if (igReels) {
+        setReels(igReels);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar dados do Instagram:", error);
+      toast({
+        title: "Erro",
+        description: "Não conseguimos carregar os dados do Instagram",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleConnectInstagram = async () => {
     setIsLoading(true);
     try {
-      // TODO: Implementar OAuth com Instagram
-      // Por enquanto, apenas simular conexão
-      setTimeout(() => {
-        setIsConnected(true);
+      const isValid = await validateInstagramToken();
+      if (!isValid) {
         toast({
-          title: "Conectado!",
-          description: "Sua conta do Instagram foi conectada com sucesso",
+          title: "Erro",
+          description: "Token do Instagram inválido ou expirado",
+          variant: "destructive",
         });
         setIsLoading(false);
-      }, 1500);
+        return;
+      }
+
+      // Salvar conexão
+      localStorage.setItem("ig_connected", "true");
+      setIsConnected(true);
+
+      // Carregar dados
+      await loadInstagramData();
+
+      toast({
+        title: "Conectado!",
+        description: "Sua conta @koraflow.ia foi conectada com sucesso",
+      });
     } catch (error) {
       toast({
         title: "Erro",
         description: "Não conseguimos conectar à sua conta do Instagram",
         variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
     }
   };
 
   const handleDisconnect = () => {
+    localStorage.removeItem("ig_connected");
     setIsConnected(false);
+    setMetrics(null);
+    setReels([]);
     toast({
       title: "Desconectado",
       description: "Sua conta do Instagram foi desconectada",
@@ -117,7 +169,7 @@ export function Analytics({ workspaceId }: Props) {
         <div className="space-y-2">
           <h1 className="text-3xl font-bold">Analytics</h1>
           <p className="text-muted-foreground text-sm">
-            ÚLTIMOS 7 DIAS · @fabianocarvalhojr
+            ÚLTIMOS 7 DIAS · @koraflow.ia
           </p>
         </div>
         <Button
@@ -131,52 +183,71 @@ export function Analytics({ workspaceId }: Props) {
       </div>
 
       {/* Main Metrics Grid */}
-      <div className="grid grid-cols-3 gap-4">
-        {mockMetrics.map((metric, idx) => (
-          <div
-            key={idx}
-            className="bg-card rounded-lg p-4 border border-border shadow-soft hover:shadow-medium transition-all"
-          >
-            <p className="text-muted-foreground text-xs font-semibold uppercase mb-3">
-              {metric.label}
-            </p>
-            <p className="text-3xl font-bold mb-1">{metric.value}</p>
-            <p className={`text-sm font-semibold ${metric.changePositive ? "text-green-600" : "text-red-600"}`}>
-              {metric.change}
-            </p>
-          </div>
-        ))}
-      </div>
+      {metrics ? (
+        <div className="grid grid-cols-3 gap-4">
+          {metrics.map((metric, idx) => (
+            <div
+              key={idx}
+              className="bg-card rounded-lg p-4 border border-border shadow-soft hover:shadow-medium transition-all"
+            >
+              <p className="text-muted-foreground text-xs font-semibold uppercase mb-3">
+                {metric.label}
+              </p>
+              <p className="text-3xl font-bold mb-1">{metric.value}</p>
+              <p className={`text-sm font-semibold ${metric.changePositive ? "text-green-600" : "text-red-600"}`}>
+                {metric.change}
+              </p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="bg-card rounded-lg p-4 border border-border shadow-soft animate-pulse">
+              <div className="h-4 bg-muted rounded w-1/2 mb-3"></div>
+              <div className="h-8 bg-muted rounded w-2/3 mb-2"></div>
+              <div className="h-4 bg-muted rounded w-1/3"></div>
+            </div>
+          ))}
+        </div>
+      )}
 
-      {/* Top Heaters */}
+      {/* Top Heels */}
       <div className="bg-card rounded-lg p-6 border border-border shadow-soft">
         <h3 className="font-semibold text-foreground text-lg mb-4">
           🔥 TOP 5 REELS · ÚLTIMOS 7 DIAS
         </h3>
         <div className="space-y-3">
-          {mockHeaters.map((heater) => (
-            <div
-              key={heater.rank}
-              className="flex items-center gap-4 p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors"
-            >
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                <span className="font-bold text-primary">#{heater.rank}</span>
+          {reels.length > 0 ? (
+            reels.map((reel, idx) => (
+              <div
+                key={reel.id}
+                className="flex items-center gap-4 p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors cursor-pointer"
+                onClick={() => window.open(reel.permalink, "_blank")}
+              >
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                  <span className="font-bold text-primary">#{idx + 1}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-foreground font-medium text-sm truncate">
+                    {reel.caption || "Reel sem descrição"}
+                  </p>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <p className="text-sm font-semibold text-foreground">
+                    {(reel.views / 1000).toFixed(0)}K views
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {(reel.saves / 1000).toFixed(1)}K saves
+                  </p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-foreground font-medium text-sm truncate">
-                  {heater.title}
-                </p>
-              </div>
-              <div className="text-right flex-shrink-0">
-                <p className="text-sm font-semibold text-foreground">
-                  {(heater.views / 1000).toFixed(0)}K views
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {(heater.saves / 1000).toFixed(1)}K saves
-                </p>
-              </div>
+            ))
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>Carregando reels...</p>
             </div>
-          ))}
+          )}
         </div>
       </div>
 
