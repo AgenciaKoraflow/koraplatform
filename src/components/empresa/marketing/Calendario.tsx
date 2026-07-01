@@ -1,10 +1,11 @@
 import { useState, useMemo } from "react";
-import { ChevronLeft, ChevronRight, X, Calendar, Trash2, Copy, Edit2, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Calendar, Trash2, Copy, Edit2, Plus, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useHooks } from "@/hooks/queries/useHooksQuery";
 
 interface ScheduledPost {
   id: string;
@@ -82,6 +83,8 @@ const PLATFORM_CONFIG = {
 
 export function Calendario({ workspaceId }: Props) {
   const { toast } = useToast();
+  const { data: hooks = [] } = useHooks(workspaceId);
+
   const [currentDate, setCurrentDate] = useState(new Date(2026, 6, 1));
   const [selectedPost, setSelectedPost] = useState<ScheduledPost | null>(null);
 
@@ -91,9 +94,13 @@ export function Calendario({ workspaceId }: Props) {
     return [...MOCK_SCHEDULED_POSTS, ...scheduled];
   });
 
-  // Modal de criar novo post
+  // Modals
+  const [chooseMethodModalOpen, setChooseMethodModalOpen] = useState(false);
+  const [selectHookModalOpen, setSelectHookModalOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [selectedDateForCreate, setSelectedDateForCreate] = useState("");
+  const [selectedHookForCreate, setSelectedHookForCreate] = useState<any>(null);
+
   const [newPostForm, setNewPostForm] = useState({
     hook: "",
     angle: "",
@@ -143,6 +150,31 @@ export function Calendario({ workspaceId }: Props) {
   const handleOpenCreateModal = (day: number) => {
     const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     setSelectedDateForCreate(dateStr);
+    setNewPostForm({ hook: "", angle: "", cta: "", contentType: "Reel", time: "19:00" });
+    setChooseMethodModalOpen(true);
+  };
+
+  const handleChooseFromHookVault = () => {
+    setChooseMethodModalOpen(false);
+    setSelectHookModalOpen(true);
+  };
+
+  const handleSelectHook = (hook: any) => {
+    setSelectedHookForCreate(hook);
+    setNewPostForm({
+      hook: hook.text,
+      angle: "",
+      cta: "",
+      contentType: (hook.contentType as "Reel" | "Stories" | "Carrossel" | "Post") || "Reel",
+      time: "19:00",
+    });
+    setSelectHookModalOpen(false);
+    setCreateModalOpen(true);
+  };
+
+  const handleChooseCreateFromZero = () => {
+    setChooseMethodModalOpen(false);
+    setSelectedHookForCreate(null);
     setNewPostForm({ hook: "", angle: "", cta: "", contentType: "Reel", time: "19:00" });
     setCreateModalOpen(true);
   };
@@ -429,6 +461,71 @@ export function Calendario({ workspaceId }: Props) {
         </div>
       </div>
 
+      {/* Choose Method Modal */}
+      <Dialog open={chooseMethodModalOpen} onOpenChange={setChooseMethodModalOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>📝 Como deseja criar o post?</DialogTitle>
+          </DialogHeader>
+          <DialogBody className="space-y-3">
+            <p className="text-sm text-muted-foreground">Escolha se quer usar um hook já pronto ou criar do zero</p>
+          </DialogBody>
+          <DialogFooter className="flex gap-2 sm:flex-col">
+            <Button
+              onClick={handleChooseFromHookVault}
+              className="gap-2 bg-primary hover:bg-primary/90"
+            >
+              <BookOpen className="w-4 h-4" />
+              Trazer do Hook Vault
+            </Button>
+            <Button
+              onClick={handleChooseCreateFromZero}
+              variant="outline"
+              className="gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Criar do Zero
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Select Hook Modal */}
+      <Dialog open={selectHookModalOpen} onOpenChange={setSelectHookModalOpen}>
+        <DialogContent className="max-w-2xl max-h-96 overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>📚 Selecione um Hook</DialogTitle>
+          </DialogHeader>
+          <DialogBody className="space-y-2">
+            {hooks.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Nenhum hook disponível</p>
+            ) : (
+              hooks.map((hook) => (
+                <button
+                  key={hook.id}
+                  onClick={() => handleSelectHook(hook)}
+                  className="w-full text-left p-3 rounded-lg border border-border hover:bg-secondary/50 transition-colors space-y-1"
+                >
+                  <p className="text-sm font-medium text-foreground">{hook.text}</p>
+                  <div className="flex gap-2 flex-wrap">
+                    {hook.painPoint && (
+                      <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
+                        🎯 {hook.painPoint}
+                      </span>
+                    )}
+                    {hook.emotionalTrigger && (
+                      <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded">
+                        💭 {hook.emotionalTrigger}
+                      </span>
+                    )}
+                  </div>
+                </button>
+              ))
+            )}
+          </DialogBody>
+        </DialogContent>
+      </Dialog>
+
       {/* Create Post Modal */}
       <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
         <DialogContent>
@@ -446,6 +543,33 @@ export function Calendario({ workspaceId }: Props) {
                 })}
               </p>
             </div>
+
+            {selectedHookForCreate && (
+              <div className="bg-blue-500/10 rounded-lg p-3 border border-blue-500/20">
+                <p className="text-xs font-semibold text-muted-foreground mb-1">📚 Hook Selecionado:</p>
+                <p className="text-sm text-foreground font-medium">{selectedHookForCreate.text}</p>
+                <div className="flex gap-2 mt-2 flex-wrap">
+                  {selectedHookForCreate.painPoint && (
+                    <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
+                      🎯 {selectedHookForCreate.painPoint}
+                    </span>
+                  )}
+                  {selectedHookForCreate.emotionalTrigger && (
+                    <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded">
+                      💭 {selectedHookForCreate.emotionalTrigger}
+                    </span>
+                  )}
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setSelectHookModalOpen(true)}
+                  className="mt-2 text-xs"
+                >
+                  Mudar Hook
+                </Button>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label>🎯 Hook / Conteúdo *</Label>
