@@ -42,7 +42,9 @@ export function EmpresaMarketing({ workspaceId }: Props) {
   const CurrentComponent = pageComponents[currentTab] || VisaoGeral;
 
   function handleTabChange(tabId: string) {
-    setSearchParams({ marketing: tabId }, { replace: true });
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("marketing", tabId);
+    setSearchParams(newParams, { replace: true });
   }
 
   return (
