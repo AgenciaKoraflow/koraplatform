@@ -104,6 +104,7 @@ export function mapDbProject(db: DbProjectRow): Project {
     recurrenceStartDate: db.recurrence_start_date
       ? formatDate(db.recurrence_start_date)
       : undefined,
+    createdAt: db.created_at ?? undefined,
     bu: sanitizeBU(db.bu),
   };
 }

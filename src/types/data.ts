@@ -51,6 +51,7 @@ export interface Project {
   type?: "projeto" | "consultoria";
   recurrenceValue?: string;
   recurrenceStartDate?: string;
+  createdAt?: string;
   bu?: BU[];
 }
 
