@@ -69,6 +69,7 @@ type Vertical = "agent" | "dev" | "studio";
 
 export function HookVault({ workspaceId }: Props) {
   const [activeVertical, setActiveVertical] = useState<Vertical>("agent");
+  const [currentPage, setCurrentPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
   const [selectedPainPoint, setSelectedPainPoint] = useState<string>("");
   const [selectedEmotionalTrigger, setSelectedEmotionalTrigger] = useState<string>("");
@@ -76,6 +77,8 @@ export function HookVault({ workspaceId }: Props) {
   const [newHookOpen, setNewHookOpen] = useState(false);
   const [formData, setFormData] = useState<NewHookForm>(EMPTY_FORM);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const ITEMS_PER_PAGE = 10;
 
   // Schedule modal state
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
@@ -134,6 +137,16 @@ export function HookVault({ workspaceId }: Props) {
 
     return result;
   }, [searchInput, selectedPainPoint, selectedEmotionalTrigger, hooksWithRelevance, activeVertical]);
+
+  // Reset to page 1 when filters change
+  useMemo(() => {
+    setCurrentPage(1);
+  }, [searchInput, selectedPainPoint, selectedEmotionalTrigger, activeVertical]);
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredHooks.length / ITEMS_PER_PAGE);
+  const startIdx = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedHooks = filteredHooks.slice(startIdx, startIdx + ITEMS_PER_PAGE);
 
   const handleUseHook = (hook: typeof hooks[0]) => {
     const content = `
@@ -403,10 +416,17 @@ ${hook.creator} (${hook.creatorHandle})
           )}
         </div>
 
-        {/* Results Count */}
-        <div className="text-sm text-muted-foreground">
-          {filteredHooks.length} hook{filteredHooks.length !== 1 ? "s" : ""} encontrado na vertical {verticalLabels[activeVertical]}
-          {filteredHooks.length !== hooks.length && ` (de ${hooks.length} total)`}
+        {/* Results Count & Pagination Info */}
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            {filteredHooks.length} hook{filteredHooks.length !== 1 ? "s" : ""} encontrado na vertical {verticalLabels[activeVertical]}
+            {filteredHooks.length !== hooks.length && ` (de ${hooks.length} total)`}
+          </div>
+          {filteredHooks.length > 0 && (
+            <div className="text-xs text-muted-foreground">
+              Página {currentPage} de {totalPages}
+            </div>
+          )}
         </div>
 
         {/* Hooks List */}
@@ -415,8 +435,8 @@ ${hook.creator} (${hook.creatorHandle})
             <div className="flex items-center justify-center py-12 text-muted-foreground">
               <p>Carregando hooks...</p>
             </div>
-          ) : filteredHooks.length > 0 ? (
-            filteredHooks.map(({ hook, relevance }) => (
+          ) : paginatedHooks.length > 0 ? (
+            paginatedHooks.map(({ hook, relevance }) => (
               <div
               key={hook.id}
               className="bg-card rounded-lg p-4 border border-border shadow-soft hover:shadow-medium transition-all"
@@ -481,6 +501,31 @@ ${hook.creator} (${hook.creatorHandle})
           </div>
         )}
         </div>
+
+        {/* Pagination */}
+        {filteredHooks.length > ITEMS_PER_PAGE && (
+          <div className="flex items-center justify-between pt-6 border-t border-border">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+            >
+              ← Anterior
+            </Button>
+            <div className="text-sm text-muted-foreground">
+              {startIdx + 1}–{Math.min(startIdx + ITEMS_PER_PAGE, filteredHooks.length)} de {filteredHooks.length}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Próxima →
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Schedule Modal */}
