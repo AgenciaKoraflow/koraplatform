@@ -1,6 +1,6 @@
 import { useSearchParams } from "react-router-dom";
-import { Megaphone } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { VisaoGeral } from "./marketing/VisaoGeral";
 import { HookVault } from "./marketing/HookVault";
 import { Analytics } from "./marketing/Analytics";
 import { Concorrentes } from "./marketing/Concorrentes";
@@ -13,35 +13,44 @@ interface Props {
 }
 
 const MARKETING_TABS = [
+  { id: "visao-geral", label: "Visão Geral" },
   { id: "hook-vault", label: "Hook Vault" },
   { id: "analytics", label: "Analytics" },
   { id: "concorrentes", label: "Concorrentes" },
   { id: "agendador", label: "Agendador" },
   { id: "calendario", label: "Calendário" },
-  { id: "em-alta", label: "Em Alta" },
+  { id: "trending", label: "Trending" },
 ];
 
 export function EmpresaMarketing({ workspaceId }: Props) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get("marketing") ?? "hook-vault";
+  const activeTab = searchParams.get("marketing") ?? "visao-geral";
 
   const isValidTab = MARKETING_TABS.some((tab) => tab.id === activeTab);
-  const currentTab = isValidTab ? activeTab : "hook-vault";
+  const currentTab = isValidTab ? activeTab : "visao-geral";
 
   function handleTabChange(value: string) {
     setSearchParams({ marketing: value }, { replace: true });
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <Tabs value={currentTab} onValueChange={handleTabChange}>
-        <TabsList className="mb-4 flex-wrap h-auto gap-1">
+        <TabsList className="mb-6 flex-wrap h-auto gap-1 bg-transparent border-b border-border rounded-none p-0">
           {MARKETING_TABS.map((tab) => (
-            <TabsTrigger key={tab.id} value={tab.id}>
+            <TabsTrigger
+              key={tab.id}
+              value={tab.id}
+              className="border-b-2 border-transparent data-[state=active]:border-primary rounded-none"
+            >
               {tab.label}
             </TabsTrigger>
           ))}
         </TabsList>
+
+        <TabsContent value="visao-geral">
+          <VisaoGeral workspaceId={workspaceId} />
+        </TabsContent>
 
         <TabsContent value="hook-vault">
           <HookVault workspaceId={workspaceId} />
@@ -63,7 +72,7 @@ export function EmpresaMarketing({ workspaceId }: Props) {
           <Calendario workspaceId={workspaceId} />
         </TabsContent>
 
-        <TabsContent value="em-alta">
+        <TabsContent value="trending">
           <EmAlta workspaceId={workspaceId} />
         </TabsContent>
       </Tabs>
