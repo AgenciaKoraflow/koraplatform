@@ -310,24 +310,6 @@ export function Calendario({ workspaceId }: Props) {
             })}
           </div>
 
-          {/* Legend */}
-          <div className="pt-4 border-t border-border">
-            <p className="text-xs font-semibold text-muted-foreground mb-2">PLATAFORMAS</p>
-            <div className="flex gap-4 flex-wrap">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-pink-500" />
-                <span className="text-xs text-muted-foreground">📷 Instagram</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-black dark:bg-white" />
-                <span className="text-xs text-muted-foreground">🎵 TikTok</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-red-600" />
-                <span className="text-xs text-muted-foreground">📺 YouTube</span>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Sidebar - Post Details */}
