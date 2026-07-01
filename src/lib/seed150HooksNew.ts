@@ -1,5 +1,11 @@
 import { supabase } from "@/integrations/supabase/client";
 
+const verticalToNicheMap: Record<string, string> = {
+  "Automação": "IA",
+  "Dev": "Tech",
+  "Studio": "Marketing",
+};
+
 export const hooks150New = [
   // ============================================
   // VERTICAL 1: AUTOMAÇÃO E AGENTES DE IA (50)
@@ -1276,7 +1282,7 @@ export async function seed150HooksNew(workspaceId: string) {
         creator: "Sistema",
         creator_handle: "@koraflow.ia",
         type: "SWAP",
-        niche: hook.vertical,
+        niche: verticalToNicheMap[hook.vertical] || "IA",
         created_by: user.id,
         views: Math.floor(Math.random() * 9000) + 1000,
         times_used: Math.floor(Math.random() * 25),
