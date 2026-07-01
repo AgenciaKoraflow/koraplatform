@@ -7,6 +7,8 @@ interface Props {
   userName: string;
   userHandle: string;
   followers: string;
+  views?: string;
+  profileImage?: string;
   period: string;
   tabs: Array<{ id: string; label: string }>;
   activeTab: string;
@@ -18,6 +20,8 @@ export function MarketingLayout({
   userName,
   userHandle,
   followers,
+  views,
+  profileImage,
   period,
   tabs,
   activeTab,
@@ -32,15 +36,26 @@ export function MarketingLayout({
           {/* User Info */}
           <div className="space-y-3">
             <div className="flex items-start gap-3">
-              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                <User className="w-6 h-6 text-primary" />
-              </div>
+              {profileImage ? (
+                <img
+                  src={profileImage}
+                  alt={userName}
+                  className="w-12 h-12 rounded-full flex-shrink-0 object-cover"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                  <User className="w-6 h-6 text-primary" />
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-foreground truncate">
-                  {userHandle}
+                  {userName}
                 </h3>
-                <p className="text-sm text-muted-foreground">
-                  {followers} · {period}
+                <p className="text-xs text-muted-foreground">
+                  {userHandle}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {followers} · {views && `${views} views · `}{period}
                 </p>
               </div>
             </div>
