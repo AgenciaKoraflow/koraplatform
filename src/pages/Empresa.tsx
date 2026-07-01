@@ -15,8 +15,9 @@ import { InsightsManager } from "@/components/insights/InsightsManager";
 import { EmpresaTarefas } from "@/components/empresa/EmpresaTarefas";
 import { EmpresaDocumentos } from "@/components/empresa/EmpresaDocumentos";
 import { EmpresaGantt } from "@/components/empresa/EmpresaGantt";
+import { EmpresaMarketing } from "@/components/empresa/EmpresaMarketing";
 
-const VALID_TABS = ["geral", "okr", "financeiro", "servicos", "processos", "contratos", "senhas", "insights", "tarefas", "documentacao", "gantt"];
+const VALID_TABS = ["geral", "okr", "financeiro", "servicos", "processos", "contratos", "senhas", "insights", "tarefas", "marketing", "documentacao", "gantt"];
 
 export default function Empresa() {
   const { data: workspace, isLoading } = useInternalWorkspace();
@@ -56,6 +57,7 @@ export default function Empresa() {
               <TabsTrigger value="senhas">Senhas</TabsTrigger>
               <TabsTrigger value="insights">Insights</TabsTrigger>
               <TabsTrigger value="tarefas">Tarefas</TabsTrigger>
+              <TabsTrigger value="marketing">Marketing</TabsTrigger>
               <TabsTrigger value="documentacao">Documentação</TabsTrigger>
               <TabsTrigger value="gantt">Gantt</TabsTrigger>
             </TabsList>
@@ -94,6 +96,10 @@ export default function Empresa() {
 
             <TabsContent value="tarefas">
               <EmpresaTarefas workspaceId={workspace.id} />
+            </TabsContent>
+
+            <TabsContent value="marketing">
+              <EmpresaMarketing workspaceId={workspace.id} />
             </TabsContent>
 
             <TabsContent value="documentacao">
