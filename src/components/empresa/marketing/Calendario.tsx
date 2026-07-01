@@ -1,103 +1,368 @@
-import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useMemo } from "react";
+import { ChevronLeft, ChevronRight, X, Calendar, Trash2, Copy, Edit2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+
+interface ScheduledPost {
+  id: string;
+  date: string;
+  platforms: Array<"instagram" | "tiktok" | "youtube">;
+  caption: string;
+  hook: string;
+  angle?: string;
+  cta?: string;
+  status: "scheduled" | "posted" | "draft";
+}
 
 interface Props {
   workspaceId: string;
 }
 
-const daysOfWeek = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sab", "Dom"];
-const weeks = [
-  [19, 20, 21, 22, 23, 24, 25],
-  [26, 27, 28, 29, 30, 31, 1],
-  [2, 3, 4, 5, 6, 7, 8],
-  [9, 10, 11, 12, 13, 14, 15],
+const MOCK_SCHEDULED_POSTS: ScheduledPost[] = [
+  {
+    id: "1",
+    date: "2026-07-05",
+    platforms: ["instagram", "tiktok"],
+    caption: "Você precisa de um painel de conteúdo viral. Aqui está como...",
+    hook: "Para de fazer X. Começa a fazer Y.",
+    angle: "Mostre como economizou 40 horas/mês",
+    cta: "Clique no link da bio",
+    status: "scheduled",
+  },
+  {
+    id: "2",
+    date: "2026-07-08",
+    platforms: ["youtube"],
+    caption: "5 ferramentas de IA que mudaram meu negócio",
+    hook: "Construí um sistema de automação",
+    status: "scheduled",
+  },
+  {
+    id: "3",
+    date: "2026-07-10",
+    platforms: ["instagram"],
+    caption: "Inteligência Artificial não é mais tendência",
+    hook: "Ninguém tá falando de...",
+    status: "draft",
+  },
+  {
+    id: "4",
+    date: "2026-07-15",
+    platforms: ["instagram", "tiktok", "youtube"],
+    caption: "A maioria dos criadores não sabe isso",
+    hook: "Lista de 3 coisas que...",
+    status: "scheduled",
+  },
+  {
+    id: "5",
+    date: "2026-07-20",
+    platforms: ["tiktok"],
+    caption: "Teste de conteúdo novo",
+    hook: "Curiosidade viral",
+    status: "draft",
+  },
+  {
+    id: "6",
+    date: "2026-07-22",
+    platforms: ["instagram", "youtube"],
+    caption: "Série de automação - Parte 1",
+    hook: "História de jornada",
+    status: "scheduled",
+  },
 ];
 
-const scheduledDays = {
-  20: 2,
-  23: 1,
-  26: 3,
-  28: 1,
-  30: 2,
-  2: 1,
-  5: 2,
+const PLATFORM_CONFIG = {
+  instagram: { label: "Instagram", color: "bg-pink-500", icon: "📷" },
+  tiktok: { label: "TikTok", color: "bg-black dark:bg-white", icon: "🎵" },
+  youtube: { label: "YouTube", color: "bg-red-600", icon: "📺" },
 };
 
 export function Calendario({ workspaceId }: Props) {
+  const { toast } = useToast();
+  const [currentDate, setCurrentDate] = useState(new Date(2026, 6, 1));
+  const [selectedPost, setSelectedPost] = useState<ScheduledPost | null>(null);
+  const [posts, setPosts] = useState<ScheduledPost[]>(MOCK_SCHEDULED_POSTS);
+
+  const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+  const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
+
+  const days = useMemo(() => {
+    const result: (number | null)[] = [];
+    for (let i = 0; i < firstDayOfMonth; i++) {
+      result.push(null);
+    }
+    for (let i = 1; i <= daysInMonth; i++) {
+      result.push(i);
+    }
+    return result;
+  }, [daysInMonth, firstDayOfMonth]);
+
+  const getPostsForDate = (day: number) => {
+    const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    return posts.filter((p) => p.date === dateStr);
+  };
+
+  const handlePrevMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+  };
+
+  const handleDeletePost = (id: string) => {
+    setPosts(posts.filter((p) => p.id !== id));
+    setSelectedPost(null);
+    toast({ title: "Post deletado", description: "O post foi removido do calendário" });
+  };
+
+  const handleCopyCaption = async (caption: string) => {
+    await navigator.clipboard.writeText(caption);
+    toast({ title: "Copiado!", description: "Legenda copiada" });
+  };
+
+  const monthName = new Date(currentDate.getFullYear(), currentDate.getMonth()).toLocaleString("pt-BR", {
+    month: "long",
+    year: "numeric",
+  });
+
+  const dayNames = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"];
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between">
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold">Calendário Editorial</h1>
-          <p className="text-muted-foreground text-sm">MAIO 2026</p>
+          <h1 className="text-3xl font-bold">Calendário de Posts</h1>
+          <p className="text-muted-foreground text-sm">📅 Visualize e gerencie todos os seus posts agendados</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="icon">
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <Button variant="outline" size="icon">
-            <ChevronRight className="w-4 h-4" />
-          </Button>
+        <div className="text-right space-y-1">
+          <p className="text-sm text-muted-foreground">Total agendado</p>
+          <p className="text-2xl font-bold text-green-600">{posts.filter((p) => p.status === "scheduled").length}</p>
         </div>
       </div>
 
-      {/* Calendar Grid */}
-      <div className="bg-card rounded-lg p-6 border border-border shadow-soft">
-        {/* Days of Week */}
-        <div className="grid grid-cols-7 gap-2 mb-4">
-          {daysOfWeek.map((day) => (
-            <div
-              key={day}
-              className="text-center font-semibold text-muted-foreground text-sm"
-            >
-              {day}
+      <div className="grid grid-cols-3 gap-4">
+        {/* Calendário */}
+        <div className="col-span-2 bg-card rounded-lg p-6 border border-border shadow-soft space-y-4">
+          {/* Month Navigation */}
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold capitalize">{monthName}</h2>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={handlePrevMonth}>
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setCurrentDate(new Date(2026, 6, 1))}>
+                Hoje
+              </Button>
+              <Button size="sm" variant="outline" onClick={handleNextMonth}>
+                <ChevronRight className="w-4 h-4" />
+              </Button>
             </div>
-          ))}
+          </div>
+
+          {/* Day Headers */}
+          <div className="grid grid-cols-7 gap-2">
+            {dayNames.map((day) => (
+              <div key={day} className="text-center font-semibold text-sm text-muted-foreground py-2">
+                {day}
+              </div>
+            ))}
+          </div>
+
+          {/* Days Grid */}
+          <div className="grid grid-cols-7 gap-2">
+            {days.map((day, idx) => {
+              if (day === null) {
+                return <div key={`empty-${idx}`} className="aspect-square bg-secondary/20 rounded-lg" />;
+              }
+
+              const dayPosts = getPostsForDate(day);
+              const isToday = new Date().toDateString() === new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toDateString();
+
+              return (
+                <button
+                  key={day}
+                  onClick={() => {
+                    if (dayPosts.length > 0) {
+                      setSelectedPost(dayPosts[0]);
+                    }
+                  }}
+                  className={`aspect-square rounded-lg p-2 border-2 transition-all hover:border-primary/50 flex flex-col items-start justify-between text-left ${
+                    isToday
+                      ? "bg-primary/20 border-primary/50"
+                      : dayPosts.length > 0
+                        ? "bg-secondary/50 border-border"
+                        : "bg-secondary/20 border-border hover:bg-secondary/40"
+                  }`}
+                >
+                  <span className={`text-xs font-semibold ${isToday ? "text-primary font-bold" : "text-muted-foreground"}`}>
+                    {day}
+                  </span>
+
+                  <div className="space-y-1 w-full">
+                    {dayPosts.slice(0, 2).map((post) => (
+                      <div key={post.id} className="flex gap-0.5 flex-wrap">
+                        {post.platforms.map((platform) => (
+                          <div
+                            key={platform}
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              platform === "instagram"
+                                ? "bg-pink-500"
+                                : platform === "tiktok"
+                                  ? "bg-black dark:bg-white"
+                                  : "bg-red-600"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    ))}
+                    {dayPosts.length > 2 && <span className="text-xs text-muted-foreground font-semibold">+{dayPosts.length - 2}</span>}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Legend */}
+          <div className="pt-4 border-t border-border">
+            <p className="text-xs font-semibold text-muted-foreground mb-2">PLATAFORMAS</p>
+            <div className="flex gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-pink-500" />
+                <span className="text-xs text-muted-foreground">📷 Instagram</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-black dark:bg-white" />
+                <span className="text-xs text-muted-foreground">🎵 TikTok</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-red-600" />
+                <span className="text-xs text-muted-foreground">📺 YouTube</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Calendar Days */}
-        <div className="space-y-2">
-          {weeks.map((week, weekIdx) => (
-            <div key={weekIdx} className="grid grid-cols-7 gap-2">
-              {week.map((day) => {
-                const scheduled = scheduledDays[day as keyof typeof scheduledDays];
-                const isCurrentMonth = day >= 19 && day <= 31;
+        {/* Sidebar - Post Details */}
+        <div className="bg-card rounded-lg p-6 border border-border shadow-soft space-y-4 h-fit sticky top-8">
+          {selectedPost ? (
+            <>
+              <div className="space-y-3 pb-4 border-b border-border">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-foreground">Post Agendado</h3>
+                  <button onClick={() => setSelectedPost(null)} className="text-muted-foreground hover:text-foreground">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
 
-                return (
-                  <div
-                    key={`${weekIdx}-${day}`}
-                    className={`p-2 rounded-lg text-center transition-all cursor-pointer ${
-                      isCurrentMonth
-                        ? scheduled
-                          ? "bg-primary/10 border-2 border-primary hover:bg-primary/20"
-                          : "bg-secondary/50 border border-border hover:bg-secondary"
-                        : "text-muted-foreground/40"
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-muted-foreground">DATA</p>
+                  <p className="text-sm text-foreground font-medium">
+                    {new Date(selectedPost.date + "T00:00:00").toLocaleDateString("pt-BR", {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                    })}
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-muted-foreground">PLATAFORMAS</p>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedPost.platforms.map((platform) => (
+                      <span key={platform} className={`text-xs font-semibold px-2 py-1 rounded text-white ${PLATFORM_CONFIG[platform].color}`}>
+                        {PLATFORM_CONFIG[platform].icon} {PLATFORM_CONFIG[platform].label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-muted-foreground">STATUS</p>
+                  <span
+                    className={`text-xs font-semibold px-2 py-1 rounded ${
+                      selectedPost.status === "scheduled"
+                        ? "bg-green-500/20 text-green-600"
+                        : selectedPost.status === "posted"
+                          ? "bg-blue-500/20 text-blue-600"
+                          : "bg-amber-500/20 text-amber-600"
                     }`}
                   >
-                    <p className="font-semibold text-sm">{day}</p>
-                    {scheduled && (
-                      <p className="text-primary text-xs font-bold mt-1">
-                        {scheduled}
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
+                    {selectedPost.status === "scheduled" ? "📅 Agendado" : selectedPost.status === "posted" ? "✅ Postado" : "📝 Rascunho"}
+                  </span>
+                </div>
+              </div>
+
+              {selectedPost.hook && (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground">🎯 HOOK</p>
+                  <p className="text-sm text-foreground bg-primary/10 rounded p-2 border border-primary/20">{selectedPost.hook}</p>
+                </div>
+              )}
+
+              {selectedPost.angle && (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground">💡 ÂNGULO</p>
+                  <p className="text-sm text-foreground bg-purple-500/10 rounded p-2 border border-purple-500/20">{selectedPost.angle}</p>
+                </div>
+              )}
+
+              {selectedPost.cta && (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground">🔗 CTA</p>
+                  <p className="text-sm text-foreground bg-amber-500/10 rounded p-2 border border-amber-500/20">{selectedPost.cta}</p>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground">📝 LEGENDA</p>
+                <div className="bg-secondary/30 rounded p-3 border border-border">
+                  <p className="text-sm text-foreground line-clamp-4">{selectedPost.caption}</p>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-border space-y-2">
+                <Button size="sm" className="w-full gap-2" variant="outline" onClick={() => handleCopyCaption(selectedPost.caption)}>
+                  <Copy className="w-4 h-4" />
+                  Copiar Legenda
+                </Button>
+
+                <Button size="sm" className="w-full gap-2 bg-red-600/20 text-red-600 hover:bg-red-600/30" variant="outline" onClick={() => handleDeletePost(selectedPost.id)}>
+                  <Trash2 className="w-4 h-4" />
+                  Deletar Post
+                </Button>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <Calendar className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">Selecione um dia com posts para ver detalhes</p>
             </div>
-          ))}
+          )}
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-4 gap-4">
+        <div className="bg-green-500/10 rounded-lg p-4 border border-green-500/20">
+          <p className="text-xs font-semibold text-muted-foreground mb-1">AGENDADOS</p>
+          <p className="text-2xl font-bold text-green-600">{posts.filter((p) => p.status === "scheduled").length}</p>
         </div>
 
-        {/* Legend */}
-        <div className="mt-6 pt-6 border-t border-border flex gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-primary/10 border-2 border-primary" />
-            <span className="text-sm text-muted-foreground">Agendado</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-secondary/50 border border-border" />
-            <span className="text-sm text-muted-foreground">Disponível</span>
-          </div>
+        <div className="bg-blue-500/10 rounded-lg p-4 border border-blue-500/20">
+          <p className="text-xs font-semibold text-muted-foreground mb-1">POSTADOS</p>
+          <p className="text-2xl font-bold text-blue-600">{posts.filter((p) => p.status === "posted").length}</p>
+        </div>
+
+        <div className="bg-amber-500/10 rounded-lg p-4 border border-amber-500/20">
+          <p className="text-xs font-semibold text-muted-foreground mb-1">RASCUNHOS</p>
+          <p className="text-2xl font-bold text-amber-600">{posts.filter((p) => p.status === "draft").length}</p>
+        </div>
+
+        <div className="bg-purple-500/10 rounded-lg p-4 border border-purple-500/20">
+          <p className="text-xs font-semibold text-muted-foreground mb-1">TOTAL</p>
+          <p className="text-2xl font-bold text-purple-600">{posts.length}</p>
         </div>
       </div>
     </div>
