@@ -28,7 +28,7 @@ import { useHooksMutations } from "@/hooks/mutations/useHooksMutations";
 import { hookNiches, hookTypes, typeColors, hookTypeLabels, contentTypes, visualModes, contentTypeLabels, visualModeLabels } from "./hooks";
 import { defaultAudience, calculateRelevance } from "./audience";
 import { AudienceConfig } from "./AudienceConfig";
-import { seed150HooksComplete } from "@/lib/seed150HooksComplete";
+import { seed150HooksNew } from "@/lib/seed150HooksNew";
 import type { HookNiche, HookType, ContentType, VisualMode } from "./hooks";
 import type { CreateHookInput } from "@/types/hooks";
 import { cn } from "@/lib/utils";
@@ -45,11 +45,18 @@ interface NewHookForm {
   niche: HookNiche;
 }
 
+// Map verticals in database to display
+const verticalNameMap: Record<string, string> = {
+  "Automação": "agent",
+  "Dev": "dev",
+  "Studio": "studio",
+};
+
 // Map niches to verticals
-const verticalMap: Record<Vertical, HookNiche[]> = {
-  agent: ["IA", "Automação", "SaaS"],
-  dev: ["Tech", "Produtividade", "Startups"],
-  studio: ["Campanhas", "Criatividade", "Marketing"],
+const verticalMap: Record<Vertical, string[]> = {
+  agent: ["Automação"],
+  dev: ["Dev"],
+  studio: ["Studio"],
 };
 
 const verticalLabels: Record<Vertical, string> = {
@@ -110,20 +117,21 @@ export function HookVault({ workspaceId }: Props) {
   }, [hooks]);
 
   const filteredHooks = useMemo(() => {
-    const verticalNiches = verticalMap[activeVertical];
+    const verticalNames = verticalMap[activeVertical];
 
     let result = hooksWithRelevance
       .filter((item) => {
         const hook = item.hook;
 
         // Filter by vertical
-        const matchesVertical = verticalNiches.includes(hook.niche as HookNiche);
+        const matchesVertical = verticalNames.includes(hook.vertical);
 
         // Filter by search
         const matchesSearch =
           hook.text.toLowerCase().includes(searchInput.toLowerCase()) ||
           hook.painPoint?.toLowerCase().includes(searchInput.toLowerCase()) ||
-          hook.emotionalTrigger?.toLowerCase().includes(searchInput.toLowerCase());
+          hook.emotionalTrigger?.toLowerCase().includes(searchInput.toLowerCase()) ||
+          hook.format?.toLowerCase().includes(searchInput.toLowerCase());
 
         // Filter by pain point and emotional trigger
         const matchesPainPoint = !selectedPainPoint || hook.painPoint?.toLowerCase().includes(selectedPainPoint.toLowerCase());
@@ -244,9 +252,9 @@ ${hook.creator} (${hook.creatorHandle})
 
   const handleSeedHooks = async () => {
     try {
-      const result = await seed150HooksComplete(workspaceId);
+      await seed150HooksNew(workspaceId);
       await queryClient.invalidateQueries({ queryKey: ["hooks", workspaceId] });
-      toast.success(`✅ ${result.count} hooks estratégicos importados com sucesso!`);
+      toast.success(`✅ 150 hooks novos importados com sucesso!`);
     } catch (error) {
       toast.error("Erro ao importar hooks");
       console.error(error);
@@ -441,13 +449,19 @@ ${hook.creator} (${hook.creatorHandle})
               key={hook.id}
               className="bg-card rounded-lg p-4 border border-border shadow-soft hover:shadow-medium transition-all"
             >
-              {/* 4 COLUNAS - MINIMALISTA COM CORES DISCRETAS */}
+              {/* 5 COLUNAS - MINIMALISTA */}
               <div className="space-y-4">
-                {/* LINHA 1: Hook + Dor */}
+                {/* LINHA 1: Hook */}
+                <div className="pl-3 border-l border-primary/20">
+                  <p className="text-xs font-semibold text-primary/60 uppercase tracking-wide mb-2">Hook</p>
+                  <p className="text-sm text-foreground leading-relaxed">"{hook.text}"</p>
+                </div>
+
+                {/* LINHA 2: Formato + Dor */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  <div className="pl-3 border-l border-primary/20">
-                    <p className="text-xs font-semibold text-primary/60 uppercase tracking-wide mb-2">Hook</p>
-                    <p className="text-sm text-foreground leading-relaxed">"{hook.text}"</p>
+                  <div className="pl-3 border-l border-purple-500/20">
+                    <p className="text-xs font-semibold text-purple-600/60 dark:text-purple-400/60 uppercase tracking-wide mb-2">Formato</p>
+                    <p className="text-sm text-foreground font-medium">{hook.format || "—"}</p>
                   </div>
                   <div className="pl-3 border-l border-red-500/20">
                     <p className="text-xs font-semibold text-red-600/60 dark:text-red-400/60 uppercase tracking-wide mb-2">Dor que Resolve</p>
@@ -455,16 +469,16 @@ ${hook.creator} (${hook.creatorHandle})
                   </div>
                 </div>
 
-                {/* LINHA 2: Gatilho + Conteúdo */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  <div className="pl-3 border-l border-orange-500/20">
-                    <p className="text-xs font-semibold text-orange-600/60 dark:text-orange-400/60 uppercase tracking-wide mb-2">Gatilho Emocional</p>
-                    <p className="text-sm text-foreground">{hook.emotionalTrigger || "—"}</p>
-                  </div>
-                  <div className="pl-3 border-l border-blue-500/20">
-                    <p className="text-xs font-semibold text-blue-600/60 dark:text-blue-400/60 uppercase tracking-wide mb-2">Descrição do Conteúdo</p>
-                    <p className="text-sm text-foreground italic">{hook.template || "—"}</p>
-                  </div>
+                {/* LINHA 3: Gatilho Emocional */}
+                <div className="pl-3 border-l border-orange-500/20">
+                  <p className="text-xs font-semibold text-orange-600/60 dark:text-orange-400/60 uppercase tracking-wide mb-2">Gatilho Emocional</p>
+                  <p className="text-sm text-foreground">{hook.emotionalTrigger || "—"}</p>
+                </div>
+
+                {/* LINHA 4: Roteiro */}
+                <div className="pl-3 border-l border-green-500/20">
+                  <p className="text-xs font-semibold text-green-600/60 dark:text-green-400/60 uppercase tracking-wide mb-2">Roteiro de Execução</p>
+                  <p className="text-sm text-foreground italic text-muted-foreground">{hook.roteiro || "—"}</p>
                 </div>
 
                 {/* AÇÕES */}
