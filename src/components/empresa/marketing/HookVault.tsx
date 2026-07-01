@@ -421,34 +421,34 @@ ${hook.creator} (${hook.creatorHandle})
               key={hook.id}
               className="bg-card rounded-lg p-4 border border-border shadow-soft hover:shadow-medium transition-all"
             >
-              {/* 4 COLUNAS - LAYOUT ORGANIZADO */}
-              <div className="space-y-3">
+              {/* 4 COLUNAS - MINIMALISTA */}
+              <div className="space-y-4">
                 {/* LINHA 1: Hook + Dor */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                  <div className="bg-accent/10 border border-accent/20 rounded p-3">
-                    <p className="text-xs font-bold text-accent uppercase mb-2">🎯 Hook</p>
-                    <p className="text-sm font-medium text-foreground">"{hook.text}"</p>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Hook</p>
+                    <p className="text-sm text-foreground leading-relaxed">"{hook.text}"</p>
                   </div>
-                  <div className="bg-red-500/10 border border-red-500/20 rounded p-3">
-                    <p className="text-xs font-bold text-red-600 dark:text-red-400 uppercase mb-2">💔 Dor</p>
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Dor que Resolve</p>
                     <p className="text-sm text-foreground">{hook.painPoint || "—"}</p>
                   </div>
                 </div>
 
                 {/* LINHA 2: Gatilho + Conteúdo */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                  <div className="bg-orange-500/10 border border-orange-500/20 rounded p-3">
-                    <p className="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase mb-2">⚡ Gatilho</p>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Gatilho Emocional</p>
                     <p className="text-sm text-foreground">{hook.emotionalTrigger || "—"}</p>
                   </div>
-                  <div className="bg-blue-500/10 border border-blue-500/20 rounded p-3">
-                    <p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase mb-2">📝 Conteúdo</p>
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Descrição do Conteúdo</p>
                     <p className="text-sm text-foreground italic">{hook.template || "—"}</p>
                   </div>
                 </div>
 
                 {/* AÇÕES */}
-                <div className="flex gap-2 justify-start pt-2">
+                <div className="flex gap-2 justify-start pt-2 border-t border-border">
                   <Button
                     size="sm"
                     onClick={() => handleUseHook(hook)}
