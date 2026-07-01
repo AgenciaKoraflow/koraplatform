@@ -147,7 +147,7 @@ export function HookVault({ workspaceId }: Props) {
       <div className="flex items-start justify-between">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold">
-            {mockHooks.length} hooks · buscável
+            {hooks.length} hooks · buscável
           </h1>
           <p className="text-muted-foreground text-sm">
             +17 ESSA SEMANA · Auto-atualização ativa
