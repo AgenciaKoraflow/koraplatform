@@ -1,39 +1,33 @@
 import { useSearchParams } from "react-router-dom";
 import { MarketingLayout } from "./marketing/MarketingLayout";
-import { VisaoGeral } from "./marketing/VisaoGeral";
 import { HookVault } from "./marketing/HookVault";
 import { AnalyticsComplete as Analytics } from "./marketing/AnalyticsComplete";
 import { Calendario } from "./marketing/Calendario";
-import { EmAlta } from "./marketing/EmAlta";
 
 interface Props {
   workspaceId: string;
 }
 
 const MARKETING_TABS = [
-  { id: "visao-geral", label: "VISÃO GERAL" },
-  { id: "hook-vault", label: "HOOK" },
   { id: "analytics", label: "ANALYTICS" },
+  { id: "hook-vault", label: "HOOK" },
   { id: "calendario", label: "CALENDÁRIO" },
-  { id: "trending", label: "TRENDING" },
 ];
 
 const pageComponents: Record<string, React.ComponentType<{ workspaceId: string }>> = {
-  "visao-geral": VisaoGeral,
   "hook-vault": HookVault,
   analytics: Analytics,
   calendario: Calendario,
-  trending: EmAlta,
 };
 
 export function EmpresaMarketing({ workspaceId }: Props) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get("marketing") ?? "visao-geral";
+  const activeTab = searchParams.get("marketing") ?? "analytics";
 
   const isValidTab = MARKETING_TABS.some((tab) => tab.id === activeTab);
-  const currentTab = isValidTab ? activeTab : "visao-geral";
+  const currentTab = isValidTab ? activeTab : "analytics";
 
-  const CurrentComponent = pageComponents[currentTab] || VisaoGeral;
+  const CurrentComponent = pageComponents[currentTab] || Analytics;
 
   function handleTabChange(tabId: string) {
     const newParams = new URLSearchParams(searchParams);

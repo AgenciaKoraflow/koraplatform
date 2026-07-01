@@ -22,58 +22,6 @@ interface Props {
   workspaceId: string;
 }
 
-const MOCK_SCHEDULED_POSTS: ScheduledPost[] = [
-  {
-    id: "1",
-    date: "2026-07-05",
-    platforms: ["instagram", "tiktok"],
-    caption: "Você precisa de um painel de conteúdo viral. Aqui está como...",
-    hook: "Para de fazer X. Começa a fazer Y.",
-    angle: "Mostre como economizou 40 horas/mês",
-    cta: "Clique no link da bio",
-    status: "scheduled",
-  },
-  {
-    id: "2",
-    date: "2026-07-08",
-    platforms: ["youtube"],
-    caption: "5 ferramentas de IA que mudaram meu negócio",
-    hook: "Construí um sistema de automação",
-    status: "scheduled",
-  },
-  {
-    id: "3",
-    date: "2026-07-10",
-    platforms: ["instagram"],
-    caption: "Inteligência Artificial não é mais tendência",
-    hook: "Ninguém tá falando de...",
-    status: "draft",
-  },
-  {
-    id: "4",
-    date: "2026-07-15",
-    platforms: ["instagram", "tiktok", "youtube"],
-    caption: "A maioria dos criadores não sabe isso",
-    hook: "Lista de 3 coisas que...",
-    status: "scheduled",
-  },
-  {
-    id: "5",
-    date: "2026-07-20",
-    platforms: ["tiktok"],
-    caption: "Teste de conteúdo novo",
-    hook: "Curiosidade viral",
-    status: "draft",
-  },
-  {
-    id: "6",
-    date: "2026-07-22",
-    platforms: ["instagram", "youtube"],
-    caption: "Série de automação - Parte 1",
-    hook: "História de jornada",
-    status: "scheduled",
-  },
-];
 
 const PLATFORM_CONFIG = {
   instagram: { label: "Instagram", color: "bg-pink-500", icon: "📷" },
@@ -91,7 +39,7 @@ export function Calendario({ workspaceId }: Props) {
   // Carregar posts do localStorage ao inicializar
   const [posts, setPosts] = useState<ScheduledPost[]>(() => {
     const scheduled = JSON.parse(localStorage.getItem("scheduledPosts") || "[]");
-    return [...MOCK_SCHEDULED_POSTS, ...scheduled];
+    return scheduled;
   });
 
   // Modals
