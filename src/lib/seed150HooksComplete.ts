@@ -5,6 +5,7 @@
 // - Gatilho Emocional
 // - Descrição do Conteúdo
 
+import { supabase } from "@/integrations/supabase/client";
 import type { CreateHookInput } from "@/types/hooks";
 
 const hooks150Complete: CreateHookInput[] = [
@@ -1517,37 +1518,34 @@ const hooks150Complete: CreateHookInput[] = [
 
 export async function seed150HooksComplete(workspaceId: string) {
   try {
-    const { createClient } = await import("@supabase/supabase-js");
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error("Supabase credentials not found");
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
     // Delete existing hooks
-    await supabase.from("hooks").delete().eq("workspace_id", workspaceId);
+    const { error: deleteError } = await supabase
+      .from("hooks")
+      .delete()
+      .eq("workspace_id", workspaceId);
+
+    if (deleteError) throw deleteError;
 
     // Insert new hooks with random stats
-    const { error } = await supabase.from("hooks").insert(
-      hooks150Complete.map((hook) => ({
-        workspace_id: workspaceId,
-        text: hook.text,
-        template: hook.template,
-        pain_point: hook.pain_point,
-        emotional_trigger: hook.emotional_trigger,
-        creator: hook.creator,
-        creator_handle: hook.creator_handle,
-        type: hook.type,
-        niche: hook.niche,
-        views: Math.floor(Math.random() * 8000) + 1000,
-        times_used: Math.floor(Math.random() * 25),
-      }))
-    );
+    const { error: insertError } = await supabase
+      .from("hooks")
+      .insert(
+        hooks150Complete.map((hook) => ({
+          workspace_id: workspaceId,
+          text: hook.text,
+          template: hook.template,
+          pain_point: hook.pain_point,
+          emotional_trigger: hook.emotional_trigger,
+          creator: hook.creator,
+          creator_handle: hook.creator_handle,
+          type: hook.type,
+          niche: hook.niche,
+          views: Math.floor(Math.random() * 8000) + 1000,
+          times_used: Math.floor(Math.random() * 25),
+        }))
+      );
 
-    if (error) throw error;
+    if (insertError) throw insertError;
 
     return {
       success: true,
