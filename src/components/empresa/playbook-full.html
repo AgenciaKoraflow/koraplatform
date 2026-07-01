@@ -29,7 +29,7 @@ html.light{
 html{scroll-behavior:smooth;}
 body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:14px;line-height:1.6;overflow-x:hidden;}
 ::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--purple);border-radius:2px;}
-#sb{position:fixed;left:0;top:0;width:200px;height:100vh;background:rgba(6,6,15,0.97);backdrop-filter:blur(24px);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:200;}
+#sb{position:fixed;left:0;top:0;width:200px;height:100vh;background:var(--bg);backdrop-filter:blur(24px);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:200;}
 .sb-logo{padding:22px 20px 18px;border-bottom:1px solid var(--border);}
 .sb-logo .wm{font-family:var(--font-display);font-size:16px;font-weight:700;background:linear-gradient(90deg,var(--purple),var(--agent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
 .sb-logo .lbl{font-size:9px;color:var(--text3);letter-spacing:2.5px;text-transform:uppercase;margin-top:2px;}
@@ -44,7 +44,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 .sb-footer span{font-family:var(--font-mono);font-size:9px;color:var(--text3);}
 #main{margin-left:200px;min-height:100vh;}
 .pg{display:none;}.pg.active{display:block;}
-.topbar{position:sticky;top:0;z-index:100;background:rgba(6,6,15,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:13px 52px;display:flex;align-items:center;justify-content:space-between;}
+.topbar{position:sticky;top:0;z-index:100;background:var(--bg);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:13px 52px;display:flex;align-items:center;justify-content:space-between;}
 .topbar-title{font-family:var(--font-display);font-weight:600;font-size:13px;color:var(--text2);}
 .badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:5px;font-family:var(--font-mono);font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;}
 .badge-a{background:rgba(0,229,255,0.1);color:var(--agent);border:1px solid rgba(0,229,255,0.2);}
