@@ -64,6 +64,7 @@ export function Calendario({ workspaceId }: Props) {
     contentDescription: "",
     contentType: "Reel" as "Reel" | "Stories" | "Carrossel" | "Post",
     time: "19:00",
+    status: "draft" as "scheduled" | "posted" | "draft",
   });
 
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
@@ -127,6 +128,18 @@ export function Calendario({ workspaceId }: Props) {
     toast({ title: "Post deletado", description: "O post foi removido do calendário" });
   };
 
+  const handleUpdatePostStatus = (id: string, newStatus: "scheduled" | "posted" | "draft") => {
+    const updatedPosts = posts.map((p) =>
+      p.id === id ? { ...p, status: newStatus } : p
+    );
+    setPosts(updatedPosts);
+    if (selectedPost?.id === id) {
+      setSelectedPost({ ...selectedPost, status: newStatus });
+    }
+    const statusLabels = { scheduled: "Agendado", posted: "Postado", draft: "Rascunho" };
+    toast({ title: "Status atualizado", description: `Post marcado como ${statusLabels[newStatus]}` });
+  };
+
   const handleCopyCaption = async (caption: string) => {
     await navigator.clipboard.writeText(caption);
     toast({ title: "Copiado!", description: "Legenda copiada" });
@@ -181,7 +194,7 @@ export function Calendario({ workspaceId }: Props) {
       emotionalTrigger: newPostForm.emotionalTrigger,
       angle: newPostForm.contentDescription,
       cta: "",
-      status: "draft",
+      status: newPostForm.status,
     };
 
     const updatedPosts = [...posts, newPost];
@@ -391,6 +404,36 @@ export function Calendario({ workspaceId }: Props) {
               </div>
 
               <div className="pt-4 border-t border-border space-y-2">
+                <div className="space-y-1.5">
+                  <p className="text-xs font-semibold text-muted-foreground">MUDAR STATUS</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Button
+                      size="sm"
+                      variant={selectedPost.status === "draft" ? "default" : "outline"}
+                      onClick={() => handleUpdatePostStatus(selectedPost.id, "draft")}
+                      className="text-xs"
+                    >
+                      📝 Rascunho
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={selectedPost.status === "scheduled" ? "default" : "outline"}
+                      onClick={() => handleUpdatePostStatus(selectedPost.id, "scheduled")}
+                      className="text-xs"
+                    >
+                      📅 Agendado
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={selectedPost.status === "posted" ? "default" : "outline"}
+                      onClick={() => handleUpdatePostStatus(selectedPost.id, "posted")}
+                      className="text-xs"
+                    >
+                      ✅ Postado
+                    </Button>
+                  </div>
+                </div>
+
                 <Button size="sm" className="w-full gap-2" variant="outline" onClick={() => handleCopyCaption(selectedPost.caption)}>
                   <Copy className="w-4 h-4" />
                   Copiar Legenda
@@ -705,7 +748,7 @@ export function Calendario({ workspaceId }: Props) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>🎬 Tipo de Conteúdo</Label>
                 <select
@@ -728,6 +771,19 @@ export function Calendario({ workspaceId }: Props) {
                   onChange={(e) => setNewPostForm({ ...newPostForm, time: e.target.value })}
                   className="w-full h-10 px-3 rounded-lg bg-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label>📊 Status</Label>
+                <select
+                  value={newPostForm.status}
+                  onChange={(e) => setNewPostForm({ ...newPostForm, status: e.target.value as any })}
+                  className="w-full h-10 px-3 rounded-lg bg-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                >
+                  <option value="draft">📝 Rascunho</option>
+                  <option value="scheduled">📅 Agendado</option>
+                  <option value="posted">✅ Postado</option>
+                </select>
               </div>
             </div>
           </DialogBody>
