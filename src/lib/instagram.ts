@@ -4,7 +4,7 @@ const INSTAGRAM_API_BASE = "https://graph.instagram.com/v18.0";
 const INSTAGRAM_CONFIG = {
   appId: "1314783690285550",
   appSecret: "88af4abd524dece3faf9db2cb9f19ca9",
-  token: "3JX1Q54EBbdrUbQdHkmdMwoi",
+  token: "IGAASrye7Q4e5BZAFpQeS1KNDFpU05vRlp1Y2lldzZAla3FmblI5cEsyZAUozcV82b2o2QnVCNzFhdTNIM3R0R0RjS2hlTDBkdWsxcTdoaERjZA0UxeG16RldfNkltX0o2OGxNV0NUaUQ3Y3VPQ1d2WXBpUXNqRF80ZAzBScmNwcU1MTQZDZD",
   businessAccountId: "17841401001890675", // @koraflow.ia
 };
 
@@ -192,9 +192,24 @@ function mockReels(): InstagramReel[] {
 // Validar token
 export async function validateInstagramToken(): Promise<boolean> {
   try {
-    const url = `${INSTAGRAM_API_BASE}/me?fields=id,name&access_token=${INSTAGRAM_CONFIG.token}`;
+    // Tentar validar usando o Business Account ID
+    const url = `${INSTAGRAM_API_BASE}/${INSTAGRAM_CONFIG.businessAccountId}?fields=id,name,username&access_token=${INSTAGRAM_CONFIG.token}`;
     const response = await fetch(url);
-    return response.ok;
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log("✅ Token válido! Conta conectada:", data.username);
+      return true;
+    }
+
+    if (response.status === 400) {
+      console.error("❌ Token inválido ou expirado");
+      console.error("Status: 400 Bad Request");
+      console.error("Verifique se o token ainda é válido em https://developers.facebook.com/tools/explorer/");
+      return false;
+    }
+
+    return false;
   } catch (error) {
     console.error("Erro ao validar token do Instagram:", error);
     return false;
