@@ -28,8 +28,7 @@ import { useHooksMutations } from "@/hooks/mutations/useHooksMutations";
 import { hookNiches, hookTypes, typeColors, hookTypeLabels, contentTypes, visualModes, contentTypeLabels, visualModeLabels } from "./hooks";
 import { defaultAudience, calculateRelevance } from "./audience";
 import { AudienceConfig } from "./AudienceConfig";
-import { seedHooksToDatabase } from "@/lib/seedHooks";
-import { seed150Hooks } from "@/lib/seed150Hooks";
+import { seed150HooksComplete } from "@/lib/seed150HooksComplete";
 import type { HookNiche, HookType, ContentType, VisualMode } from "./hooks";
 import type { CreateHookInput } from "@/types/hooks";
 import { cn } from "@/lib/utils";
@@ -232,9 +231,9 @@ ${hook.creator} (${hook.creatorHandle})
 
   const handleSeedHooks = async () => {
     try {
-      const result = await seed150Hooks(workspaceId);
+      const result = await seed150HooksComplete(workspaceId);
       await queryClient.invalidateQueries({ queryKey: ["hooks", workspaceId] });
-      toast.success(`✅ ${result.count} hooks importados com sucesso!`);
+      toast.success(`✅ ${result.count} hooks estratégicos importados com sucesso!`);
     } catch (error) {
       toast.error("Erro ao importar hooks");
       console.error(error);
