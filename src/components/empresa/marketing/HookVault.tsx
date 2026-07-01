@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
 import { Search, Copy, Share2, Trash2, Settings, Zap, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -104,18 +103,35 @@ export function HookVault({ workspaceId }: Props) {
     return result;
   }, [searchInput, selectedPainPoint, selectedEmotionalTrigger, hooksWithRelevance]);
 
-  const [, setSearchParams] = useSearchParams();
-
   const handleUseHook = (hook: typeof hooks[0]) => {
-    // Copy to clipboard
-    navigator.clipboard.writeText(hook.text);
-    toast.success("Hook copiado! Levando para o Agendador... 🚀");
+    const content = `
+🎯 HOOK
+${hook.text}
 
-    // Navigate to Agendador and store hook in sessionStorage
-    setTimeout(() => {
-      sessionStorage.setItem("selectedHook", JSON.stringify(hook));
-      setSearchParams({ marketing: "agendador" });
-    }, 500);
+📋 TEMPLATE
+${hook.template}
+
+🎯 DOR QUE RESOLVE
+${hook.painPoint || "N/A"}
+
+💭 GATILHO EMOCIONAL
+${hook.emotionalTrigger || "N/A"}
+
+📱 TIPO DE CONTEÚDO
+${hook.contentType || "N/A"}
+
+🎨 MODO VISUAL
+${hook.visualMode || "N/A"}
+
+🏷️ NICHO
+${hook.niche}
+
+👤 CRIADOR
+${hook.creator} (${hook.creatorHandle})
+`.trim();
+
+    navigator.clipboard.writeText(content);
+    toast.success("✅ Hook completo copiado! Use em Canva, CapCut, etc.");
   };
 
   const handleCreateHook = async () => {
