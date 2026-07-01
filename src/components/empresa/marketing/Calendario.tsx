@@ -1,7 +1,10 @@
 import { useState, useMemo } from "react";
-import { ChevronLeft, ChevronRight, X, Calendar, Trash2, Copy, Edit2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Calendar, Trash2, Copy, Edit2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ScheduledPost {
   id: string;
@@ -88,6 +91,17 @@ export function Calendario({ workspaceId }: Props) {
     return [...MOCK_SCHEDULED_POSTS, ...scheduled];
   });
 
+  // Modal de criar novo post
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [selectedDateForCreate, setSelectedDateForCreate] = useState("");
+  const [newPostForm, setNewPostForm] = useState({
+    hook: "",
+    angle: "",
+    cta: "",
+    contentType: "Reel" as "Reel" | "Stories" | "Carrossel" | "Post",
+    time: "19:00",
+  });
+
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
 
@@ -124,6 +138,42 @@ export function Calendario({ workspaceId }: Props) {
   const handleCopyCaption = async (caption: string) => {
     await navigator.clipboard.writeText(caption);
     toast({ title: "Copiado!", description: "Legenda copiada" });
+  };
+
+  const handleOpenCreateModal = (day: number) => {
+    const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    setSelectedDateForCreate(dateStr);
+    setNewPostForm({ hook: "", angle: "", cta: "", contentType: "Reel", time: "19:00" });
+    setCreateModalOpen(true);
+  };
+
+  const handleCreateNewPost = () => {
+    if (!newPostForm.hook.trim()) {
+      toast({ title: "Erro", description: "Preencha o hook/conteúdo", variant: "destructive" });
+      return;
+    }
+
+    const newPost: ScheduledPost = {
+      id: Date.now().toString(),
+      date: selectedDateForCreate,
+      platforms: ["instagram"],
+      caption: newPostForm.hook,
+      hook: newPostForm.hook,
+      angle: newPostForm.angle,
+      cta: newPostForm.cta,
+      status: "draft",
+    };
+
+    const updatedPosts = [...posts, newPost];
+    setPosts(updatedPosts);
+
+    // Salvar no localStorage
+    const scheduled = JSON.parse(localStorage.getItem("scheduledPosts") || "[]");
+    scheduled.push(newPost);
+    localStorage.setItem("scheduledPosts", JSON.stringify(scheduled));
+
+    toast({ title: "✅ Post criado!", description: "Novo post adicionado ao calendário" });
+    setCreateModalOpen(false);
   };
 
   const monthName = new Date(currentDate.getFullYear(), currentDate.getMonth()).toLocaleString("pt-BR", {
@@ -191,9 +241,11 @@ export function Calendario({ workspaceId }: Props) {
                   onClick={() => {
                     if (dayPosts.length > 0) {
                       setSelectedPost(dayPosts[0]);
+                    } else {
+                      handleOpenCreateModal(day);
                     }
                   }}
-                  className={`aspect-square rounded-lg p-2 border-2 transition-all hover:border-primary/50 flex flex-col items-start justify-between text-left ${
+                  className={`aspect-square rounded-lg p-2 border-2 transition-all hover:border-primary/50 flex flex-col items-start justify-between text-left group relative ${
                     isToday
                       ? "bg-primary/20 border-primary/50"
                       : dayPosts.length > 0
@@ -201,6 +253,12 @@ export function Calendario({ workspaceId }: Props) {
                         : "bg-secondary/20 border-border hover:bg-secondary/40"
                   }`}
                 >
+                  {/* + Icon for empty days */}
+                  {dayPosts.length === 0 && (
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-50 transition-opacity">
+                      <Plus className="w-6 h-6 text-primary" />
+                    </div>
+                  )}
                   <span className={`text-xs font-semibold ${isToday ? "text-primary font-bold" : "text-muted-foreground"}`}>
                     {day}
                   </span>
@@ -370,6 +428,93 @@ export function Calendario({ workspaceId }: Props) {
           <p className="text-2xl font-bold text-purple-600">{posts.length}</p>
         </div>
       </div>
+
+      {/* Create Post Modal */}
+      <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>📝 Criar Novo Post</DialogTitle>
+          </DialogHeader>
+          <DialogBody className="space-y-4">
+            <div className="bg-primary/10 rounded-lg p-3 border border-primary/20">
+              <p className="text-xs font-semibold text-muted-foreground">Data selecionada:</p>
+              <p className="text-sm text-foreground font-medium">
+                {new Date(selectedDateForCreate + "T00:00:00").toLocaleDateString("pt-BR", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                })}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>🎯 Hook / Conteúdo *</Label>
+              <Textarea
+                placeholder="Digite o hook ou conteúdo principal..."
+                value={newPostForm.hook}
+                onChange={(e) => setNewPostForm({ ...newPostForm, hook: e.target.value })}
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>💡 Seu Ângulo (opcional)</Label>
+              <Textarea
+                placeholder="Adicione seu ângulo pessoal..."
+                value={newPostForm.angle}
+                onChange={(e) => setNewPostForm({ ...newPostForm, angle: e.target.value })}
+                rows={2}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>🔗 CTA (opcional)</Label>
+              <input
+                type="text"
+                placeholder="Ex: Clique no link da bio"
+                value={newPostForm.cta}
+                onChange={(e) => setNewPostForm({ ...newPostForm, cta: e.target.value })}
+                className="w-full h-10 px-3 rounded-lg bg-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>🎬 Tipo de Conteúdo</Label>
+                <select
+                  value={newPostForm.contentType}
+                  onChange={(e) => setNewPostForm({ ...newPostForm, contentType: e.target.value as any })}
+                  className="w-full h-10 px-3 rounded-lg bg-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                >
+                  <option value="Reel">📹 Reel</option>
+                  <option value="Stories">📖 Stories</option>
+                  <option value="Carrossel">📸 Carrossel</option>
+                  <option value="Post">📄 Post</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>🕐 Hora</Label>
+                <input
+                  type="time"
+                  value={newPostForm.time}
+                  onChange={(e) => setNewPostForm({ ...newPostForm, time: e.target.value })}
+                  className="w-full h-10 px-3 rounded-lg bg-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+            </div>
+          </DialogBody>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setCreateModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCreateNewPost} className="bg-[#B8532E] hover:bg-[#B8532E]/90 gap-2">
+              <Plus className="w-4 h-4" />
+              Criar Post
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
