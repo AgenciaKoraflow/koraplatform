@@ -37,17 +37,15 @@ export function EmpresaMarketing({ workspaceId }: Props) {
       try {
         const report = await fetchCompleteInstagramAnalytics();
         if (report?.account?.profilePictureUrl) {
+          console.log("📷 Profile picture loaded:", report.account.profilePictureUrl);
           setProfileImage(report.account.profilePictureUrl);
         }
       } catch (error) {
-        console.log("Using default avatar");
+        console.log("Using default avatar:", error);
       }
     };
 
-    const isConnected = localStorage.getItem("ig_connected");
-    if (isConnected === "true") {
-      fetchProfileImage();
-    }
+    fetchProfileImage();
   }, []);
 
   function handleTabChange(tabId: string) {

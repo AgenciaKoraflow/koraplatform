@@ -149,7 +149,7 @@ export async function fetchCompleteInstagramAnalytics(): Promise<CompleteInstagr
     console.log("📊 Iniciando análise completa do Instagram...");
 
     // 1. Dados da conta
-    const accountUrl = `${INSTAGRAM_API_BASE}/${INSTAGRAM_CONFIG.accountId}?fields=id,username,name,biography,followers_count,follows_count,media_count&access_token=${INSTAGRAM_CONFIG.token}`;
+    const accountUrl = `${INSTAGRAM_API_BASE}/${INSTAGRAM_CONFIG.accountId}?fields=id,username,name,biography,followers_count,follows_count,media_count,profile_picture_url&access_token=${INSTAGRAM_CONFIG.token}`;
     const accountResponse = await fetch(accountUrl);
     const accountData = await accountResponse.json();
 
