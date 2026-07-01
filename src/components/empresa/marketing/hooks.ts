@@ -1,5 +1,5 @@
 export type HookType = "SWAP" | "BUILD" | "CLAIM" | "LIST" | "CONTRARIAN" | "STORY" | "CURIOSIDADE";
-export type HookNiche = "IA" | "SaaS" | "Produtividade" | "Criatividade" | "Tech" | "Startups" | "Marketing" | "Educação";
+export type HookNiche = "IA" | "SaaS" | "Produtividade" | "Criatividade" | "Tech" | "Startups" | "Marketing" | "Educação" | "Automação" | "Campanhas" | "PME" | "WhatsApp";
 
 export interface Hook {
   id: string;
@@ -23,6 +23,10 @@ export const hookNiches: HookNiche[] = [
   "Startups",
   "Marketing",
   "Educação",
+  "Automação",
+  "Campanhas",
+  "PME",
+  "WhatsApp",
 ];
 
 export const hookTypes: HookType[] = [

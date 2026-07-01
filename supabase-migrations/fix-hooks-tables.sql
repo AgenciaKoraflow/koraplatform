@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS hooks (
   creator_handle TEXT NOT NULL,
   views INTEGER DEFAULT 0,
   type VARCHAR(50) NOT NULL CHECK (type IN ('SWAP', 'BUILD', 'CLAIM', 'LIST', 'CONTRARIAN', 'STORY', 'CURIOSIDADE')),
-  niche VARCHAR(50) NOT NULL CHECK (niche IN ('IA', 'SaaS', 'Produtividade', 'Criatividade', 'Tech', 'Startups', 'Marketing', 'Educação')),
+  niche VARCHAR(50) NOT NULL CHECK (niche IN ('IA', 'SaaS', 'Produtividade', 'Criatividade', 'Tech', 'Startups', 'Marketing', 'Educação', 'Automação', 'Campanhas', 'PME', 'WhatsApp')),
   created_by UUID NOT NULL REFERENCES auth.users(id),
   times_used INTEGER DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
