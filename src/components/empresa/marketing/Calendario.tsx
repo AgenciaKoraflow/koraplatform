@@ -103,8 +103,9 @@ export function Calendario({ workspaceId }: Props) {
 
   const [newPostForm, setNewPostForm] = useState({
     hook: "",
-    angle: "",
-    cta: "",
+    painPoint: "",
+    emotionalTrigger: "",
+    contentDescription: "",
     contentType: "Reel" as "Reel" | "Stories" | "Carrossel" | "Post",
     time: "19:00",
   });
@@ -163,8 +164,9 @@ export function Calendario({ workspaceId }: Props) {
     setSelectedHookForCreate(hook);
     setNewPostForm({
       hook: hook.text,
-      angle: "",
-      cta: "",
+      painPoint: hook.painPoint || "",
+      emotionalTrigger: hook.emotionalTrigger || "",
+      contentDescription: "",
       contentType: (hook.contentType as "Reel" | "Stories" | "Carrossel" | "Post") || "Reel",
       time: "19:00",
     });
@@ -175,13 +177,13 @@ export function Calendario({ workspaceId }: Props) {
   const handleChooseCreateFromZero = () => {
     setChooseMethodModalOpen(false);
     setSelectedHookForCreate(null);
-    setNewPostForm({ hook: "", angle: "", cta: "", contentType: "Reel", time: "19:00" });
+    setNewPostForm({ hook: "", painPoint: "", emotionalTrigger: "", contentDescription: "", contentType: "Reel", time: "19:00" });
     setCreateModalOpen(true);
   };
 
   const handleCreateNewPost = () => {
-    if (!newPostForm.hook.trim()) {
-      toast({ title: "Erro", description: "Preencha o hook/conteúdo", variant: "destructive" });
+    if (!newPostForm.hook.trim() || !newPostForm.contentDescription.trim()) {
+      toast({ title: "Erro", description: "Preencha Hook e Descrição do Conteúdo", variant: "destructive" });
       return;
     }
 
@@ -189,10 +191,12 @@ export function Calendario({ workspaceId }: Props) {
       id: Date.now().toString(),
       date: selectedDateForCreate,
       platforms: ["instagram"],
-      caption: newPostForm.hook,
+      caption: newPostForm.contentDescription,
       hook: newPostForm.hook,
-      angle: newPostForm.angle,
-      cta: newPostForm.cta,
+      painPoint: newPostForm.painPoint,
+      emotionalTrigger: newPostForm.emotionalTrigger,
+      angle: newPostForm.contentDescription,
+      cta: "",
       status: "draft",
     };
 
@@ -572,33 +576,44 @@ export function Calendario({ workspaceId }: Props) {
             )}
 
             <div className="space-y-2">
-              <Label>🎯 Hook / Conteúdo *</Label>
+              <Label>🎯 Hook ou Gancho (Título) *</Label>
               <Textarea
-                placeholder="Digite o hook ou conteúdo principal..."
+                placeholder="Ex: Para de fazer X. Começa a fazer Y..."
                 value={newPostForm.hook}
                 onChange={(e) => setNewPostForm({ ...newPostForm, hook: e.target.value })}
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>💡 Seu Ângulo (opcional)</Label>
-              <Textarea
-                placeholder="Adicione seu ângulo pessoal..."
-                value={newPostForm.angle}
-                onChange={(e) => setNewPostForm({ ...newPostForm, angle: e.target.value })}
                 rows={2}
               />
             </div>
 
             <div className="space-y-2">
-              <Label>🔗 CTA (opcional)</Label>
+              <Label>💔 Dor que Resolve</Label>
               <input
                 type="text"
-                placeholder="Ex: Clique no link da bio"
-                value={newPostForm.cta}
-                onChange={(e) => setNewPostForm({ ...newPostForm, cta: e.target.value })}
+                placeholder="Ex: Desperdício de recursos"
+                value={newPostForm.painPoint}
+                onChange={(e) => setNewPostForm({ ...newPostForm, painPoint: e.target.value })}
                 className="w-full h-10 px-3 rounded-lg bg-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>⚡ Gatilho Emocional</Label>
+              <input
+                type="text"
+                placeholder="Ex: Aversão à Perda, Urgência"
+                value={newPostForm.emotionalTrigger}
+                onChange={(e) => setNewPostForm({ ...newPostForm, emotionalTrigger: e.target.value })}
+                className="w-full h-10 px-3 rounded-lg bg-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>📝 Descrição do Conteúdo *</Label>
+              <Textarea
+                placeholder="O que deve conter no post? (storyline, pontos principais, exemplos...)"
+                value={newPostForm.contentDescription}
+                onChange={(e) => setNewPostForm({ ...newPostForm, contentDescription: e.target.value })}
+                rows={3}
               />
             </div>
 
