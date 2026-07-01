@@ -14,6 +14,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [report, setReport] = useState<CompleteInstagramReport | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "historical" | "content" | "audience">("overview");
+  const [period, setPeriod] = useState<"7d" | "30d" | "90d">("7d");
 
   useEffect(() => {
     const savedConnection = localStorage.getItem("ig_connected");
@@ -67,6 +68,20 @@ export function AnalyticsComplete({ workspaceId }: Props) {
     setIsConnected(false);
     setReport(null);
     toast({ title: "Desconectado", description: "Conta removida" });
+  };
+
+  const getMetricsForPeriod = () => {
+    if (!report) return null;
+
+    const days = period === "7d" ? 7 : period === "30d" ? 30 : 90;
+    const reachData = report.metrics.reach.daily.slice(-days);
+    const reachSum = reachData.reduce((sum, m) => sum + m.value, 0);
+
+    return {
+      reach: reachSum,
+      reachAvg: reachData.length > 0 ? Math.round(reachSum / reachData.length) : 0,
+      growthRate: report.growth.growthRate7d
+    };
   };
 
   if (!isConnected || !report) {
@@ -168,6 +183,40 @@ export function AnalyticsComplete({ workspaceId }: Props) {
       {/* TAB 1: OVERVIEW */}
       {activeTab === "overview" && (
         <div className="space-y-6">
+          {/* Period Selector */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPeriod("7d")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                period === "7d"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Últimos 7 dias
+            </button>
+            <button
+              onClick={() => setPeriod("30d")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                period === "30d"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Últimos 30 dias
+            </button>
+            <button
+              onClick={() => setPeriod("90d")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                period === "90d"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Últimos 90 dias
+            </button>
+          </div>
+
           {/* Main Metrics */}
           <div className="grid grid-cols-5 gap-3">
             <div className="bg-gradient-to-br from-pink-500/10 to-red-500/10 rounded-lg p-4 border border-pink-500/20">
@@ -183,9 +232,9 @@ export function AnalyticsComplete({ workspaceId }: Props) {
             </div>
 
             <div className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-lg p-4 border border-amber-500/20">
-              <p className="text-xs font-semibold text-muted-foreground mb-1">ALCANCE</p>
-              <p className="text-2xl font-bold">{(report.metrics.reach.daily.reduce((sum, m) => sum + m.value, 0) / 1000).toFixed(0)}K</p>
-              <p className="text-xs text-green-500 mt-1">{report.growth.growthRate7d > 0 ? "+" : ""}{report.growth.growthRate7d.toFixed(1)}%</p>
+              <p className="text-xs font-semibold text-muted-foreground mb-1">ALCANCE ({period})</p>
+              <p className="text-2xl font-bold">{(getMetricsForPeriod()?.reach ?? 0 / 1000).toFixed(0)}K</p>
+              <p className="text-xs text-muted-foreground mt-1">Média: {(getMetricsForPeriod()?.reachAvg ?? 0 / 1000).toFixed(1)}K/dia</p>
             </div>
 
             <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-lg p-4 border border-green-500/20">
