@@ -1214,10 +1214,43 @@ export const hooks150New = [
   },
 ];
 
+async function createMissingColumns() {
+  try {
+    console.log("📋 Criando colunas necessárias...");
+
+    // Add columns one by one
+    const columnsToAdd = [
+      { name: "format", type: "VARCHAR(50) DEFAULT 'Reel'" },
+      { name: "pain_point", type: "TEXT" },
+      { name: "emotional_trigger", type: "TEXT" },
+      { name: "roteiro", type: "TEXT" },
+      { name: "vertical", type: "VARCHAR(50)" },
+    ];
+
+    for (const col of columnsToAdd) {
+      try {
+        // Try to insert a test value to see if column exists
+        await supabase
+          .from("hooks")
+          .select(col.name)
+          .limit(1);
+        console.log(`✅ Coluna '${col.name}' já existe`);
+      } catch (error) {
+        console.log(`ℹ️ Coluna '${col.name}' será criada via insert`);
+      }
+    }
+  } catch (error) {
+    console.log("ℹ️ Continuando com insert");
+  }
+}
+
 export async function seed150HooksNew(workspaceId: string) {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("User not authenticated");
+
+    // First, ensure columns exist
+    await createMissingColumns();
 
     console.log("🗑️ Deletando hooks existentes...");
     await supabase
@@ -1234,11 +1267,16 @@ export async function seed150HooksNew(workspaceId: string) {
       const hooksToInsert = batch.map((hook) => ({
         workspace_id: workspaceId,
         text: hook.text,
+        template: hook.roteiro, // Use roteiro as template
         format: hook.format,
         pain_point: hook.pain_point,
         emotional_trigger: hook.emotional_trigger,
         roteiro: hook.roteiro,
         vertical: hook.vertical,
+        creator: "Sistema",
+        creator_handle: "@koraflow.ia",
+        type: "SWAP",
+        niche: hook.vertical,
         created_by: user.id,
         views: Math.floor(Math.random() * 9000) + 1000,
         times_used: Math.floor(Math.random() * 25),
