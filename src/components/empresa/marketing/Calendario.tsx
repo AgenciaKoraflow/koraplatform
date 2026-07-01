@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { ChevronLeft, ChevronRight, X, Calendar, Trash2, Copy, Edit2, Plus, BookOpen } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Calendar, Trash2, Copy, Edit2, Plus, BookOpen, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
@@ -49,6 +49,14 @@ export function Calendario({ workspaceId }: Props) {
   const [selectedDateForCreate, setSelectedDateForCreate] = useState("");
   const [selectedHookForCreate, setSelectedHookForCreate] = useState<any>(null);
 
+  // Hook selection filters
+  const [hookSearchInput, setHookSearchInput] = useState("");
+  const [selectedVertical, setSelectedVertical] = useState<string>("");
+  const [selectedPainPoint, setSelectedPainPoint] = useState<string>("");
+  const [selectedEmotionalTrigger, setSelectedEmotionalTrigger] = useState<string>("");
+  const [hookPage, setHookPage] = useState(1);
+  const HOOKS_PER_PAGE = 8;
+
   const [newPostForm, setNewPostForm] = useState({
     hook: "",
     painPoint: "",
@@ -60,6 +68,34 @@ export function Calendario({ workspaceId }: Props) {
 
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
+
+  // Extract unique values for filters
+  const uniqueVerticals = useMemo(() => Array.from(new Set(hooks.map((h) => h.vertical).filter(Boolean))).sort(), [hooks]);
+  const uniquePainPoints = useMemo(() => Array.from(new Set(hooks.map((h) => h.painPoint).filter(Boolean))).sort(), [hooks]);
+  const uniqueEmotionalTriggers = useMemo(() => Array.from(new Set(hooks.map((h) => h.emotionalTrigger).filter(Boolean))).sort(), [hooks]);
+
+  // Filter hooks for the modal
+  const filteredHooksForModal = useMemo(() => {
+    return hooks.filter((hook) => {
+      const matchesSearch = hookSearchInput === "" ||
+        hook.text.toLowerCase().includes(hookSearchInput.toLowerCase()) ||
+        hook.painPoint?.toLowerCase().includes(hookSearchInput.toLowerCase()) ||
+        hook.emotionalTrigger?.toLowerCase().includes(hookSearchInput.toLowerCase());
+
+      const matchesVertical = selectedVertical === "" || hook.vertical === selectedVertical;
+      const matchesPainPoint = selectedPainPoint === "" || hook.painPoint?.toLowerCase().includes(selectedPainPoint.toLowerCase());
+      const matchesEmotionalTrigger = selectedEmotionalTrigger === "" || hook.emotionalTrigger?.toLowerCase().includes(selectedEmotionalTrigger.toLowerCase());
+
+      return matchesSearch && matchesVertical && matchesPainPoint && matchesEmotionalTrigger;
+    });
+  }, [hooks, hookSearchInput, selectedVertical, selectedPainPoint, selectedEmotionalTrigger]);
+
+  // Paginate hooks
+  const totalHookPages = Math.ceil(filteredHooksForModal.length / HOOKS_PER_PAGE);
+  const paginatedHooks = filteredHooksForModal.slice(
+    (hookPage - 1) * HOOKS_PER_PAGE,
+    hookPage * HOOKS_PER_PAGE
+  );
 
   const days = useMemo(() => {
     const result: (number | null)[] = [];
@@ -443,36 +479,155 @@ export function Calendario({ workspaceId }: Props) {
       </Dialog>
 
       {/* Select Hook Modal */}
-      <Dialog open={selectHookModalOpen} onOpenChange={setSelectHookModalOpen}>
-        <DialogContent className="max-w-2xl max-h-96 overflow-y-auto">
+      <Dialog open={selectHookModalOpen} onOpenChange={(open) => {
+        setSelectHookModalOpen(open);
+        if (!open) {
+          setHookSearchInput("");
+          setSelectedVertical("");
+          setSelectedPainPoint("");
+          setSelectedEmotionalTrigger("");
+          setHookPage(1);
+        }
+      }}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>📚 Selecione um Hook</DialogTitle>
           </DialogHeader>
-          <DialogBody className="space-y-2">
-            {hooks.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">Nenhum hook disponível</p>
-            ) : (
-              hooks.map((hook) => (
-                <button
-                  key={hook.id}
-                  onClick={() => handleSelectHook(hook)}
-                  className="w-full text-left p-3 rounded-lg border border-border hover:bg-secondary/50 transition-colors space-y-1"
+          <DialogBody className="flex-1 overflow-y-auto space-y-4">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Buscar hook..."
+                value={hookSearchInput}
+                onChange={(e) => {
+                  setHookSearchInput(e.target.value);
+                  setHookPage(1);
+                }}
+                className="w-full h-10 pl-10 pr-4 rounded-lg bg-input border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+
+            {/* Filters */}
+            <div className="space-y-3 bg-secondary/30 rounded-lg p-3 border border-border">
+              {/* Vertical */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground uppercase">🎯 Vertical</label>
+                <select
+                  value={selectedVertical}
+                  onChange={(e) => {
+                    setSelectedVertical(e.target.value);
+                    setHookPage(1);
+                  }}
+                  className="w-full h-9 px-3 rounded-lg bg-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                 >
-                  <p className="text-sm font-medium text-foreground">{hook.text}</p>
-                  <div className="flex gap-2 flex-wrap">
-                    {hook.painPoint && (
-                      <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
-                        🎯 {hook.painPoint}
-                      </span>
-                    )}
-                    {hook.emotionalTrigger && (
-                      <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded">
-                        💭 {hook.emotionalTrigger}
-                      </span>
-                    )}
-                  </div>
-                </button>
-              ))
+                  <option value="">Todas as verticais</option>
+                  {uniqueVerticals.map((v) => (
+                    <option key={v} value={v}>{v}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Pain Point */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground uppercase">💔 Dor que resolve</label>
+                <select
+                  value={selectedPainPoint}
+                  onChange={(e) => {
+                    setSelectedPainPoint(e.target.value);
+                    setHookPage(1);
+                  }}
+                  className="w-full h-9 px-3 rounded-lg bg-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                >
+                  <option value="">Todas as dores</option>
+                  {uniquePainPoints.map((p) => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Emotional Trigger */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground uppercase">💭 Gatilho emocional</label>
+                <select
+                  value={selectedEmotionalTrigger}
+                  onChange={(e) => {
+                    setSelectedEmotionalTrigger(e.target.value);
+                    setHookPage(1);
+                  }}
+                  className="w-full h-9 px-3 rounded-lg bg-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                >
+                  <option value="">Todos os gatilhos</option>
+                  {uniqueEmotionalTriggers.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Results Info */}
+            <div className="text-xs text-muted-foreground">
+              {filteredHooksForModal.length} hook{filteredHooksForModal.length !== 1 ? "s" : ""} encontrado{filteredHooksForModal.length !== 1 ? "s" : ""}
+            </div>
+
+            {/* Hooks List */}
+            <div className="space-y-2">
+              {filteredHooksForModal.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">Nenhum hook encontrado</p>
+              ) : (
+                paginatedHooks.map((hook) => (
+                  <button
+                    key={hook.id}
+                    onClick={() => handleSelectHook(hook)}
+                    className="w-full text-left p-3 rounded-lg border border-border hover:bg-secondary/50 transition-colors space-y-1"
+                  >
+                    <p className="text-sm font-medium text-foreground">{hook.text}</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {hook.format && (
+                        <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded">
+                          🎬 {hook.format}
+                        </span>
+                      )}
+                      {hook.painPoint && (
+                        <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
+                          🎯 {hook.painPoint}
+                        </span>
+                      )}
+                      {hook.emotionalTrigger && (
+                        <span className="text-xs bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded">
+                          💭 {hook.emotionalTrigger}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+
+            {/* Pagination */}
+            {filteredHooksForModal.length > HOOKS_PER_PAGE && (
+              <div className="flex items-center justify-between pt-2 border-t border-border">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setHookPage(Math.max(1, hookPage - 1))}
+                  disabled={hookPage === 1}
+                >
+                  ← Anterior
+                </Button>
+                <span className="text-xs text-muted-foreground">
+                  Página {hookPage} de {totalHookPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setHookPage(Math.min(totalHookPages, hookPage + 1))}
+                  disabled={hookPage === totalHookPages}
+                >
+                  Próxima →
+                </Button>
+              </div>
             )}
           </DialogBody>
         </DialogContent>
