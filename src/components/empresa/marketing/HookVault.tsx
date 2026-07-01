@@ -421,154 +421,50 @@ ${hook.creator} (${hook.creatorHandle})
               key={hook.id}
               className="bg-card rounded-lg p-4 border border-border shadow-soft hover:shadow-medium transition-all"
             >
-              <div className="space-y-4">
-                {/* 4 COLUNAS DO DOCUMENTO */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* COLUNA 1: Hook ou Gancho (Título) */}
-                  <div className="bg-accent/10 border border-accent/30 rounded-lg p-3">
-                    <p className="text-xs font-bold text-accent uppercase mb-1">🎯 Hook ou Gancho (Título)</p>
-                    <p className="text-sm text-foreground font-medium leading-relaxed">"{hook.text}"</p>
+              {/* 4 COLUNAS - LAYOUT ORGANIZADO */}
+              <div className="space-y-3">
+                {/* LINHA 1: Hook + Dor */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                  <div className="bg-accent/10 border border-accent/20 rounded p-3">
+                    <p className="text-xs font-bold text-accent uppercase mb-2">🎯 Hook</p>
+                    <p className="text-sm font-medium text-foreground">"{hook.text}"</p>
                   </div>
-
-                  {/* COLUNA 2: Dor que Resolve */}
-                  <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
-                    <p className="text-xs font-bold text-red-600 dark:text-red-400 uppercase mb-1">💔 Dor que Resolve</p>
+                  <div className="bg-red-500/10 border border-red-500/20 rounded p-3">
+                    <p className="text-xs font-bold text-red-600 dark:text-red-400 uppercase mb-2">💔 Dor</p>
                     <p className="text-sm text-foreground">{hook.painPoint || "—"}</p>
                   </div>
+                </div>
 
-                  {/* COLUNA 3: Gatilho Emocional */}
-                  <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3">
-                    <p className="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase mb-1">⚡ Gatilho Emocional</p>
+                {/* LINHA 2: Gatilho + Conteúdo */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                  <div className="bg-orange-500/10 border border-orange-500/20 rounded p-3">
+                    <p className="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase mb-2">⚡ Gatilho</p>
                     <p className="text-sm text-foreground">{hook.emotionalTrigger || "—"}</p>
                   </div>
-
-                  {/* COLUNA 4: Descrição do Conteúdo */}
-                  <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
-                    <p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase mb-1">📝 Descrição do Conteúdo</p>
+                  <div className="bg-blue-500/10 border border-blue-500/20 rounded p-3">
+                    <p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase mb-2">📝 Conteúdo</p>
                     <p className="text-sm text-foreground italic">{hook.template || "—"}</p>
                   </div>
                 </div>
 
-                {/* Relevance & Reasons */}
-                <div className="bg-secondary/50 rounded p-3 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`text-sm font-bold px-3 py-1 rounded-full ${getRelevanceColor(
-                        relevance.score
-                      )}`}
-                    >
-                      Relevância: {relevance.score}%
-                    </span>
-                  </div>
-                  <div className="text-xs text-muted-foreground space-y-1">
-                    {relevance.reasons.map((reason, idx) => (
-                      <p key={idx}>✓ {reason}</p>
-                    ))}
-                  </div>
-                  {relevance.suggestedAdaptation && (
-                    <div className="mt-2 text-xs bg-primary/10 text-primary p-2 rounded border-l-2 border-primary">
-                      <strong>Sugestão:</strong> {relevance.suggestedAdaptation}
-                    </div>
-                  )}
-                </div>
-
-                {/* Hook Info & Actions */}
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {/* Type Badge */}
-                    <span
-                      className={`text-xs font-semibold px-2.5 py-1 rounded ${
-                        typeColors[hook.type]
-                      }`}
-                    >
-                      {hookTypeLabels[hook.type]}
-                    </span>
-
-                    {/* Niche Badge */}
-                    <span className="text-xs bg-secondary text-foreground px-2.5 py-1 rounded">
-                      {hook.niche}
-                    </span>
-
-                    {/* Content Type Badge */}
-                    {hook.contentType && (
-                      <span className="text-xs bg-accent/20 text-accent-foreground px-2.5 py-1 rounded">
-                        {hook.contentType === "Reel" && "📱 Reel"}
-                        {hook.contentType === "Carrossel" && "📸 Carrossel"}
-                        {hook.contentType === "Post" && "📄 Post"}
-                        {hook.contentType === "Story" && "📖 Story"}
-                      </span>
-                    )}
-
-                    {/* Visual Mode Badge */}
-                    {hook.visualMode && (
-                      <span className="text-xs bg-muted text-muted-foreground px-2.5 py-1 rounded">
-                        {hook.visualMode === "Clean" && "☀️ Clean"}
-                        {hook.visualMode === "Dark" && "🌙 Dark"}
-                      </span>
-                    )}
-
-                    {/* Creator */}
-                    <span className="text-xs text-muted-foreground">
-                      por {hook.creatorHandle}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    {/* Views & Uses */}
-                    <div className="text-right text-xs">
-                      <p className="font-bold text-primary">
-                        {(hook.views / 1000).toFixed(0)}K views
-                      </p>
-                      {hook.timesUsed && (
-                        <p className="text-muted-foreground">
-                          Usado {hook.timesUsed}×
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Use Button */}
-                    <Button
-                      size="sm"
-                      onClick={() => handleUseHook(hook)}
-                      className="bg-primary hover:bg-primary/90"
-                    >
-                      Usar este
-                    </Button>
-
-                    {/* Schedule Button */}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleOpenScheduleModal(hook)}
-                      className="gap-1"
-                    >
-                      <Calendar className="w-4 h-4" />
-                      Agendar
-                    </Button>
-
-                    {/* More Actions */}
-                    <ActionMenu
-                      items={[
-                        {
-                          label: "Copiar",
-                          icon: Copy,
-                          onClick: () =>
-                            navigator.clipboard.writeText(hook.text),
-                        },
-                        {
-                          label: "Compartilhar",
-                          icon: Share2,
-                          onClick: () => console.log("Share"),
-                        },
-                        {
-                          label: "Remover",
-                          icon: Trash2,
-                          onClick: () => setDeleteId(hook.id),
-                          variant: "destructive",
-                        },
-                      ]}
-                    />
-                  </div>
+                {/* AÇÕES */}
+                <div className="flex gap-2 justify-start pt-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handleUseHook(hook)}
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    Usar este
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleOpenScheduleModal(hook)}
+                    className="gap-1"
+                  >
+                    <Calendar className="w-4 h-4" />
+                    Agendar
+                  </Button>
                 </div>
               </div>
             </div>
