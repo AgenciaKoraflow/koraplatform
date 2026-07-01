@@ -284,23 +284,22 @@ export function Calendario({ workspaceId }: Props) {
                   </span>
 
                   <div className="space-y-1 w-full">
-                    {dayPosts.slice(0, 2).map((post) => (
-                      <div key={post.id} className="flex gap-0.5 flex-wrap">
-                        {post.platforms.map((platform) => (
-                          <div
-                            key={platform}
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              platform === "instagram"
-                                ? "bg-pink-500"
-                                : platform === "tiktok"
-                                  ? "bg-black dark:bg-white"
-                                  : "bg-red-600"
-                            }`}
-                          />
-                        ))}
+                    {dayPosts.slice(0, 3).map((post) => (
+                      <div key={post.id} className="flex gap-1 flex-wrap">
+                        {post.platforms.map((platform) => {
+                          const platformIcon =
+                            platform === "instagram" ? "📷" :
+                            platform === "tiktok" ? "🎵" :
+                            "📺";
+                          return (
+                            <span key={platform} className="text-sm leading-none">
+                              {platformIcon}
+                            </span>
+                          );
+                        })}
                       </div>
                     ))}
-                    {dayPosts.length > 2 && <span className="text-xs text-muted-foreground font-semibold">+{dayPosts.length - 2}</span>}
+                    {dayPosts.length > 3 && <span className="text-xs text-muted-foreground font-semibold">+{dayPosts.length - 3}</span>}
                   </div>
                 </button>
               );
