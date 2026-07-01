@@ -41,7 +41,7 @@ export function EmpresaMarketing({ workspaceId }: Props) {
       userHandle="@koraflow.ia"
       followers="43"
       views="847"
-      profileImage="https://instagram.fmad4-1.fna.fbcdn.net/v/t51.2885-15/456240950_27571261272563142_8935249833759154819_n.jpg"
+      profileImage="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%23B8532E'/%3E%3Ctext x='50%25' y='50%25' font-size='80' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='middle' font-family='Arial'%3EK%3C/text%3E%3C/svg%3E"
       period="30D"
       tabs={MARKETING_TABS}
       activeTab={currentTab}
