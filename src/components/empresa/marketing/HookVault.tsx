@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Search, Copy, Share2, Trash2, Settings, Zap, Plus } from "lucide-react";
+import { Search, Copy, Share2, Trash2, Settings, Zap, Plus, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -60,6 +60,13 @@ export function HookVault({ workspaceId }: Props) {
   const [newHookOpen, setNewHookOpen] = useState(false);
   const [formData, setFormData] = useState<NewHookForm>(EMPTY_FORM);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  // Schedule modal state
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [selectedHookToSchedule, setSelectedHookToSchedule] = useState<any>(null);
+  const [scheduleDate, setScheduleDate] = useState("");
+  const [scheduleTime, setScheduleTime] = useState("19:00");
+  const [contentType, setContentType] = useState<"Reel" | "Stories" | "Carrossel" | "Post">("Reel");
 
   // Fetch hooks from Supabase
   const { data: hooks = [], isLoading } = useHooks(workspaceId);
@@ -132,6 +139,44 @@ ${hook.creator} (${hook.creatorHandle})
 
     navigator.clipboard.writeText(content);
     toast.success("✅ Hook completo copiado! Use em Canva, CapCut, etc.");
+  };
+
+  const handleOpenScheduleModal = (hook: typeof hooks[0]) => {
+    setSelectedHookToSchedule(hook);
+    setScheduleDate("");
+    setScheduleTime("19:00");
+    setContentType("Reel");
+    setScheduleModalOpen(true);
+  };
+
+  const handleSchedulePost = () => {
+    if (!scheduleDate || !selectedHookToSchedule) {
+      toast.error("Selecione uma data para agendar");
+      return;
+    }
+
+    const scheduledPost = {
+      id: Date.now().toString(),
+      date: scheduleDate,
+      time: scheduleTime,
+      platforms: ["instagram"],
+      contentType: contentType,
+      caption: selectedHookToSchedule.text,
+      hook: selectedHookToSchedule.text,
+      painPoint: selectedHookToSchedule.painPoint,
+      emotionalTrigger: selectedHookToSchedule.emotionalTrigger,
+      angle: "",
+      cta: "",
+      status: "scheduled",
+    };
+
+    // Salvar no localStorage
+    const existingPosts = JSON.parse(localStorage.getItem("scheduledPosts") || "[]");
+    existingPosts.push(scheduledPost);
+    localStorage.setItem("scheduledPosts", JSON.stringify(existingPosts));
+
+    toast.success(`📅 Post agendado para ${scheduleDate}! Veja no Calendário.`);
+    setScheduleModalOpen(false);
   };
 
   const handleCreateHook = async () => {
@@ -450,6 +495,17 @@ ${hook.creator} (${hook.creatorHandle})
                       Usar este
                     </Button>
 
+                    {/* Schedule Button */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleOpenScheduleModal(hook)}
+                      className="gap-1"
+                    >
+                      <Calendar className="w-4 h-4" />
+                      Agendar
+                    </Button>
+
                     {/* More Actions */}
                     <ActionMenu
                       items={[
@@ -489,6 +545,70 @@ ${hook.creator} (${hook.creatorHandle})
           </div>
         )}
       </div>
+
+      {/* Schedule Modal */}
+      <Dialog open={scheduleModalOpen} onOpenChange={setScheduleModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>📅 Agendar Post no Instagram</DialogTitle>
+            <DialogDescription>
+              Defina quando este hook será postado
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody className="space-y-4">
+            {selectedHookToSchedule && (
+              <div className="bg-primary/10 rounded-lg p-3 border border-primary/20">
+                <p className="text-sm text-foreground font-medium">Hook: {selectedHookToSchedule.text.substring(0, 60)}...</p>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>Data do Post *</Label>
+              <input
+                type="date"
+                value={scheduleDate}
+                onChange={(e) => setScheduleDate(e.target.value)}
+                className="w-full h-10 px-3 rounded-lg bg-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Hora</Label>
+                <input
+                  type="time"
+                  value={scheduleTime}
+                  onChange={(e) => setScheduleTime(e.target.value)}
+                  className="w-full h-10 px-3 rounded-lg bg-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Tipo de Conteúdo</Label>
+                <select
+                  value={contentType}
+                  onChange={(e) => setContentType(e.target.value as any)}
+                  className="w-full h-10 px-3 rounded-lg bg-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                >
+                  <option value="Reel">📹 Reel</option>
+                  <option value="Stories">📖 Stories</option>
+                  <option value="Carrossel">📸 Carrossel</option>
+                  <option value="Post">📄 Post</option>
+                </select>
+              </div>
+            </div>
+          </DialogBody>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setScheduleModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSchedulePost} className="bg-primary hover:bg-primary/90 gap-2">
+              <Calendar className="w-4 h-4" />
+              Agendar Post
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* New Hook Dialog */}
       <Dialog open={newHookOpen} onOpenChange={setNewHookOpen}>

@@ -81,7 +81,12 @@ export function Calendario({ workspaceId }: Props) {
   const { toast } = useToast();
   const [currentDate, setCurrentDate] = useState(new Date(2026, 6, 1));
   const [selectedPost, setSelectedPost] = useState<ScheduledPost | null>(null);
-  const [posts, setPosts] = useState<ScheduledPost[]>(MOCK_SCHEDULED_POSTS);
+
+  // Carregar posts do localStorage ao inicializar
+  const [posts, setPosts] = useState<ScheduledPost[]>(() => {
+    const scheduled = JSON.parse(localStorage.getItem("scheduledPosts") || "[]");
+    return [...MOCK_SCHEDULED_POSTS, ...scheduled];
+  });
 
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
