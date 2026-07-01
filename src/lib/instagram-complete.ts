@@ -56,7 +56,7 @@ export interface CompleteInstagramReport {
     reach: PeriodMetrics;
     profileViews: PeriodMetrics;
     websiteClicks: PeriodMetrics;
-    impressions: PeriodMetrics;
+    views: PeriodMetrics;
   };
 
   // ENGAJAMENTO
@@ -155,11 +155,11 @@ export async function fetchCompleteInstagramAnalytics(): Promise<CompleteInstagr
 
     // 2. Histórico de métricas (dia, semana, mês)
     console.log("📈 Buscando histórico de métricas...");
-    const [reach, profileViews, websiteClicks, impressions] = await Promise.all([
+    const [reach, profileViews, websiteClicks, views] = await Promise.all([
       fetchAllPeriodMetrics("reach"),
       fetchAllPeriodMetrics("profile_views"),
       fetchAllPeriodMetrics("website_clicks"),
-      fetchAllPeriodMetrics("impressions"),
+      fetchAllPeriodMetrics("views"),
     ]);
 
     // Fallback: Se reach estiver vazio, gera dados mockados realistas
@@ -324,7 +324,7 @@ export async function fetchCompleteInstagramAnalytics(): Promise<CompleteInstagr
         reach,
         profileViews,
         websiteClicks,
-        impressions,
+        views,
       },
       engagement: {
         totalLikes,

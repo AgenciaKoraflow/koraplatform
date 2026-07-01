@@ -75,13 +75,24 @@ export function AnalyticsComplete({ workspaceId }: Props) {
 
     const days = period === "7d" ? 7 : period === "30d" ? 30 : 90;
     const reachData = report.metrics.reach.daily.slice(-days);
+    const viewsData = report.metrics.views.daily.slice(-days);
+
     const reachSum = reachData.reduce((sum, m) => sum + m.value, 0);
+    const viewsSum = viewsData.reduce((sum, m) => sum + m.value, 0);
 
     return {
       reach: reachSum,
       reachAvg: reachData.length > 0 ? Math.round(reachSum / reachData.length) : 0,
+      views: viewsSum,
+      viewsAvg: viewsData.length > 0 ? Math.round(viewsSum / viewsData.length) : 0,
       growthRate: report.growth.growthRate7d
     };
+  };
+
+  const formatNumber = (num: number) => {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
+    if (num >= 1000) return (num / 1000).toFixed(1) + "K";
+    return Math.round(num).toString();
   };
 
   if (!isConnected || !report) {
@@ -218,7 +229,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
           </div>
 
           {/* Main Metrics */}
-          <div className="grid grid-cols-5 gap-3">
+          <div className="grid grid-cols-4 gap-3">
             <div className="bg-gradient-to-br from-pink-500/10 to-red-500/10 rounded-lg p-4 border border-pink-500/20">
               <p className="text-xs font-semibold text-muted-foreground mb-1">SEGUIDORES</p>
               <p className="text-2xl font-bold">{report.account.followers.toLocaleString()}</p>
@@ -233,20 +244,14 @@ export function AnalyticsComplete({ workspaceId }: Props) {
 
             <div className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-lg p-4 border border-amber-500/20">
               <p className="text-xs font-semibold text-muted-foreground mb-1">ALCANCE ({period})</p>
-              <p className="text-2xl font-bold">{(getMetricsForPeriod()?.reach ?? 0 / 1000).toFixed(0)}K</p>
-              <p className="text-xs text-muted-foreground mt-1">Média: {(getMetricsForPeriod()?.reachAvg ?? 0 / 1000).toFixed(1)}K/dia</p>
+              <p className="text-2xl font-bold">{formatNumber(getMetricsForPeriod()?.reach ?? 0)}</p>
+              <p className="text-xs text-muted-foreground mt-1">Média: {formatNumber(getMetricsForPeriod()?.reachAvg ?? 0)}/dia</p>
             </div>
 
             <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-lg p-4 border border-green-500/20">
-              <p className="text-xs font-semibold text-muted-foreground mb-1">ENGAJAMENTO</p>
-              <p className="text-2xl font-bold">{report.engagement.engagementRate.toFixed(1)}%</p>
-              <p className="text-xs text-muted-foreground mt-1">{report.engagement.totalLikes.toLocaleString()} curtidas</p>
-            </div>
-
-            <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 rounded-lg p-4 border border-cyan-500/20">
-              <p className="text-xs font-semibold text-muted-foreground mb-1">VISITAS</p>
-              <p className="text-2xl font-bold">{report.interactions.interactionsByType.profileVisits.toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground mt-1">Perfil</p>
+              <p className="text-xs font-semibold text-muted-foreground mb-1">VISUALIZAÇÕES ({period})</p>
+              <p className="text-2xl font-bold">{formatNumber(getMetricsForPeriod()?.views ?? 0)}</p>
+              <p className="text-xs text-muted-foreground mt-1">Média: {formatNumber(getMetricsForPeriod()?.viewsAvg ?? 0)}/dia</p>
             </div>
           </div>
 
