@@ -36,17 +36,19 @@ export function MarketingLayout({
           {/* User Info */}
           <div className="space-y-3">
             <div className="flex items-start gap-3">
-              {profileImage ? (
-                <img
-                  src={profileImage}
-                  alt={userName}
-                  className="w-12 h-12 rounded-full flex-shrink-0 object-cover"
-                />
-              ) : (
-                <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                  <User className="w-6 h-6 text-primary" />
-                </div>
-              )}
+              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                {profileImage ? (
+                  <img
+                    src={profileImage}
+                    alt={userName}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                ) : null}
+                {!profileImage && <User className="w-6 h-6 text-primary" />}
+              </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-foreground truncate">
                   {userName}
