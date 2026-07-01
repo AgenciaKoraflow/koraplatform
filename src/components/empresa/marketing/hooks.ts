@@ -35,6 +35,16 @@ export const hookTypes: HookType[] = [
   "CURIOSIDADE",
 ];
 
+export const hookTypeLabels: Record<HookType, string> = {
+  SWAP: "Troca (Para de fazer X)",
+  BUILD: "Constrói (Construí X em Y)",
+  CLAIM: "Afirmação (Você precisa de X)",
+  LIST: "Lista (N coisas que...)",
+  CONTRARIAN: "Contrário (Ninguém fala sobre)",
+  STORY: "História (Minha jornada de...)",
+  CURIOSIDADE: "Curiosidade (O que a maioria..)",
+};
+
 export const typeColors: Record<HookType, string> = {
   SWAP: "bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400",
   BUILD: "bg-orange-50 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400",

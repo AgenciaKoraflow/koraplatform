@@ -24,7 +24,7 @@ import { ActionMenu } from "@/components/shared/ActionMenu";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { useHooks } from "@/hooks/queries/useHooksQuery";
 import { useHooksMutations } from "@/hooks/mutations/useHooksMutations";
-import { hookNiches, hookTypes, typeColors } from "./hooks";
+import { hookNiches, hookTypes, typeColors, hookTypeLabels } from "./hooks";
 import { defaultAudience, calculateRelevance } from "./audience";
 import { AudienceConfig } from "./AudienceConfig";
 import { seedHooksToDatabase } from "@/lib/seedHooks";
@@ -375,7 +375,7 @@ export function HookVault({ workspaceId }: Props) {
                         typeColors[hook.type]
                       }`}
                     >
-                      {hook.type}
+                      {hookTypeLabels[hook.type]}
                     </span>
 
                     {/* Niche Badge */}
@@ -502,7 +502,7 @@ export function HookVault({ workspaceId }: Props) {
                   <SelectContent>
                     {hookTypes.map((type) => (
                       <SelectItem key={type} value={type}>
-                        {type}
+                        {hookTypeLabels[type]}
                       </SelectItem>
                     ))}
                   </SelectContent>

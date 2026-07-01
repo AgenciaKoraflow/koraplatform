@@ -236,37 +236,54 @@ export const seedHooks: CreateHookInput[] = [
 
 export async function seedHooksToDatabase(workspaceId: string) {
   try {
-    const { data: user } = await supabase.auth.getUser();
-    if (!user.user) throw new Error("User not authenticated");
+    const { data } = await supabase.auth.getUser();
+    const userId = data?.user?.id;
+
+    if (!userId) throw new Error("User not authenticated");
 
     // Check if hooks already exist
-    const { data: existingHooks } = await supabase
+    const { data: existingHooks, error: checkError } = await supabase
       .from("hooks")
       .select("id")
       .eq("workspace_id", workspaceId)
       .limit(1);
+
+    if (checkError) throw checkError;
 
     if (existingHooks && existingHooks.length > 0) {
       console.log("Hooks already exist in database");
       return { success: false, message: "Hooks already seeded" };
     }
 
-    // Insert all hooks
-    const { data, error } = await supabase
-      .from("hooks")
-      .insert(
-        seedHooks.map((hook) => ({
-          workspace_id: workspaceId,
-          created_by: user.user.id,
-          ...hook,
-        }))
-      )
-      .select();
+    // Insert all hooks in smaller batches
+    const batchSize = 5;
+    let totalInserted = 0;
 
-    if (error) throw error;
+    for (let i = 0; i < seedHooks.length; i += batchSize) {
+      const batch = seedHooks.slice(i, i + batchSize);
+      const { data: inserted, error: insertError } = await supabase
+        .from("hooks")
+        .insert(
+          batch.map((hook) => ({
+            workspace_id: workspaceId,
+            created_by: userId,
+            text: hook.text,
+            template: hook.template,
+            creator: hook.creator,
+            creator_handle: hook.creator_handle,
+            type: hook.type,
+            niche: hook.niche,
+            views: hook.views || 0,
+          }))
+        )
+        .select();
 
-    console.log(`Successfully seeded ${data?.length || 0} hooks`);
-    return { success: true, count: data?.length || 0 };
+      if (insertError) throw insertError;
+      totalInserted += inserted?.length || 0;
+    }
+
+    console.log(`Successfully seeded ${totalInserted} hooks`);
+    return { success: true, count: totalInserted };
   } catch (error) {
     console.error("Error seeding hooks:", error);
     throw error;
