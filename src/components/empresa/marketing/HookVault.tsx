@@ -1,16 +1,57 @@
 import { useState, useMemo } from "react";
-import { Search, Copy, Share2, Trash2, Settings, Zap } from "lucide-react";
+import { Search, Copy, Share2, Trash2, Settings, Zap, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogBody,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ActionMenu } from "@/components/shared/ActionMenu";
-import { mockHooks, hookNiches, hookTypes, typeColors } from "./hooks";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { useHooks } from "@/hooks/queries/useHooksQuery";
+import { useHooksMutations } from "@/hooks/mutations/useHooksMutations";
+import { hookNiches, hookTypes, typeColors } from "./hooks";
 import { defaultAudience, calculateRelevance } from "./audience";
 import { AudienceConfig } from "./AudienceConfig";
 import type { HookNiche, HookType } from "./hooks";
+import type { CreateHookInput } from "@/types/hooks";
 import { cn } from "@/lib/utils";
 
 interface Props {
   workspaceId: string;
 }
+
+interface NewHookForm {
+  text: string;
+  template: string;
+  creator: string;
+  creator_handle: string;
+  type: HookType;
+  niche: HookNiche;
+}
+
+const EMPTY_FORM: NewHookForm = {
+  text: "",
+  template: "",
+  creator: "",
+  creator_handle: "",
+  type: "SWAP",
+  niche: "IA",
+};
 
 export function HookVault({ workspaceId }: Props) {
   const [searchInput, setSearchInput] = useState("");
@@ -20,13 +61,20 @@ export function HookVault({ workspaceId }: Props) {
   const [sortByRelevance, setSortByRelevance] = useState(true);
   const [minRelevance, setMinRelevance] = useState(0);
   const [configOpen, setConfigOpen] = useState(false);
+  const [newHookOpen, setNewHookOpen] = useState(false);
+  const [formData, setFormData] = useState<NewHookForm>(EMPTY_FORM);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  // Fetch hooks from Supabase
+  const { data: hooks = [], isLoading } = useHooks(workspaceId);
+  const { createHook, deleteHook } = useHooksMutations(workspaceId);
 
   const hooksWithRelevance = useMemo(() => {
-    return mockHooks.map((hook) => ({
+    return hooks.map((hook) => ({
       hook,
       relevance: calculateRelevance(hook.text, defaultAudience),
     }));
-  }, []);
+  }, [hooks]);
 
   const filteredHooks = useMemo(() => {
     let result = hooksWithRelevance
@@ -59,7 +107,31 @@ export function HookVault({ workspaceId }: Props) {
 
   const handleUseHook = (hookText: string) => {
     navigator.clipboard.writeText(hookText);
-    // Pode adicionar toast aqui
+  };
+
+  const handleCreateHook = async () => {
+    if (!formData.text.trim() || !formData.template.trim()) {
+      return;
+    }
+
+    await createHook.mutateAsync({
+      text: formData.text,
+      template: formData.template,
+      creator: formData.creator || "Você",
+      creator_handle: formData.creator_handle || "@seu_usuario",
+      type: formData.type,
+      niche: formData.niche,
+    } as CreateHookInput);
+
+    setNewHookOpen(false);
+    setFormData(EMPTY_FORM);
+  };
+
+  const handleDeleteHook = async () => {
+    if (deleteId) {
+      await deleteHook.mutateAsync(deleteId);
+      setDeleteId(null);
+    }
   };
 
   const getRelevanceColor = (score: number) => {
@@ -91,8 +163,12 @@ export function HookVault({ workspaceId }: Props) {
             <Settings className="w-4 h-4" />
             Configurar Audiência
           </Button>
-          <Button size="lg" className="bg-primary hover:bg-primary/90 gap-2">
-            <Zap className="w-4 h-4" />
+          <Button
+            size="lg"
+            onClick={() => setNewHookOpen(true)}
+            className="bg-primary hover:bg-primary/90 gap-2"
+          >
+            <Plus className="w-4 h-4" />
             Novo Hook
           </Button>
         </div>
@@ -225,12 +301,16 @@ export function HookVault({ workspaceId }: Props) {
       {/* Results Count */}
       <div className="text-sm text-muted-foreground">
         {filteredHooks.length} hook{filteredHooks.length !== 1 ? "s" : ""} encontrado
-        {filteredHooks.length !== mockHooks.length && ` (de ${mockHooks.length})`}
+        {filteredHooks.length !== hooks.length && ` (de ${hooks.length})`}
       </div>
 
       {/* Hooks List */}
       <div className="space-y-3">
-        {filteredHooks.length > 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12 text-muted-foreground">
+            <p>Carregando hooks...</p>
+          </div>
+        ) : filteredHooks.length > 0 ? (
           filteredHooks.map(({ hook, relevance }) => (
             <div
               key={hook.id}
@@ -332,7 +412,7 @@ export function HookVault({ workspaceId }: Props) {
                         {
                           label: "Remover",
                           icon: Trash2,
-                          onClick: () => console.log("Delete"),
+                          onClick: () => setDeleteId(hook.id),
                           variant: "destructive",
                         },
                       ]}
@@ -349,6 +429,140 @@ export function HookVault({ workspaceId }: Props) {
           </div>
         )}
       </div>
+
+      {/* New Hook Dialog */}
+      <Dialog open={newHookOpen} onOpenChange={setNewHookOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Novo Hook</DialogTitle>
+            <DialogDescription>
+              Adicione um novo hook ao seu banco de dados
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>Hook Text *</Label>
+              <Textarea
+                placeholder='Ex: "Para de fazer [X]. Começa a fazer [Y]."'
+                value={formData.text}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, text: e.target.value }))
+                }
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Template *</Label>
+              <Input
+                placeholder='Ex: "Para de fazer [X]. Começa a fazer [Y]."'
+                value={formData.template}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, template: e.target.value }))
+                }
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Tipo *</Label>
+                <Select
+                  value={formData.type}
+                  onValueChange={(v) =>
+                    setFormData((prev) => ({ ...prev, type: v as HookType }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {hookTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Nicho *</Label>
+                <Select
+                  value={formData.niche}
+                  onValueChange={(v) =>
+                    setFormData((prev) => ({ ...prev, niche: v as HookNiche }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {hookNiches.map((niche) => (
+                      <SelectItem key={niche} value={niche}>
+                        {niche}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Criador Original</Label>
+              <Input
+                placeholder='Ex: "Dan Koe"'
+                value={formData.creator}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, creator: e.target.value }))
+                }
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Handle do Criador</Label>
+              <Input
+                placeholder='Ex: "@dan_koe"'
+                value={formData.creator_handle}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    creator_handle: e.target.value,
+                  }))
+                }
+              />
+            </div>
+          </DialogBody>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setNewHookOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleCreateHook}
+              disabled={
+                !formData.text.trim() ||
+                !formData.template.trim() ||
+                createHook.isPending
+              }
+            >
+              {createHook.isPending ? "Criando..." : "Criar Hook"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirm Dialog */}
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        title="Remover Hook"
+        description="Esta ação não pode ser desfeita."
+        confirmLabel="Remover"
+        variant="destructive"
+        onConfirm={handleDeleteHook}
+      />
 
       {/* Audience Config Modal */}
       <AudienceConfig isOpen={configOpen} onClose={() => setConfigOpen(false)} />
