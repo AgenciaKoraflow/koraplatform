@@ -9,6 +9,8 @@ interface Props {
   followers: string;
   period: string;
   tabs: Array<{ id: string; label: string }>;
+  activeTab: string;
+  onTabChange: (tabId: string) => void;
 }
 
 export function MarketingLayout({
@@ -18,13 +20,9 @@ export function MarketingLayout({
   followers,
   period,
   tabs,
+  activeTab,
+  onTabChange,
 }: Props) {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get("marketing") ?? "visao-geral";
-
-  function handleTabChange(tabId: string) {
-    setSearchParams({ marketing: tabId }, { replace: true });
-  }
 
   return (
     <div className="flex gap-0">
@@ -55,7 +53,7 @@ export function MarketingLayout({
               return (
                 <button
                   key={tab.id}
-                  onClick={() => handleTabChange(tab.id)}
+                  onClick={() => onTabChange(tab.id)}
                   className={cn(
                     "w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-all",
                     isActive

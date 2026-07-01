@@ -13,13 +13,13 @@ interface Props {
 }
 
 const MARKETING_TABS = [
-  { id: "visao-geral", label: "◆ VISÃO GERAL" },
-  { id: "hook-vault", label: "▦ HOOK VAULT" },
-  { id: "analytics", label: "◯ ANALYTICS" },
-  { id: "concorrentes", label: "● CONCORRENTES" },
-  { id: "agendador", label: "⊞ AGENDADOR" },
-  { id: "calendario", label: "⊟ CALENDÁRIO" },
-  { id: "trending", label: "≡ TRENDING" },
+  { id: "visao-geral", label: "VISÃO GERAL" },
+  { id: "hook-vault", label: "HOOK VAULT" },
+  { id: "analytics", label: "ANALYTICS" },
+  { id: "concorrentes", label: "CONCORRENTES" },
+  { id: "agendador", label: "AGENDADOR" },
+  { id: "calendario", label: "CALENDÁRIO" },
+  { id: "trending", label: "TRENDING" },
 ];
 
 const pageComponents: Record<string, React.ComponentType<{ workspaceId: string }>> = {
@@ -33,13 +33,17 @@ const pageComponents: Record<string, React.ComponentType<{ workspaceId: string }
 };
 
 export function EmpresaMarketing({ workspaceId }: Props) {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get("marketing") ?? "visao-geral";
 
   const isValidTab = MARKETING_TABS.some((tab) => tab.id === activeTab);
   const currentTab = isValidTab ? activeTab : "visao-geral";
 
   const CurrentComponent = pageComponents[currentTab] || VisaoGeral;
+
+  function handleTabChange(tabId: string) {
+    setSearchParams({ marketing: tabId }, { replace: true });
+  }
 
   return (
     <MarketingLayout
@@ -48,6 +52,8 @@ export function EmpresaMarketing({ workspaceId }: Props) {
       followers="287.4K"
       period="30D"
       tabs={MARKETING_TABS}
+      activeTab={currentTab}
+      onTabChange={handleTabChange}
     >
       <CurrentComponent workspaceId={workspaceId} />
     </MarketingLayout>
