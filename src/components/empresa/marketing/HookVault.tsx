@@ -1,4 +1,6 @@
 import { useState, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { Search, Copy, Share2, Trash2, Settings, Zap, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,11 +26,11 @@ import { ActionMenu } from "@/components/shared/ActionMenu";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { useHooks } from "@/hooks/queries/useHooksQuery";
 import { useHooksMutations } from "@/hooks/mutations/useHooksMutations";
-import { hookNiches, hookTypes, typeColors, hookTypeLabels } from "./hooks";
+import { hookNiches, hookTypes, typeColors, hookTypeLabels, contentTypes, visualModes, contentTypeLabels, visualModeLabels } from "./hooks";
 import { defaultAudience, calculateRelevance } from "./audience";
 import { AudienceConfig } from "./AudienceConfig";
 import { seedHooksToDatabase } from "@/lib/seedHooks";
-import type { HookNiche, HookType } from "./hooks";
+import type { HookNiche, HookType, ContentType, VisualMode } from "./hooks";
 import type { CreateHookInput } from "@/types/hooks";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -40,8 +42,6 @@ interface Props {
 interface NewHookForm {
   text: string;
   template: string;
-  creator: string;
-  creator_handle: string;
   type: HookType;
   niche: HookNiche;
 }
@@ -49,19 +49,14 @@ interface NewHookForm {
 const EMPTY_FORM: NewHookForm = {
   text: "",
   template: "",
-  creator: "",
-  creator_handle: "",
   type: "SWAP",
   niche: "IA",
 };
 
 export function HookVault({ workspaceId }: Props) {
   const [searchInput, setSearchInput] = useState("");
-  const [selectedNiche, setSelectedNiche] = useState<HookNiche | "">("");
-  const [selectedType, setSelectedType] = useState<HookType | "">("");
-  const [minViews, setMinViews] = useState(0);
-  const [sortByRelevance, setSortByRelevance] = useState(true);
-  const [minRelevance, setMinRelevance] = useState(0);
+  const [selectedPainPoint, setSelectedPainPoint] = useState<string>("");
+  const [selectedEmotionalTrigger, setSelectedEmotionalTrigger] = useState<string>("");
   const [configOpen, setConfigOpen] = useState(false);
   const [newHookOpen, setNewHookOpen] = useState(false);
   const [formData, setFormData] = useState<NewHookForm>(EMPTY_FORM);
@@ -70,6 +65,17 @@ export function HookVault({ workspaceId }: Props) {
   // Fetch hooks from Supabase
   const { data: hooks = [], isLoading } = useHooks(workspaceId);
   const { createHook, deleteHook } = useHooksMutations(workspaceId);
+  const queryClient = useQueryClient();
+
+  // Extract unique pain points and emotional triggers
+  const uniquePainPoints = useMemo(
+    () => Array.from(new Set(hooks.map((h) => h.painPoint).filter(Boolean))).sort(),
+    [hooks]
+  );
+  const uniqueEmotionalTriggers = useMemo(
+    () => Array.from(new Set(hooks.map((h) => h.emotionalTrigger).filter(Boolean))).sort(),
+    [hooks]
+  );
 
   const hooksWithRelevance = useMemo(() => {
     return hooks.map((hook) => ({
@@ -82,33 +88,34 @@ export function HookVault({ workspaceId }: Props) {
     let result = hooksWithRelevance
       .filter((item) => {
         const hook = item.hook;
-        const relevance = item.relevance;
         const matchesSearch =
           hook.text.toLowerCase().includes(searchInput.toLowerCase()) ||
-          hook.creator.toLowerCase().includes(searchInput.toLowerCase());
-        const matchesNiche = !selectedNiche || hook.niche === selectedNiche;
-        const matchesType = !selectedType || hook.type === selectedType;
-        const matchesViews = hook.views >= minViews * 1000;
-        const matchesRelevance = relevance.score >= minRelevance;
+          hook.painPoint?.toLowerCase().includes(searchInput.toLowerCase()) ||
+          hook.emotionalTrigger?.toLowerCase().includes(searchInput.toLowerCase());
+        const matchesPainPoint = !selectedPainPoint || hook.painPoint?.toLowerCase().includes(selectedPainPoint.toLowerCase());
+        const matchesEmotionalTrigger = !selectedEmotionalTrigger || hook.emotionalTrigger?.toLowerCase().includes(selectedEmotionalTrigger.toLowerCase());
 
-        return (
-          matchesSearch &&
-          matchesNiche &&
-          matchesType &&
-          matchesViews &&
-          matchesRelevance
-        );
+        return matchesSearch && matchesPainPoint && matchesEmotionalTrigger;
       });
 
-    if (sortByRelevance) {
-      result = result.sort((a, b) => b.relevance.score - a.relevance.score);
-    }
+    // Always sort by relevance
+    result = result.sort((a, b) => b.relevance.score - a.relevance.score);
 
     return result;
-  }, [searchInput, selectedNiche, selectedType, minViews, sortByRelevance, minRelevance]);
+  }, [searchInput, selectedPainPoint, selectedEmotionalTrigger, hooksWithRelevance]);
 
-  const handleUseHook = (hookText: string) => {
-    navigator.clipboard.writeText(hookText);
+  const [, setSearchParams] = useSearchParams();
+
+  const handleUseHook = (hook: typeof hooks[0]) => {
+    // Copy to clipboard
+    navigator.clipboard.writeText(hook.text);
+    toast.success("Hook copiado! Levando para o Agendador... 🚀");
+
+    // Navigate to Agendador and store hook in sessionStorage
+    setTimeout(() => {
+      sessionStorage.setItem("selectedHook", JSON.stringify(hook));
+      setSearchParams({ marketing: "agendador" });
+    }, 500);
   };
 
   const handleCreateHook = async () => {
@@ -119,8 +126,8 @@ export function HookVault({ workspaceId }: Props) {
     await createHook.mutateAsync({
       text: formData.text,
       template: formData.template,
-      creator: formData.creator || "Você",
-      creator_handle: formData.creator_handle || "@seu_usuario",
+      creator: "Sistema",
+      creator_handle: "@sistema",
       type: formData.type,
       niche: formData.niche,
     } as CreateHookInput);
@@ -140,6 +147,8 @@ export function HookVault({ workspaceId }: Props) {
     try {
       const result = await seedHooksToDatabase(workspaceId);
       if (result.success) {
+        // Invalidate cache to force refetch
+        await queryClient.invalidateQueries({ queryKey: ["hooks", workspaceId] });
         toast.success(`${result.count} hooks adicionados com sucesso!`);
       } else {
         toast.info("Hooks já foram adicionados anteriormente");
@@ -170,6 +179,15 @@ export function HookVault({ workspaceId }: Props) {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button
+            size="lg"
+            variant="outline"
+            onClick={handleSeedHooks}
+            className="gap-2"
+          >
+            <Zap className="w-4 h-4" />
+            Importar Hooks (48)
+          </Button>
           <Button
             size="lg"
             variant="outline"
@@ -222,90 +240,53 @@ export function HookVault({ workspaceId }: Props) {
         </div>
 
         {/* Filter Controls */}
-        <div className="grid grid-cols-4 gap-3">
-          {/* Niche Filter */}
+        <div className="grid grid-cols-2 gap-3">
+          {/* Pain Point Filter */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase">
-              Nicho
+              🎯 Dor que resolve
             </label>
             <select
-              value={selectedNiche}
-              onChange={(e) =>
-                setSelectedNiche((e.target.value as HookNiche) || "")
-              }
+              value={selectedPainPoint}
+              onChange={(e) => setSelectedPainPoint(e.target.value)}
               className="w-full h-9 px-3 rounded-lg bg-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
-              <option value="">Todos</option>
-              {hookNiches.map((niche) => (
-                <option key={niche} value={niche}>
-                  {niche}
+              <option value="">Todas as dores</option>
+              {uniquePainPoints.map((pain) => (
+                <option key={pain} value={pain}>
+                  {pain}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Type Filter */}
+          {/* Emotional Trigger Filter */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase">
-              Tipo
+              💭 Gatilho emocional
             </label>
             <select
-              value={selectedType}
-              onChange={(e) =>
-                setSelectedType((e.target.value as HookType) || "")
-              }
+              value={selectedEmotionalTrigger}
+              onChange={(e) => setSelectedEmotionalTrigger(e.target.value)}
               className="w-full h-9 px-3 rounded-lg bg-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
-              <option value="">Todos</option>
-              {hookTypes.map((type) => (
-                <option key={type} value={type}>
-                  {type}
+              <option value="">Todos os gatilhos</option>
+              {uniqueEmotionalTriggers.map((trigger) => (
+                <option key={trigger} value={trigger}>
+                  {trigger}
                 </option>
               ))}
-            </select>
-          </div>
-
-          {/* Relevance Filter */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase">
-              Relevância
-            </label>
-            <select
-              value={minRelevance}
-              onChange={(e) => setMinRelevance(Number(e.target.value))}
-              className="w-full h-9 px-3 rounded-lg bg-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-            >
-              <option value="0">Qualquer uma</option>
-              <option value="40">40%+</option>
-              <option value="60">60%+</option>
-              <option value="80">80%+</option>
-            </select>
-          </div>
-
-          {/* Sort */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase">
-              Ordenar por
-            </label>
-            <select
-              value={sortByRelevance ? "relevance" : "views"}
-              onChange={(e) => setSortByRelevance(e.target.value === "relevance")}
-              className="w-full h-9 px-3 rounded-lg bg-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-            >
-              <option value="relevance">Relevância</option>
-              <option value="views">Mais Views</option>
             </select>
           </div>
         </div>
 
         {/* Clear Filters */}
-        {(searchInput || selectedNiche || selectedType || minRelevance > 0) && (
+        {(searchInput || selectedPainPoint || selectedEmotionalTrigger) && (
           <button
             onClick={() => {
               setSearchInput("");
-              setSelectedNiche("");
-              setSelectedType("");
-              setMinRelevance(0);
+              setSelectedPainPoint("");
+              setSelectedEmotionalTrigger("");
             }}
             className="text-xs text-primary hover:underline font-medium"
           >
@@ -342,6 +323,30 @@ export function HookVault({ workspaceId }: Props) {
                     Template: {hook.template}
                   </p>
                 </div>
+
+                {/* Metadados Psicológicos */}
+                {(hook.painPoint || hook.emotionalTrigger) && (
+                  <div className="bg-primary/5 border border-primary/20 rounded p-3 space-y-2">
+                    {hook.painPoint && (
+                      <div className="flex gap-2 items-start">
+                        <span className="text-lg">🎯</span>
+                        <div className="flex-1">
+                          <p className="text-xs font-semibold text-primary uppercase">Dor que resolve</p>
+                          <p className="text-sm text-foreground">{hook.painPoint}</p>
+                        </div>
+                      </div>
+                    )}
+                    {hook.emotionalTrigger && (
+                      <div className="flex gap-2 items-start">
+                        <span className="text-lg">💭</span>
+                        <div className="flex-1">
+                          <p className="text-xs font-semibold text-primary uppercase">Gatilho emocional</p>
+                          <p className="text-sm text-foreground">{hook.emotionalTrigger}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Relevance & Reasons */}
                 <div className="bg-secondary/50 rounded p-3 space-y-2">
@@ -383,6 +388,24 @@ export function HookVault({ workspaceId }: Props) {
                       {hook.niche}
                     </span>
 
+                    {/* Content Type Badge */}
+                    {hook.contentType && (
+                      <span className="text-xs bg-accent/20 text-accent-foreground px-2.5 py-1 rounded">
+                        {hook.contentType === "Reel" && "📱 Reel"}
+                        {hook.contentType === "Carrossel" && "📸 Carrossel"}
+                        {hook.contentType === "Post" && "📄 Post"}
+                        {hook.contentType === "Story" && "📖 Story"}
+                      </span>
+                    )}
+
+                    {/* Visual Mode Badge */}
+                    {hook.visualMode && (
+                      <span className="text-xs bg-muted text-muted-foreground px-2.5 py-1 rounded">
+                        {hook.visualMode === "Clean" && "☀️ Clean"}
+                        {hook.visualMode === "Dark" && "🌙 Dark"}
+                      </span>
+                    )}
+
                     {/* Creator */}
                     <span className="text-xs text-muted-foreground">
                       por {hook.creatorHandle}
@@ -405,7 +428,7 @@ export function HookVault({ workspaceId }: Props) {
                     {/* Use Button */}
                     <Button
                       size="sm"
-                      onClick={() => handleUseHook(hook.text)}
+                      onClick={() => handleUseHook(hook)}
                       className="bg-primary hover:bg-primary/90"
                     >
                       Usar este
@@ -442,9 +465,6 @@ export function HookVault({ workspaceId }: Props) {
           <div className="text-center py-12 text-muted-foreground space-y-4">
             <p>Nenhum hook no banco de dados</p>
             <p className="text-xs">Adicione hooks manualmente ou importe nossos modelos</p>
-            <Button onClick={handleSeedHooks} className="mt-4">
-              + Importar 20 Hooks Iniciais
-            </Button>
           </div>
         ) : (
           <div className="text-center py-12 text-muted-foreground">
@@ -531,30 +551,6 @@ export function HookVault({ workspaceId }: Props) {
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label>Criador Original</Label>
-              <Input
-                placeholder='Ex: "Dan Koe"'
-                value={formData.creator}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, creator: e.target.value }))
-                }
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label>Handle do Criador</Label>
-              <Input
-                placeholder='Ex: "@dan_koe"'
-                value={formData.creator_handle}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    creator_handle: e.target.value,
-                  }))
-                }
-              />
-            </div>
           </DialogBody>
           <DialogFooter>
             <Button

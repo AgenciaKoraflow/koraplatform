@@ -1,5 +1,7 @@
 export type HookType = "SWAP" | "BUILD" | "CLAIM" | "LIST" | "CONTRARIAN" | "STORY" | "CURIOSIDADE";
 export type HookNiche = "IA" | "SaaS" | "Produtividade" | "Criatividade" | "Tech" | "Startups" | "Marketing" | "Educação" | "Automação" | "Campanhas" | "PME" | "WhatsApp";
+export type ContentType = "Reel" | "Carrossel" | "Post" | "Story";
+export type VisualMode = "Clean" | "Dark";
 
 export interface Hook {
   id: string;
@@ -10,7 +12,12 @@ export interface Hook {
   views: number;
   type: HookType;
   niche: HookNiche;
-  dateAdded: string;
+  contentType?: ContentType;
+  visualMode?: VisualMode;
+  theme?: string; // ex: "Dor: O Funcionário Robô" ou "Métrica: A Matemática do Desperdício"
+  emotionalTrigger?: string; // ex: "Aversão à Perda, Urgência"
+  painPoint?: string; // ex: "Desperdício de recursos"
+  dateAdded?: string;
   timesUsed?: number;
 }
 
@@ -28,6 +35,9 @@ export const hookNiches: HookNiche[] = [
   "PME",
   "WhatsApp",
 ];
+
+export const contentTypes: ContentType[] = ["Reel", "Carrossel", "Post", "Story"];
+export const visualModes: VisualMode[] = ["Clean", "Dark"];
 
 export const hookTypes: HookType[] = [
   "SWAP",
@@ -47,6 +57,18 @@ export const hookTypeLabels: Record<HookType, string> = {
   CONTRARIAN: "Contrário (Ninguém fala sobre)",
   STORY: "História (Minha jornada de...)",
   CURIOSIDADE: "Curiosidade (O que a maioria..)",
+};
+
+export const contentTypeLabels: Record<ContentType, string> = {
+  Reel: "📱 Reel (9:16)",
+  Carrossel: "📸 Carrossel (4:5)",
+  Post: "📄 Post (1:1)",
+  Story: "📖 Story (9:16)",
+};
+
+export const visualModeLabels: Record<VisualMode, string> = {
+  Clean: "☀️ Clean Mode",
+  Dark: "🌙 Dark Mode",
 };
 
 export const typeColors: Record<HookType, string> = {

@@ -1,137 +1,142 @@
-# Marketing Dashboard - Documentação Técnica
+# 🎬 Marketing Dashboard - Assistente de Conteúdo Viral
 
-## Stack & Arquitetura
+## 🎯 Visão Geral
 
-**Framework:** React 18 + TypeScript + React Router DOM
-**Styling:** Tailwind CSS + shadcn/ui
-**Package Manager:** Bun
-**Theme:** Dark mode nativo + Accent terracota (#B8532E)
+**Propósito:** Painel interno que automatiza todo o fluxo de conteúdo viral — captura referências, mede performance, vigia concorrentes e agenda posts. Você cria, o sistema cuida do resto.
 
-## Decisões Arquiteturais
+**Usuário:** Criador de conteúdo focado em IA/tech (ex: @fabianocarvalhojr)
+**Stack:** React 18 + TypeScript + React Router DOM | Tailwind CSS + shadcn/ui | Bun
+**Tema:** Dark mode nativo + Accent terracota (#B8532E)
 
-### 1. Navegação em Tabs
-- Marketing é uma subsecção da página Empresa com 6 sub-páginas
-- Usamos um sistema de sub-tabs interno para navegar entre as 6 páginas
-- Estado de aba mantido via query parameter (`?subpage=hook-vault`)
-- Permite deep-linking e volta do navegador funciona
+---
 
-### 2. Componentes Reutilizáveis
-- Cada sub-página é um componente isolado em `src/components/empresa/marketing/`
-- Estrutura consistente com outros módulos da aplicação (Tarefas, Financeiro, etc)
-- Props: `workspaceId` é passado para cada componente
+## 📊 As 6 Páginas (Sequência de Desenvolvimento)
 
-### 3. Cores & Tema
-- **Accent Principal (Marketing):** Terracota (#B8532E) - mais quente que laranja, mais relevante para conteúdo
-- Segue padrão de cores do projeto (HSL variables no CSS)
-- Dark mode automático via `html.dark` class
-- Acessibilidade: contrast ratio >= WCAG AA em ambos os temas
+### 0️⃣ **Visão Geral** (`?marketing=visao-geral`)
+**Dashboard de entrada com resumos**
+- Cards: última semana (views, saves, followers)
+- Quick actions: "Novo Hook", "Agendar Post", "Ver Tendências"
+- Status do agendamento (próximos 3 posts)
 
-### 4. Estrutura de Pasta
+### 1️⃣ **Hook Vault** (`?marketing=hook-vault`)
+**Banco de hooks viral que cresce automaticamente**
+- ✅ Histórico de todos os hooks já usados
+- ✅ Buscável: nicho, tipo, views, criador
+- ✅ "Usar este" → copia para clipboard
+- ✅ Mostra quantas vezes cada hook foi usado (38×, 24×)
+- 🔄 Futura: Reel viral → transcreve áudio → extrai hook automático
+
+### 2️⃣ **Analytics** (`?marketing=analytics`)
+**Métricas IG + Heaters (reels que explodiram)**
+- 📈 Dados IG: views, saves, follows, volume DM
+- 📊 Sparklines (7 / 30 / 90 dias)
+- 🔥 Heaters: reel que bateu 2x a mediana
+- 🏆 Top 5 com análise: "O que fez este explodir?"
+
+### 3️⃣ **Concorrentes** (`?marketing=concorrentes`)
+**Raspagem automática de top content**
+- 🤖 Domingo 6h: raspa top 5 reels de cada conta que você segue
+- 🎙️ Transcreve áudio automático
+- 🔗 Extrai hook + texto em tela
+- 👥 @ criador, follower count
+- 💾 Botão "salvar no Hook Vault"
+
+### 4️⃣ **Agendador** (`?marketing=agendador`)
+**Publica IG/TikTok/YouTube com 1 clique**
+- 📱 Escolhe plataformas: Instagram | TikTok | YouTube Shorts
+- 🪝 Escolhe hook
+- ✍️ Digita ângulo/CTA
+- 🤖 Auto-gera legenda completa
+- 📅 Escolhe data/hora
+- 1️⃣ Um clique = publica em todas (via MCP)
+
+### 5️⃣ **Calendário** (`?marketing=calendario`)
+**Visão mensal: tudo que vai sair e quando**
+- 📅 Grade mensal (7 colunas x semanas)
+- 📍 Cada dia: data, plataformas, contador de posts
+- 🖱️ Click → painel lateral com roteiro + legenda
+- 🎨 Cores por plataforma
+
+### 6️⃣ **Em Alta** (`?marketing=trending`)
+**Feed de notícias com potencial de conteúdo**
+- 🤖 Raspa 12 fontes diárias (Anthropic, OpenAI, X lists, RSS)
+- 🏷️ Marca cada item: "Potencial de Hook" | "Explicar" | "Pular"
+- 📊 Top 5 por recência
+- 🔔 Notificação diária 7h com destaques
+- 🔗 Deep link para compartilhar ideia
+
+---
+
+## 🏗️ Arquitetura & Padrões
+
+### Estrutura de Pasta
 ```
 src/components/empresa/
-├── EmpresaMarketing.tsx          (container principal)
+├── EmpresaMarketing.tsx              (Router principal)
 └── marketing/
-    ├── HookVault.tsx              (Page 1)
-    ├── Analytics.tsx              (Page 2)
-    ├── Concorrentes.tsx           (Page 3)
-    ├── Agendador.tsx              (Page 4)
-    ├── Calendario.tsx             (Page 5)
-    └── EmAlta.tsx                 (Page 6)
+    ├── MarketingLayout.tsx          (Sidebar + layout)
+    ├── VisaoGeral.tsx               (Page 0)
+    ├── HookVault.tsx                (Page 1)
+    ├── Analytics.tsx                (Page 2)
+    ├── Concorrentes.tsx             (Page 3)
+    ├── Agendador.tsx                (Page 4)
+    ├── Calendario.tsx               (Page 5)
+    ├── EmAlta.tsx                   (Page 6)
+    ├── hooks.ts                     (Tipos: HookType, HookNiche)
+    ├── audience.ts                  (Lógica de relevância)
+    └── AudienceConfig.tsx           (Modal de config)
 ```
 
-## Páginas do Dashboard
+### Navegação
+- Query param: `?tab=empresa&marketing=hook-vault`
+- Permite deep-linking, volta do navegador funciona
+- Sidebar mostra user (@handle, followers, período)
+- Tabs ativas destacadas com borda esquerda
 
-### 0. **Visão Geral** (`/empresa?tab=marketing&marketing=visao-geral`)
-- Dashboard principal com metrics de alto nível
-- Cards com views, stripe revenue, DMs filtradas
-- Status de conteúdo (publicados, rascunho, agendados, em análise)
-- Quick links para outras páginas
-
-### 1. **Hook Vault** (`/empresa?tab=marketing&marketing=hook-vault`)
-- Banco de dados de hooks/chamativos com categorias (SWAP, BUILD, CLAIM, LIST, CONTRARIAN)
-- Listagem com contador de uso (ex: 38×, 24×)
-- Busca em tempo real
-- Cards com ações (copiar, deletar)
-
-### 2. **Analytics** (`/empresa?tab=marketing&marketing=analytics`)
-- Métricas principais: Views, Saves, Visitas ao Perfil
-- Top 5 Heaters (últimos 7 dias) com crescimento percentual
-- Cards de performance com deltas positivos
-
-### 3. **Concorrentes** (`/empresa?tab=marketing&marketing=concorrentes`)
-- Lista de 8+ criadores monitorados
-- Follower count em grandes números (1.2M, 478K, etc)
-- Contador de novos posts por criador
-- Atualização automática (DOM 06:00)
-
-### 4. **Agendador** (`/empresa?tab=marketing&marketing=agendador`)
-- Seleção de plataformas (Instagram, TikTok, YT Shorts, LinkedIn)
-- Form com data, hora e via de publicação
-- Botão "AGENDAR TUDO" para múltiplas plataformas
-
-### 5. **Calendario** (`/empresa?tab=marketing&marketing=calendario`)
-- Calendário visual do mês com grid 7x semana
-- Dias agendados destacados com contador
-- Navegação mês anterior/próximo
-- Legenda com status (agendado, disponível)
-
-### 6. **Trending** (`/empresa?tab=marketing&marketing=trending`)
-- Feed de tendências do dia
-- 12+ fontes monitoradas
-- Classificação por potencial (COM POTENCIAL, HOOK, EXPLICAR, PULAR)
-- Contador de fontes por tendência
-
-## Padrões de Desenvolvimento
-
-### Query Parameters
-- Navegação via URL: `?tab=marketing&marketing=hook-vault`
-- Exemplo completo: `/empresa?tab=marketing&marketing=analytics`
-- Permite preservar estado durante navegação
-- Suporta deep-linking e botão voltar do navegador
-
-### Loading States
-- Cada página possui seu próprio state de loading
-- Placeholder com ícone e mensagem descritiva
-- Dados carregados via React Query (padrão do projeto)
-
-### Responsividade
-- Mobile-first design com Tailwind
-- Tabs se adaptam a screens menores
-- Conteúdo sempre legível em mobile
-
-## Garantia de Qualidade (QA) ✅
-
-**Status:** 24/24 testes automatizados passando
-
-### Antes de qualquer commit ou push:
-1. ✅ Executar `npm run build` (deve suceder sem erros)
-2. ✅ Executar `./test-marketing-dashboard.sh` (deve ter 24/24 testes passando)
-3. ✅ Verificar console do navegador (zero erros)
-4. ✅ Testar 3 funcionalidades principais manualmente
-
-### Documentação de QA
-- `TESTING.md` - Checklist completo de testes (13 suites, 50+ items)
-- `QUALITY_ASSURANCE.md` - Certificação formal de qualidade e SLA
-- `test-marketing-dashboard.sh` - Script automatizado de validação
-
-### Processo de QA:
-```bash
-# Antes de cada commit:
-npm run build && ./test-marketing-dashboard.sh
+### Tipagem
+```typescript
+type HookType = "SWAP" | "BUILD" | "CLAIM" | "LIST" | "CONTRARIAN" | "STORY" | "CURIOSIDADE"
+type HookNiche = "IA" | "SaaS" | "Produtividade" | "Criatividade" | "Tech" | "Startups" | "Marketing" | "Educação" | "Automação" | "Campanhas" | "PME" | "WhatsApp"
 ```
 
-Se algum teste falhar: NÃO comitar até corrigir
+### Props Padrão
+Cada página recebe: `workspaceId: string`
 
-## Próximos Passos
+---
 
-1. Integrar com backend (API endpoints)
-2. Adicionar hooks de mutação para CRUD operations
-3. Implementar permissões por papel
-4. Adicionar cache e sincronização em tempo real (se necessário)
-5. Telemetria e analytics do próprio dashboard
+## 🔄 Fluxo de Dados (Futuro)
 
-## Referências
-- Estrutura seguida: `src/components/empresa/EmpresaTarefas.tsx`
-- Pattern de hooks: `useInternalTasks`, `useInternalTaskMutations`
-- UI components: shadcn/ui (Button, Input, Select, Dialog, etc)
-- QA Script: `./test-marketing-dashboard.sh` (execute antes de cada commit)
+1. **Hooks de audiência** → relevância score (buscável)
+2. **IG API** → puxa metrics em tempo real
+3. **Scraper de concorrentes** → DOM 6h → armazena hooks
+4. **Agendador** → MCP de publicação → Instagram/TikTok/YT
+5. **Feed trending** → raspa 12 fontes → notifica 7h
+
+---
+
+## 📋 Checklist de Desenvolvimento
+
+- [ ] **Passo 0:** Estruturar 6 páginas (skeleton com placeholder)
+- [ ] **Passo 1:** Hook Vault completo (busca, filtros, CRUD)
+- [ ] **Passo 2:** Analytics com dados mockados (sparklines, heaters)
+- [ ] **Passo 3:** Concorrentes (layout, dados mockados)
+- [ ] **Passo 4:** Agendador (form, auto-geração legenda mockada)
+- [ ] **Passo 5:** Calendário (grid mensal, painel lateral)
+- [ ] **Passo 6:** Em Alta (feed, marcação potencial)
+
+Depois: integrar backends/MCPs conforme disponível.
+
+---
+
+## 🎨 Design System
+
+**Tema:** Dark mode por padrão, accent terracota (#B8532E)
+**Componentes:** shadcn/ui (Button, Dialog, Input, Select, etc)
+**Ícones:** lucide-react
+**Responsivo:** Mobile-first com Tailwind
+
+---
+
+## 🚀 Começando (Passo 0)
+
+Agora vamos estruturar o skeleton de cada página com placeholders, garantindo que a navegação funciona perfeitamente.

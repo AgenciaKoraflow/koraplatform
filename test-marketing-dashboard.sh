@@ -93,9 +93,9 @@ else
 fi
 
 # Test 5: Verificar se filtros estão implementados
-if grep -q "selectedNiche" src/components/empresa/marketing/HookVault.tsx && \
-   grep -q "selectedType" src/components/empresa/marketing/HookVault.tsx && \
-   grep -q "minRelevance" src/components/empresa/marketing/HookVault.tsx; then
+if grep -q "selectedPainPoint" src/components/empresa/marketing/HookVault.tsx && \
+   grep -q "selectedEmotionalTrigger" src/components/empresa/marketing/HookVault.tsx && \
+   grep -q "searchInput" src/components/empresa/marketing/HookVault.tsx; then
     test_feature "HookVault: Filtros implementados" 0
 else
     test_feature "HookVault: Filtros implementados" 1
