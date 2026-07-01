@@ -48,6 +48,7 @@ export interface CompleteInstagramReport {
     following: number;
     totalPosts: number;
     biography: string;
+    profilePictureUrl?: string;
   };
 
   // MÉTRICAS HISTÓRICO
@@ -284,6 +285,7 @@ export async function fetchCompleteInstagramAnalytics(): Promise<CompleteInstagr
         following: accountData.follows_count,
         totalPosts: accountData.media_count,
         biography: accountData.biography,
+        profilePictureUrl: accountData.profile_picture_url,
       },
       metrics: {
         reach,
