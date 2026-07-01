@@ -411,7 +411,7 @@ export function Calendario({ workspaceId }: Props) {
                       className={`flex-1 px-3 py-2 rounded text-xs font-semibold transition-all ${
                         selectedPost.status === "draft"
                           ? "bg-gray-500 text-white"
-                          : "bg-gray-500/20 text-gray-600 hover:bg-gray-500/30"
+                          : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       📝 Rascunho
@@ -421,7 +421,7 @@ export function Calendario({ workspaceId }: Props) {
                       className={`flex-1 px-3 py-2 rounded text-xs font-semibold transition-all ${
                         selectedPost.status === "scheduled"
                           ? "bg-amber-500 text-white"
-                          : "bg-amber-500/20 text-amber-600 hover:bg-amber-500/30"
+                          : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       📅 Agendado
@@ -431,7 +431,7 @@ export function Calendario({ workspaceId }: Props) {
                       className={`flex-1 px-3 py-2 rounded text-xs font-semibold transition-all ${
                         selectedPost.status === "posted"
                           ? "bg-green-500 text-white"
-                          : "bg-green-500/20 text-green-600 hover:bg-green-500/30"
+                          : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       ✅ Postado
