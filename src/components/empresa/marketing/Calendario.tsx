@@ -333,11 +333,16 @@ export function Calendario({ workspaceId }: Props) {
             <>
               <div className="space-y-3 pb-4 border-b border-border">
                 <div className="flex items-center justify-between gap-2">
-                  <h3 className="font-semibold text-foreground text-sm">
-                    Post {selectedPost && getPostsForDate(parseInt(selectedPost.date.split("-")[2])).length > 1
-                      ? `${selectedPostIndex + 1} de ${getPostsForDate(parseInt(selectedPost.date.split("-")[2])).length}`
-                      : "Agendado"}
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">
+                      {selectedPost.status === "draft" ? "📝" : selectedPost.status === "scheduled" ? "📅" : "✅"}
+                    </span>
+                    <h3 className="font-semibold text-foreground text-sm">
+                      Post {selectedPost && getPostsForDate(parseInt(selectedPost.date.split("-")[2])).length > 1
+                        ? `${selectedPostIndex + 1} de ${getPostsForDate(parseInt(selectedPost.date.split("-")[2])).length}`
+                        : ""}
+                    </h3>
+                  </div>
                   <div className="flex gap-1">
                     {selectedPost && getPostsForDate(parseInt(selectedPost.date.split("-")[2])).length > 1 && (
                       <>
@@ -386,9 +391,10 @@ export function Calendario({ workspaceId }: Props) {
                   </p>
                 </div>
 
+
                 <div className="space-y-1">
                   <p className="text-xs font-semibold text-muted-foreground">PLATAFORMAS</p>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 mb-3">
                     {selectedPost.platforms.map((platform) => (
                       <span key={platform} className={`text-xs font-semibold px-2 py-1 rounded text-white ${PLATFORM_CONFIG[platform].color}`}>
                         {PLATFORM_CONFIG[platform].icon} {PLATFORM_CONFIG[platform].label}
@@ -397,19 +403,40 @@ export function Calendario({ workspaceId }: Props) {
                   </div>
                 </div>
 
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <p className="text-xs font-semibold text-muted-foreground">STATUS</p>
-                  <span
-                    className={`text-xs font-semibold px-2 py-1 rounded ${
-                      selectedPost.status === "scheduled"
-                        ? "bg-green-500/20 text-green-600"
-                        : selectedPost.status === "posted"
-                          ? "bg-blue-500/20 text-blue-600"
-                          : "bg-amber-500/20 text-amber-600"
-                    }`}
-                  >
-                    {selectedPost.status === "scheduled" ? "📅 Agendado" : selectedPost.status === "posted" ? "✅ Postado" : "📝 Rascunho"}
-                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleUpdatePostStatus(selectedPost.id, "draft")}
+                      className={`flex-1 px-3 py-2 rounded text-xs font-semibold transition-all ${
+                        selectedPost.status === "draft"
+                          ? "bg-gray-500 text-white"
+                          : "bg-gray-500/20 text-gray-600 hover:bg-gray-500/30"
+                      }`}
+                    >
+                      📝 Rascunho
+                    </button>
+                    <button
+                      onClick={() => handleUpdatePostStatus(selectedPost.id, "scheduled")}
+                      className={`flex-1 px-3 py-2 rounded text-xs font-semibold transition-all ${
+                        selectedPost.status === "scheduled"
+                          ? "bg-amber-500 text-white"
+                          : "bg-amber-500/20 text-amber-600 hover:bg-amber-500/30"
+                      }`}
+                    >
+                      📅 Agendado
+                    </button>
+                    <button
+                      onClick={() => handleUpdatePostStatus(selectedPost.id, "posted")}
+                      className={`flex-1 px-3 py-2 rounded text-xs font-semibold transition-all ${
+                        selectedPost.status === "posted"
+                          ? "bg-green-500 text-white"
+                          : "bg-green-500/20 text-green-600 hover:bg-green-500/30"
+                      }`}
+                    >
+                      ✅ Postado
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -417,6 +444,20 @@ export function Calendario({ workspaceId }: Props) {
                 <div className="space-y-2">
                   <p className="text-xs font-semibold text-muted-foreground">🎯 HOOK</p>
                   <p className="text-sm text-foreground bg-primary/10 rounded p-2 border border-primary/20">{selectedPost.hook}</p>
+                </div>
+              )}
+
+              {selectedPost.emotionalTrigger && (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground">💭 GATILHO EMOCIONAL</p>
+                  <p className="text-sm text-foreground bg-orange-500/10 rounded p-2 border border-orange-500/20">{selectedPost.emotionalTrigger}</p>
+                </div>
+              )}
+
+              {selectedPost.painPoint && (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground">🎯 DOR QUE RESOLVE</p>
+                  <p className="text-sm text-foreground bg-red-500/10 rounded p-2 border border-red-500/20">{selectedPost.painPoint}</p>
                 </div>
               )}
 
@@ -442,36 +483,6 @@ export function Calendario({ workspaceId }: Props) {
               </div>
 
               <div className="pt-4 border-t border-border space-y-2">
-                <div className="space-y-1.5">
-                  <p className="text-xs font-semibold text-muted-foreground">MUDAR STATUS</p>
-                  <div className="grid grid-cols-3 gap-2">
-                    <Button
-                      size="sm"
-                      variant={selectedPost.status === "draft" ? "default" : "outline"}
-                      onClick={() => handleUpdatePostStatus(selectedPost.id, "draft")}
-                      className="text-xs"
-                    >
-                      📝 Rascunho
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={selectedPost.status === "scheduled" ? "default" : "outline"}
-                      onClick={() => handleUpdatePostStatus(selectedPost.id, "scheduled")}
-                      className="text-xs"
-                    >
-                      📅 Agendado
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={selectedPost.status === "posted" ? "default" : "outline"}
-                      onClick={() => handleUpdatePostStatus(selectedPost.id, "posted")}
-                      className="text-xs"
-                    >
-                      ✅ Postado
-                    </Button>
-                  </div>
-                </div>
-
                 <Button size="sm" className="w-full gap-2" variant="outline" onClick={() => handleCopyCaption(selectedPost.caption)}>
                   <Copy className="w-4 h-4" />
                   Copiar Legenda
