@@ -1,28 +1,19 @@
 import { useState, useEffect } from "react";
-import { Plus, LogOut, Loader } from "lucide-react";
+import { Plus, LogOut, Loader, Heart, MessageCircle, Share2, Bookmark, Eye, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { fetchInstagramMetrics, fetchInstagramReels, validateInstagramToken, type InstagramReel } from "@/lib/instagram";
+import { fetchCompleteInstagramReport, validateInstagramToken, type InstagramCompleteReport, type InstagramMedia } from "@/lib/instagram";
 
 interface Props {
   workspaceId: string;
-}
-
-interface MetricCard {
-  label: string;
-  value: string;
-  change: string;
-  changePositive: boolean;
 }
 
 export function Analytics({ workspaceId }: Props) {
   const { toast } = useToast();
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [metrics, setMetrics] = useState<MetricCard[] | null>(null);
-  const [reels, setReels] = useState<InstagramReel[]>([]);
+  const [report, setReport] = useState<InstagramCompleteReport | null>(null);
 
-  // Verificar se já tem token salvo
   useEffect(() => {
     const savedConnection = localStorage.getItem("ig_connected");
     if (savedConnection === "true") {
@@ -44,26 +35,12 @@ export function Analytics({ workspaceId }: Props) {
         return;
       }
 
-      // Buscar métricas
-      const igMetrics = await fetchInstagramMetrics();
-      if (igMetrics) {
-        setMetrics([
-          { label: "VIEWS · 7D", value: `${(igMetrics.reelsViews / 1000).toFixed(1)}K`, change: "+162%", changePositive: true },
-          { label: "SAVES · 7D", value: `${igMetrics.saves.toLocaleString()}`, change: "+71%", changePositive: true },
-          { label: "COMENTÁRIOS · 7D", value: `${igMetrics.comments.toLocaleString()}`, change: "+44%", changePositive: true },
-          { label: "COMPARTILHAMENTOS · 7D", value: `${(igMetrics.shares / 1000).toFixed(1)}K`, change: "+28%", changePositive: true },
-          { label: "NOVOS SEGUIDORES · 7D", value: `${(igMetrics.growth7d / 1000).toFixed(1)}K`, change: "+18%", changePositive: true },
-          { label: "VISITAS PERFIL · 7D", value: `${(igMetrics.profileVisits / 1000).toFixed(1)}K`, change: "+89%", changePositive: true },
-        ]);
-      }
-
-      // Buscar reels
-      const igReels = await fetchInstagramReels(5);
-      if (igReels) {
-        setReels(igReels);
+      const completeReport = await fetchCompleteInstagramReport();
+      if (completeReport) {
+        setReport(completeReport);
       }
     } catch (error) {
-      console.error("Erro ao carregar dados do Instagram:", error);
+      console.error("Erro ao carregar dados:", error);
       toast({
         title: "Erro",
         description: "Não conseguimos carregar os dados do Instagram",
@@ -86,11 +63,8 @@ export function Analytics({ workspaceId }: Props) {
         return;
       }
 
-      // Salvar conexão
       localStorage.setItem("ig_connected", "true");
       setIsConnected(true);
-
-      // Carregar dados
       await loadInstagramData();
 
       toast({
@@ -111,8 +85,7 @@ export function Analytics({ workspaceId }: Props) {
   const handleDisconnect = () => {
     localStorage.removeItem("ig_connected");
     setIsConnected(false);
-    setMetrics(null);
-    setReels([]);
+    setReport(null);
     toast({
       title: "Desconectado",
       description: "Sua conta do Instagram foi desconectada",
@@ -126,7 +99,7 @@ export function Analytics({ workspaceId }: Props) {
           <div className="space-y-2">
             <h1 className="text-3xl font-bold">Analytics</h1>
             <p className="text-muted-foreground text-sm">
-              Conecte sua conta do Instagram para ver os dados em tempo real
+              Conecte sua conta do Instagram para ver relatórios completos
             </p>
           </div>
         </div>
@@ -136,7 +109,7 @@ export function Analytics({ workspaceId }: Props) {
             <div className="text-6xl">📱</div>
             <h2 className="text-2xl font-bold">Conectar Instagram</h2>
             <p className="text-muted-foreground">
-              Acesse seus insights de views, saves, comentários e crescimento de seguidores em tempo real.
+              Acesse insights completos: views, saves, comentários, alcance, perfil e muito mais.
             </p>
             <Button
               size="lg"
@@ -162,6 +135,22 @@ export function Analytics({ workspaceId }: Props) {
     );
   }
 
+  if (!report) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <Loader className="w-8 h-8 animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Carregando dados do Instagram...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const topMedia = [...report.media].sort((a, b) => b.likes - a.likes).slice(0, 5);
+  const avgLikes = report.media.length > 0 ? Math.floor(report.engagement.totalLikes / report.media.length) : 0;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -169,107 +158,186 @@ export function Analytics({ workspaceId }: Props) {
         <div className="space-y-2">
           <h1 className="text-3xl font-bold">Analytics</h1>
           <p className="text-muted-foreground text-sm">
-            ÚLTIMOS 7 DIAS · @koraflow.ia
+            📊 @{report.account.username} • {report.account.followers.toLocaleString()} followers
           </p>
         </div>
-        <Button
-          variant="outline"
-          onClick={handleDisconnect}
-          className="gap-2"
-        >
+        <Button variant="outline" onClick={handleDisconnect} className="gap-2">
           <LogOut className="w-4 h-4" />
           Desconectar
         </Button>
       </div>
 
-      {/* Main Metrics Grid */}
-      {metrics ? (
-        <div className="grid grid-cols-3 gap-4">
-          {metrics.map((metric, idx) => (
-            <div
-              key={idx}
-              className="bg-card rounded-lg p-4 border border-border shadow-soft hover:shadow-medium transition-all"
-            >
-              <p className="text-muted-foreground text-xs font-semibold uppercase mb-3">
-                {metric.label}
-              </p>
-              <p className="text-3xl font-bold mb-1">{metric.value}</p>
-              <p className={`text-sm font-semibold ${metric.changePositive ? "text-green-600" : "text-red-600"}`}>
-                {metric.change}
-              </p>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-3 gap-4">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="bg-card rounded-lg p-4 border border-border shadow-soft animate-pulse">
-              <div className="h-4 bg-muted rounded w-1/2 mb-3"></div>
-              <div className="h-8 bg-muted rounded w-2/3 mb-2"></div>
-              <div className="h-4 bg-muted rounded w-1/3"></div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Top Heels */}
-      <div className="bg-card rounded-lg p-6 border border-border shadow-soft">
-        <h3 className="font-semibold text-foreground text-lg mb-4">
-          🔥 TOP 5 REELS · ÚLTIMOS 7 DIAS
-        </h3>
-        <div className="space-y-3">
-          {reels.length > 0 ? (
-            reels.map((reel, idx) => (
-              <div
-                key={reel.id}
-                className="flex items-center gap-4 p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors cursor-pointer"
-                onClick={() => window.open(reel.permalink, "_blank")}
+      {/* Account Summary Card */}
+      <div className="bg-gradient-to-r from-pink-500/10 to-purple-500/10 rounded-lg p-6 border border-pink-500/20 space-y-3">
+        <div className="flex items-start gap-4">
+          <img
+            src={report.account.profilePictureUrl}
+            alt={report.account.username}
+            className="w-16 h-16 rounded-full border-2 border-pink-500/30"
+          />
+          <div className="flex-1">
+            <h2 className="text-lg font-bold">{report.account.name}</h2>
+            <p className="text-sm text-muted-foreground">{report.account.biography}</p>
+            {report.account.website && (
+              <a
+                href={report.account.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-pink-500 hover:underline mt-1 block"
               >
-                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                  <span className="font-bold text-primary">#{idx + 1}</span>
+                {report.account.website}
+              </a>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Metrics Grid */}
+      <div className="grid grid-cols-4 gap-4">
+        <div className="bg-card rounded-lg p-4 border border-border shadow-soft">
+          <p className="text-muted-foreground text-xs font-semibold uppercase mb-2">Seguidores</p>
+          <p className="text-3xl font-bold">{report.account.followers.toLocaleString()}</p>
+          <p className="text-xs text-muted-foreground mt-1">Perfil</p>
+        </div>
+
+        <div className="bg-card rounded-lg p-4 border border-border shadow-soft">
+          <p className="text-muted-foreground text-xs font-semibold uppercase mb-2">Posts</p>
+          <p className="text-3xl font-bold">{report.media.length}</p>
+          <p className="text-xs text-muted-foreground mt-1">Total</p>
+        </div>
+
+        <div className="bg-card rounded-lg p-4 border border-border shadow-soft">
+          <p className="text-muted-foreground text-xs font-semibold uppercase mb-2">Alcance Semanal</p>
+          <p className="text-3xl font-bold">{report.insights.reachWeekly.toLocaleString()}</p>
+          <p className="text-xs text-muted-foreground mt-1">Visualizações</p>
+        </div>
+
+        <div className="bg-card rounded-lg p-4 border border-border shadow-soft">
+          <p className="text-muted-foreground text-xs font-semibold uppercase mb-2">Taxa Engajamento</p>
+          <p className="text-3xl font-bold">{report.engagement.engagementRate.toFixed(1)}%</p>
+          <p className="text-xs text-muted-foreground mt-1">Interações</p>
+        </div>
+      </div>
+
+      {/* Engagement Summary */}
+      <div className="grid grid-cols-4 gap-4">
+        <div className="bg-red-500/5 rounded-lg p-4 border border-red-500/20 space-y-2">
+          <div className="flex items-center gap-2">
+            <Heart className="w-4 h-4 text-red-500" />
+            <p className="text-xs font-semibold text-muted-foreground">CURTIDAS TOTAIS</p>
+          </div>
+          <p className="text-2xl font-bold text-foreground">{report.engagement.totalLikes.toLocaleString()}</p>
+          <p className="text-xs text-muted-foreground">~{avgLikes} por post</p>
+        </div>
+
+        <div className="bg-blue-500/5 rounded-lg p-4 border border-blue-500/20 space-y-2">
+          <div className="flex items-center gap-2">
+            <MessageCircle className="w-4 h-4 text-blue-500" />
+            <p className="text-xs font-semibold text-muted-foreground">COMENTÁRIOS</p>
+          </div>
+          <p className="text-2xl font-bold text-foreground">{report.engagement.totalComments.toLocaleString()}</p>
+          <p className="text-xs text-muted-foreground">Total</p>
+        </div>
+
+        <div className="bg-purple-500/5 rounded-lg p-4 border border-purple-500/20 space-y-2">
+          <div className="flex items-center gap-2">
+            <Bookmark className="w-4 h-4 text-purple-500" />
+            <p className="text-xs font-semibold text-muted-foreground">SALVOS</p>
+          </div>
+          <p className="text-2xl font-bold text-foreground">{report.engagement.totalSaves.toLocaleString()}</p>
+          <p className="text-xs text-muted-foreground">Total</p>
+        </div>
+
+        <div className="bg-amber-500/5 rounded-lg p-4 border border-amber-500/20 space-y-2">
+          <div className="flex items-center gap-2">
+            <Share2 className="w-4 h-4 text-amber-500" />
+            <p className="text-xs font-semibold text-muted-foreground">COMPARTILHAMENTOS</p>
+          </div>
+          <p className="text-2xl font-bold text-foreground">{report.engagement.totalShares.toLocaleString()}</p>
+          <p className="text-xs text-muted-foreground">Total</p>
+        </div>
+      </div>
+
+      {/* Top 5 Posts */}
+      <div className="bg-card rounded-lg p-6 border border-border shadow-soft space-y-4">
+        <div className="flex items-center gap-2">
+          <TrendingUp className="w-5 h-5 text-amber-500" />
+          <h3 className="font-semibold text-foreground text-lg">🔥 TOP 5 POSTS</h3>
+        </div>
+
+        <div className="space-y-3">
+          {topMedia.map((media, idx) => (
+            <a
+              key={media.id}
+              href={media.permalink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-4 p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-all cursor-pointer group"
+            >
+              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 flex items-center justify-center flex-shrink-0 text-white font-bold">
+                #{idx + 1}
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <p className="text-foreground font-medium text-sm line-clamp-2 group-hover:text-pink-500 transition-colors">
+                  {media.caption}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {new Date(media.timestamp).toLocaleDateString("pt-BR")} • {media.mediaType === "VIDEO" ? "📹 Vídeo" : media.mediaType === "CAROUSEL_ALBUM" ? "📸 Carrossel" : "🖼️ Imagem"}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-4 text-right flex-shrink-0">
+                <div>
+                  <div className="flex items-center gap-1">
+                    <Heart className="w-3 h-3 text-red-500" />
+                    <p className="text-sm font-bold text-foreground">{media.likes.toLocaleString()}</p>
+                  </div>
+                  <div className="flex items-center gap-1 mt-1">
+                    <MessageCircle className="w-3 h-3 text-blue-500" />
+                    <p className="text-xs text-muted-foreground">{media.comments}</p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-foreground font-medium text-sm truncate">
-                    {reel.caption || "Reel sem descrição"}
-                  </p>
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <p className="text-sm font-semibold text-foreground">
-                    {(reel.views / 1000).toFixed(0)}K views
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {(reel.saves / 1000).toFixed(1)}K saves
-                  </p>
+                <div>
+                  <div className="flex items-center gap-1">
+                    <Bookmark className="w-3 h-3 text-purple-500" />
+                    <p className="text-sm font-bold text-foreground">{media.saved}</p>
+                  </div>
+                  <div className="flex items-center gap-1 mt-1">
+                    <Eye className="w-3 h-3 text-amber-500" />
+                    <p className="text-xs text-muted-foreground">{(media.views / 1000).toFixed(0)}K</p>
+                  </div>
                 </div>
               </div>
-            ))
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>Carregando reels...</p>
-            </div>
-          )}
+            </a>
+          ))}
         </div>
       </div>
 
-      {/* Insights & Recommendations */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-card rounded-lg p-6 border border-border shadow-soft">
-          <h4 className="font-semibold text-foreground mb-3">💡 O que funcionou</h4>
-          <ul className="space-y-2 text-sm text-muted-foreground">
-            <li>✓ Reels com hooks de "Para de fazer X"</li>
-            <li>✓ Vídeos 15-30 segundos têm 40% mais saves</li>
-            <li>✓ Horário ideal: 19h-21h em dias úteis</li>
-          </ul>
+      {/* All Media List */}
+      {report.media.length > 5 && (
+        <div className="bg-card rounded-lg p-6 border border-border shadow-soft space-y-4">
+          <h3 className="font-semibold text-foreground text-lg">📋 TODOS OS POSTS ({report.media.length})</h3>
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {report.media.map((media) => (
+              <a
+                key={media.id}
+                href={media.permalink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between p-3 bg-secondary/20 rounded hover:bg-secondary/40 transition-colors text-sm"
+              >
+                <p className="text-foreground truncate flex-1 text-xs">{media.caption}</p>
+                <div className="flex items-center gap-3 text-right flex-shrink-0 text-xs">
+                  <span className="text-red-500">❤️ {media.likes}</span>
+                  <span className="text-blue-500">💬 {media.comments}</span>
+                  <span className="text-purple-500">📌 {media.saved}</span>
+                </div>
+              </a>
+            ))}
+          </div>
         </div>
-        <div className="bg-card rounded-lg p-6 border border-border shadow-soft">
-          <h4 className="font-semibold text-foreground mb-3">🎯 Próximos passos</h4>
-          <ul className="space-y-2 text-sm text-muted-foreground">
-            <li>→ Testar mais CTA no final dos reels</li>
-            <li>→ Aumentar frequência para 5x/semana</li>
-            <li>→ Diversificar entre educação e entretenimento</li>
-          </ul>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
