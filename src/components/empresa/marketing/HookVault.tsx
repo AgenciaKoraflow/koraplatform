@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Search, Copy, Share2, Trash2, Settings, Zap, Plus, Calendar } from "lucide-react";
+import { Search, Copy, Share2, Trash2, Settings, Zap, Plus, Calendar, Sparkles, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,6 +53,7 @@ const EMPTY_FORM: NewHookForm = {
 };
 
 export function HookVault({ workspaceId }: Props) {
+  const [activeTab, setActiveTab] = useState<"gerar" | "biblioteca">("biblioteca");
   const [searchInput, setSearchInput] = useState("");
   const [selectedPainPoint, setSelectedPainPoint] = useState<string>("");
   const [selectedEmotionalTrigger, setSelectedEmotionalTrigger] = useState<string>("");
@@ -67,6 +68,11 @@ export function HookVault({ workspaceId }: Props) {
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("19:00");
   const [contentType, setContentType] = useState<"Reel" | "Stories" | "Carrossel" | "Post">("Reel");
+
+  // Generate hook state
+  const [generateTopic, setGenerateTopic] = useState("");
+  const [generateContext, setGenerateContext] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // Fetch hooks from Supabase
   const { data: hooks = [], isLoading } = useHooks(workspaceId);
@@ -220,6 +226,38 @@ ${hook.creator} (${hook.creatorHandle})
     }
   };
 
+  const handleGenerateHook = async () => {
+    if (!generateTopic.trim()) {
+      toast.error("Digite um tema/assunto para gerar o hook");
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      // This will connect to your Claude project via API
+      // For now, showing a placeholder message
+      toast.loading("🚀 Gerando hook com IA...");
+
+      // TODO: Connect to your Claude project's hook generation API
+      // The generated hook should include:
+      // - hook.text (the actual hook)
+      // - hook.painPoint (the pain point it solves)
+      // - hook.emotionalTrigger (the emotional trigger)
+      // - hook.template (the template structure)
+
+      setTimeout(() => {
+        toast.success("✨ Conecte seu projeto Claude para gerar hooks com IA!");
+        setGenerateTopic("");
+        setGenerateContext("");
+      }, 1500);
+    } catch (error) {
+      toast.error("Erro ao gerar hook");
+      console.error(error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const getRelevanceColor = (score: number) => {
     if (score >= 80) return "text-green-600 bg-green-50 dark:bg-green-950/30";
     if (score >= 60) return "text-blue-600 bg-blue-50 dark:bg-blue-950/30";
@@ -233,143 +271,231 @@ ${hook.creator} (${hook.creatorHandle})
       <div className="flex items-start justify-between">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold">
-            {hooks.length} hooks · buscável
+            {hooks.length} hooks · gerador + biblioteca
           </h1>
           <p className="text-muted-foreground text-sm">
-            +17 ESSA SEMANA · Auto-atualização ativa
+            Gere hooks com IA ou escolha da biblioteca de {hooks.length} opções
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            size="lg"
-            variant="outline"
-            onClick={handleSeedHooks}
-            className="gap-2"
-          >
-            <Zap className="w-4 h-4" />
-            Importar Hooks (48)
-          </Button>
-          <Button
-            size="lg"
-            variant="outline"
-            onClick={() => setConfigOpen(true)}
-            className="gap-2"
-          >
-            <Settings className="w-4 h-4" />
-            Configurar Audiência
-          </Button>
-          <Button
-            size="lg"
-            onClick={() => setNewHookOpen(true)}
-            className="bg-primary hover:bg-primary/90 gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Novo Hook
-          </Button>
-        </div>
       </div>
 
-      {/* Audience Summary */}
-      <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-        <p className="text-sm">
-          <span className="font-semibold">Sua Audiência:</span> {defaultAudience.description}
-        </p>
-        <div className="flex gap-2 mt-2 flex-wrap">
-          {defaultAudience.segments.map((seg) => (
-            <span
-              key={seg}
-              className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded"
-            >
-              {seg}
-            </span>
-          ))}
-        </div>
+      {/* Tabs */}
+      <div className="flex gap-4 border-b border-border">
+        <button
+          onClick={() => setActiveTab("gerar")}
+          className={cn(
+            "flex items-center gap-2 px-4 py-3 font-semibold border-b-2 transition-colors",
+            activeTab === "gerar"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Sparkles className="w-4 h-4" />
+          Gerar Hook com IA
+        </button>
+        <button
+          onClick={() => setActiveTab("biblioteca")}
+          className={cn(
+            "flex items-center gap-2 px-4 py-3 font-semibold border-b-2 transition-colors",
+            activeTab === "biblioteca"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <BookOpen className="w-4 h-4" />
+          Biblioteca ({hooks.length})
+        </button>
       </div>
 
-      {/* Filters */}
-      <div className="space-y-4 bg-secondary/30 rounded-lg p-4 border border-border">
-        {/* Search */}
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Buscar hook ou criador..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            className="w-full h-10 pl-10 pr-4 rounded-lg bg-input border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-          />
-        </div>
+      {/* TAB: GERAR HOOK COM IA */}
+      {activeTab === "gerar" && (
+        <div className="space-y-6">
+          <div className="bg-accent/10 border border-accent/30 rounded-lg p-6 space-y-4">
+            <div className="space-y-2">
+              <h2 className="text-xl font-bold">✨ Gerar Hook com IA</h2>
+              <p className="text-sm text-muted-foreground">
+                Conecte com seu projeto Claude para gerar hooks automáticos baseado em seu tema/contexto
+              </p>
+            </div>
 
-        {/* Filter Controls */}
-        <div className="grid grid-cols-2 gap-3">
-          {/* Pain Point Filter */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase">
-              🎯 Dor que resolve
-            </label>
-            <select
-              value={selectedPainPoint}
-              onChange={(e) => setSelectedPainPoint(e.target.value)}
-              className="w-full h-9 px-3 rounded-lg bg-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-            >
-              <option value="">Todas as dores</option>
-              {uniquePainPoints.map((pain) => (
-                <option key={pain} value={pain}>
-                  {pain}
-                </option>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="topic">Tema ou Assunto *</Label>
+                <Input
+                  id="topic"
+                  placeholder="Ex: Automação de WhatsApp para PME, Inteligência Artificial no varejo"
+                  value={generateTopic}
+                  onChange={(e) => setGenerateTopic(e.target.value)}
+                  className="bg-input"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="context">Contexto (Opcional)</Label>
+                <Textarea
+                  id="context"
+                  placeholder="Ex: Queremos atrair pequenos negócios que estão perdendo tempo manual em atendimento. Foco em economizar tempo e aumentar vendas."
+                  value={generateContext}
+                  onChange={(e) => setGenerateContext(e.target.value)}
+                  rows={4}
+                  className="bg-input"
+                />
+              </div>
+
+              <Button
+                onClick={handleGenerateHook}
+                disabled={isGenerating || !generateTopic.trim()}
+                size="lg"
+                className="w-full bg-accent hover:bg-accent/90 gap-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                {isGenerating ? "Gerando..." : "Gerar Hook com IA"}
+              </Button>
+            </div>
+
+            <div className="bg-warning/10 border border-warning/30 rounded-lg p-4">
+              <p className="text-sm text-muted-foreground">
+                💡 <strong>Dica:</strong> Seus hooks gerados aparecerão na biblioteca e poderão ser usados/agendados imediatamente
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: BIBLIOTECA DE HOOKS */}
+      {activeTab === "biblioteca" && (
+        <div className="space-y-6">
+          {/* Audience Summary */}
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+            <p className="text-sm">
+              <span className="font-semibold">Sua Audiência:</span> {defaultAudience.description}
+            </p>
+            <div className="flex gap-2 mt-2 flex-wrap">
+              {defaultAudience.segments.map((seg) => (
+                <span
+                  key={seg}
+                  className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded"
+                >
+                  {seg}
+                </span>
               ))}
-            </select>
+            </div>
           </div>
 
-          {/* Emotional Trigger Filter */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase">
-              💭 Gatilho emocional
-            </label>
-            <select
-              value={selectedEmotionalTrigger}
-              onChange={(e) => setSelectedEmotionalTrigger(e.target.value)}
-              className="w-full h-9 px-3 rounded-lg bg-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+          {/* Library Actions */}
+          <div className="flex gap-2">
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={handleSeedHooks}
+              className="gap-2"
             >
-              <option value="">Todos os gatilhos</option>
-              {uniqueEmotionalTriggers.map((trigger) => (
-                <option key={trigger} value={trigger}>
-                  {trigger}
-                </option>
-              ))}
-            </select>
+              <Zap className="w-4 h-4" />
+              Importar Hooks (48)
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => setConfigOpen(true)}
+              className="gap-2"
+            >
+              <Settings className="w-4 h-4" />
+              Configurar Audiência
+            </Button>
+            <Button
+              size="lg"
+              onClick={() => setNewHookOpen(true)}
+              className="bg-primary hover:bg-primary/90 gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Novo Hook
+            </Button>
           </div>
-        </div>
 
-        {/* Clear Filters */}
-        {(searchInput || selectedPainPoint || selectedEmotionalTrigger) && (
-          <button
-            onClick={() => {
-              setSearchInput("");
-              setSelectedPainPoint("");
-              setSelectedEmotionalTrigger("");
-            }}
-            className="text-xs text-primary hover:underline font-medium"
-          >
-            Limpar filtros
-          </button>
-        )}
-      </div>
+          {/* Filters */}
+          <div className="space-y-4 bg-secondary/30 rounded-lg p-4 border border-border">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Buscar hook ou criador..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="w-full h-10 pl-10 pr-4 rounded-lg bg-input border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
 
-      {/* Results Count */}
-      <div className="text-sm text-muted-foreground">
-        {filteredHooks.length} hook{filteredHooks.length !== 1 ? "s" : ""} encontrado
-        {filteredHooks.length !== hooks.length && ` (de ${hooks.length})`}
-      </div>
+            {/* Filter Controls */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Pain Point Filter */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground uppercase">
+                  🎯 Dor que resolve
+                </label>
+                <select
+                  value={selectedPainPoint}
+                  onChange={(e) => setSelectedPainPoint(e.target.value)}
+                  className="w-full h-9 px-3 rounded-lg bg-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                >
+                  <option value="">Todas as dores</option>
+                  {uniquePainPoints.map((pain) => (
+                    <option key={pain} value={pain}>
+                      {pain}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-      {/* Hooks List */}
-      <div className="space-y-3">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12 text-muted-foreground">
-            <p>Carregando hooks...</p>
+              {/* Emotional Trigger Filter */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground uppercase">
+                  💭 Gatilho emocional
+                </label>
+                <select
+                  value={selectedEmotionalTrigger}
+                  onChange={(e) => setSelectedEmotionalTrigger(e.target.value)}
+                  className="w-full h-9 px-3 rounded-lg bg-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                >
+                  <option value="">Todos os gatilhos</option>
+                  {uniqueEmotionalTriggers.map((trigger) => (
+                    <option key={trigger} value={trigger}>
+                      {trigger}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Clear Filters */}
+            {(searchInput || selectedPainPoint || selectedEmotionalTrigger) && (
+              <button
+                onClick={() => {
+                  setSearchInput("");
+                  setSelectedPainPoint("");
+                  setSelectedEmotionalTrigger("");
+                }}
+                className="text-xs text-primary hover:underline font-medium"
+              >
+                Limpar filtros
+              </button>
+            )}
           </div>
-        ) : filteredHooks.length > 0 ? (
-          filteredHooks.map(({ hook, relevance }) => (
+
+          {/* Results Count */}
+          <div className="text-sm text-muted-foreground">
+            {filteredHooks.length} hook{filteredHooks.length !== 1 ? "s" : ""} encontrado
+            {filteredHooks.length !== hooks.length && ` (de ${hooks.length})`}
+          </div>
+
+          {/* Hooks List */}
+          <div className="space-y-3">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12 text-muted-foreground">
+                <p>Carregando hooks...</p>
+              </div>
+            ) : filteredHooks.length > 0 ? (
+              filteredHooks.map(({ hook, relevance }) => (
             <div
               key={hook.id}
               className="bg-card rounded-lg p-4 border border-border shadow-soft hover:shadow-medium transition-all"
@@ -544,7 +670,9 @@ ${hook.creator} (${hook.creatorHandle})
             <p className="text-xs mt-2">Tente ajustar sua busca ou relevância</p>
           </div>
         )}
-      </div>
+          </div>
+        </div>
+      )}
 
       {/* Schedule Modal */}
       <Dialog open={scheduleModalOpen} onOpenChange={setScheduleModalOpen}>
