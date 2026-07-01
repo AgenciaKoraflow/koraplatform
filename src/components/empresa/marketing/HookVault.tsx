@@ -1,8 +1,10 @@
 import { useState, useMemo } from "react";
-import { Search, Copy, Share2, Trash2, ChevronDown } from "lucide-react";
+import { Search, Copy, Share2, Trash2, Settings, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ActionMenu } from "@/components/shared/ActionMenu";
 import { mockHooks, hookNiches, hookTypes, typeColors } from "./hooks";
+import { defaultAudience, calculateRelevance } from "./audience";
+import { AudienceConfig } from "./AudienceConfig";
 import type { HookNiche, HookType } from "./hooks";
 import { cn } from "@/lib/utils";
 
@@ -15,25 +17,56 @@ export function HookVault({ workspaceId }: Props) {
   const [selectedNiche, setSelectedNiche] = useState<HookNiche | "">("");
   const [selectedType, setSelectedType] = useState<HookType | "">("");
   const [minViews, setMinViews] = useState(0);
+  const [sortByRelevance, setSortByRelevance] = useState(true);
+  const [minRelevance, setMinRelevance] = useState(0);
+  const [configOpen, setConfigOpen] = useState(false);
+
+  const hooksWithRelevance = useMemo(() => {
+    return mockHooks.map((hook) => ({
+      hook,
+      relevance: calculateRelevance(hook.text, defaultAudience),
+    }));
+  }, []);
 
   const filteredHooks = useMemo(() => {
-    return mockHooks.filter((hook) => {
-      const matchesSearch =
-        hook.text.toLowerCase().includes(searchInput.toLowerCase()) ||
-        hook.creator.toLowerCase().includes(searchInput.toLowerCase());
-      const matchesNiche = !selectedNiche || hook.niche === selectedNiche;
-      const matchesType = !selectedType || hook.type === selectedType;
-      const matchesViews = hook.views >= minViews * 1000;
+    let result = hooksWithRelevance
+      .filter((item) => {
+        const hook = item.hook;
+        const relevance = item.relevance;
+        const matchesSearch =
+          hook.text.toLowerCase().includes(searchInput.toLowerCase()) ||
+          hook.creator.toLowerCase().includes(searchInput.toLowerCase());
+        const matchesNiche = !selectedNiche || hook.niche === selectedNiche;
+        const matchesType = !selectedType || hook.type === selectedType;
+        const matchesViews = hook.views >= minViews * 1000;
+        const matchesRelevance = relevance.score >= minRelevance;
 
-      return matchesSearch && matchesNiche && matchesType && matchesViews;
-    });
-  }, [searchInput, selectedNiche, selectedType, minViews]);
+        return (
+          matchesSearch &&
+          matchesNiche &&
+          matchesType &&
+          matchesViews &&
+          matchesRelevance
+        );
+      });
 
-  const handleUseHook = (hook: typeof mockHooks[0]) => {
-    // Copia o hook para a área de transferência
-    navigator.clipboard.writeText(hook.text);
-    // Aqui você pode adicionar um toast ou navegação para /fewer-permission-prompts
-    console.log("Hook copied:", hook.text);
+    if (sortByRelevance) {
+      result = result.sort((a, b) => b.relevance.score - a.relevance.score);
+    }
+
+    return result;
+  }, [searchInput, selectedNiche, selectedType, minViews, sortByRelevance, minRelevance]);
+
+  const handleUseHook = (hookText: string) => {
+    navigator.clipboard.writeText(hookText);
+    // Pode adicionar toast aqui
+  };
+
+  const getRelevanceColor = (score: number) => {
+    if (score >= 80) return "text-green-600 bg-green-50 dark:bg-green-950/30";
+    if (score >= 60) return "text-blue-600 bg-blue-50 dark:bg-blue-950/30";
+    if (score >= 40) return "text-amber-600 bg-amber-50 dark:bg-amber-950/30";
+    return "text-gray-600 bg-gray-50 dark:bg-gray-950/30";
   };
 
   return (
@@ -45,12 +78,41 @@ export function HookVault({ workspaceId }: Props) {
             {mockHooks.length} hooks · buscável
           </h1>
           <p className="text-muted-foreground text-sm">
-            +17 ESSA SEMANA
+            +17 ESSA SEMANA · Auto-atualização ativa
           </p>
         </div>
-        <Button size="lg" className="bg-primary hover:bg-primary/90">
-          + NOVO HOOK
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            size="lg"
+            variant="outline"
+            onClick={() => setConfigOpen(true)}
+            className="gap-2"
+          >
+            <Settings className="w-4 h-4" />
+            Configurar Audiência
+          </Button>
+          <Button size="lg" className="bg-primary hover:bg-primary/90 gap-2">
+            <Zap className="w-4 h-4" />
+            Novo Hook
+          </Button>
+        </div>
+      </div>
+
+      {/* Audience Summary */}
+      <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+        <p className="text-sm">
+          <span className="font-semibold">Sua Audiência:</span> {defaultAudience.description}
+        </p>
+        <div className="flex gap-2 mt-2 flex-wrap">
+          {defaultAudience.segments.map((seg) => (
+            <span
+              key={seg}
+              className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded"
+            >
+              {seg}
+            </span>
+          ))}
+        </div>
       </div>
 
       {/* Filters */}
@@ -68,7 +130,7 @@ export function HookVault({ workspaceId }: Props) {
         </div>
 
         {/* Filter Controls */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-4 gap-3">
           {/* Niche Filter */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase">
@@ -81,7 +143,7 @@ export function HookVault({ workspaceId }: Props) {
               }
               className="w-full h-9 px-3 rounded-lg bg-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
-              <option value="">Todos os nichos</option>
+              <option value="">Todos</option>
               {hookNiches.map((niche) => (
                 <option key={niche} value={niche}>
                   {niche}
@@ -102,7 +164,7 @@ export function HookVault({ workspaceId }: Props) {
               }
               className="w-full h-9 px-3 rounded-lg bg-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
-              <option value="">Todos os tipos</option>
+              <option value="">Todos</option>
               {hookTypes.map((type) => (
                 <option key={type} value={type}>
                   {type}
@@ -111,33 +173,47 @@ export function HookVault({ workspaceId }: Props) {
             </select>
           </div>
 
-          {/* Views Filter */}
+          {/* Relevance Filter */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase">
-              Views mínimas (K)
+              Relevância
             </label>
             <select
-              value={minViews}
-              onChange={(e) => setMinViews(Number(e.target.value))}
+              value={minRelevance}
+              onChange={(e) => setMinRelevance(Number(e.target.value))}
               className="w-full h-9 px-3 rounded-lg bg-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
               <option value="0">Qualquer uma</option>
-              <option value="100">100K+</option>
-              <option value="300">300K+</option>
-              <option value="500">500K+</option>
-              <option value="800">800K+</option>
+              <option value="40">40%+</option>
+              <option value="60">60%+</option>
+              <option value="80">80%+</option>
+            </select>
+          </div>
+
+          {/* Sort */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-muted-foreground uppercase">
+              Ordenar por
+            </label>
+            <select
+              value={sortByRelevance ? "relevance" : "views"}
+              onChange={(e) => setSortByRelevance(e.target.value === "relevance")}
+              className="w-full h-9 px-3 rounded-lg bg-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              <option value="relevance">Relevância</option>
+              <option value="views">Mais Views</option>
             </select>
           </div>
         </div>
 
         {/* Clear Filters */}
-        {(searchInput || selectedNiche || selectedType || minViews > 0) && (
+        {(searchInput || selectedNiche || selectedType || minRelevance > 0) && (
           <button
             onClick={() => {
               setSearchInput("");
               setSelectedNiche("");
               setSelectedType("");
-              setMinViews(0);
+              setMinRelevance(0);
             }}
             className="text-xs text-primary hover:underline font-medium"
           >
@@ -155,7 +231,7 @@ export function HookVault({ workspaceId }: Props) {
       {/* Hooks List */}
       <div className="space-y-3">
         {filteredHooks.length > 0 ? (
-          filteredHooks.map((hook) => (
+          filteredHooks.map(({ hook, relevance }) => (
             <div
               key={hook.id}
               className="bg-card rounded-lg p-4 border border-border shadow-soft hover:shadow-medium transition-all"
@@ -169,6 +245,29 @@ export function HookVault({ workspaceId }: Props) {
                   <p className="text-xs text-muted-foreground mt-2 italic">
                     Template: {hook.template}
                   </p>
+                </div>
+
+                {/* Relevance & Reasons */}
+                <div className="bg-secondary/50 rounded p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`text-sm font-bold px-3 py-1 rounded-full ${getRelevanceColor(
+                        relevance.score
+                      )}`}
+                    >
+                      Relevância: {relevance.score}%
+                    </span>
+                  </div>
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    {relevance.reasons.map((reason, idx) => (
+                      <p key={idx}>✓ {reason}</p>
+                    ))}
+                  </div>
+                  {relevance.suggestedAdaptation && (
+                    <div className="mt-2 text-xs bg-primary/10 text-primary p-2 rounded border-l-2 border-primary">
+                      <strong>Sugestão:</strong> {relevance.suggestedAdaptation}
+                    </div>
+                  )}
                 </div>
 
                 {/* Hook Info & Actions */}
@@ -210,7 +309,7 @@ export function HookVault({ workspaceId }: Props) {
                     {/* Use Button */}
                     <Button
                       size="sm"
-                      onClick={() => handleUseHook(hook)}
+                      onClick={() => handleUseHook(hook.text)}
                       className="bg-primary hover:bg-primary/90"
                     >
                       Usar este
@@ -246,10 +345,13 @@ export function HookVault({ workspaceId }: Props) {
         ) : (
           <div className="text-center py-12 text-muted-foreground">
             <p>Nenhum hook encontrado com esses filtros</p>
-            <p className="text-xs mt-2">Tente ajustar sua busca</p>
+            <p className="text-xs mt-2">Tente ajustar sua busca ou relevância</p>
           </div>
         )}
       </div>
+
+      {/* Audience Config Modal */}
+      <AudienceConfig isOpen={configOpen} onClose={() => setConfigOpen(false)} />
     </div>
   );
 }
