@@ -1,3 +1,7 @@
+-- DROP OLD TABLES AND RECREATE
+DROP TABLE IF EXISTS audience_configs CASCADE;
+DROP TABLE IF EXISTS hooks CASCADE;
+
 -- Create hooks table
 CREATE TABLE IF NOT EXISTS hooks (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
