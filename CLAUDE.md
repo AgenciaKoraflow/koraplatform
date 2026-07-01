@@ -41,42 +41,53 @@ src/components/empresa/
 
 ## Páginas do Dashboard
 
-### 1. **Hook Vault** (`/empresa?tab=marketing&subpage=hook-vault`)
-- Banco de dados de hooks/chamativos para conteúdo
-- Permite salvar, organizar e pesquisar hooks
-- Prototipo: cards com hooks, filtros por categoria
+### 0. **Visão Geral** (`/empresa?tab=marketing&marketing=visao-geral`)
+- Dashboard principal com metrics de alto nível
+- Cards com views, stripe revenue, DMs filtradas
+- Status de conteúdo (publicados, rascunho, agendados, em análise)
+- Quick links para outras páginas
 
-### 2. **Analytics** (`/empresa?tab=marketing&subpage=analytics`)
-- Métricas de desempenho de conteúdo
-- Visualizações de engagement, views, conversões
-- Dashboard com gráficos e estatísticas
+### 1. **Hook Vault** (`/empresa?tab=marketing&marketing=hook-vault`)
+- Banco de dados de hooks/chamativos com categorias (SWAP, BUILD, CLAIM, LIST, CONTRARIAN)
+- Listagem com contador de uso (ex: 38×, 24×)
+- Busca em tempo real
+- Cards com ações (copiar, deletar)
 
-### 3. **Concorrentes** (`/empresa?tab=marketing&subpage=concorrentes`)
-- Análise e monitoramento de concorrentes
-- Rastreamento de estratégias, conteúdo e performance
-- Comparação competitiva
+### 2. **Analytics** (`/empresa?tab=marketing&marketing=analytics`)
+- Métricas principais: Views, Saves, Visitas ao Perfil
+- Top 5 Heaters (últimos 7 dias) com crescimento percentual
+- Cards de performance com deltas positivos
 
-### 4. **Agendador** (`/empresa?tab=marketing&subpage=agendador`)
-- Agendamento de publicações
-- Calendário semanal/mensal para planejamento de conteúdo
-- Gerenciamento de fila de publicação
+### 3. **Concorrentes** (`/empresa?tab=marketing&marketing=concorrentes`)
+- Lista de 8+ criadores monitorados
+- Follower count em grandes números (1.2M, 478K, etc)
+- Contador de novos posts por criador
+- Atualização automática (DOM 06:00)
 
-### 5. **Calendario** (`/empresa?tab=marketing&subpage=calendario`)
-- Visualização visual de calendário completo
-- Eventos de publicação mapeados por dia
-- Planejamento visual de estratégia editorial
+### 4. **Agendador** (`/empresa?tab=marketing&marketing=agendador`)
+- Seleção de plataformas (Instagram, TikTok, YT Shorts, LinkedIn)
+- Form com data, hora e via de publicação
+- Botão "AGENDAR TUDO" para múltiplas plataformas
 
-### 6. **Em Alta** (`/empresa?tab=marketing&subpage=em-alta`)
-- Trending topics e tendências do momento
-- Análise do que está em alta nas plataformas
-- Oportunidades de conteúdo oportuno
+### 5. **Calendario** (`/empresa?tab=marketing&marketing=calendario`)
+- Calendário visual do mês com grid 7x semana
+- Dias agendados destacados com contador
+- Navegação mês anterior/próximo
+- Legenda com status (agendado, disponível)
+
+### 6. **Trending** (`/empresa?tab=marketing&marketing=trending`)
+- Feed de tendências do dia
+- 12+ fontes monitoradas
+- Classificação por potencial (COM POTENCIAL, HOOK, EXPLICAR, PULAR)
+- Contador de fontes por tendência
 
 ## Padrões de Desenvolvimento
 
 ### Query Parameters
-- Navegação via URL: `?tab=marketing&subpage=hook-vault`
+- Navegação via URL: `?tab=marketing&marketing=hook-vault`
+- Exemplo completo: `/empresa?tab=marketing&marketing=analytics`
 - Permite preservar estado durante navegação
-- Suporta deep-linking
+- Suporta deep-linking e botão voltar do navegador
 
 ### Loading States
 - Cada página possui seu próprio state de loading
