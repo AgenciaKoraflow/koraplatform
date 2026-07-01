@@ -35,6 +35,7 @@ export function Calendario({ workspaceId }: Props) {
 
   const [currentDate, setCurrentDate] = useState(new Date(2026, 6, 1));
   const [selectedPost, setSelectedPost] = useState<ScheduledPost | null>(null);
+  const [selectedPostIndex, setSelectedPostIndex] = useState(0);
 
   // Carregar posts do localStorage ao inicializar
   const [posts, setPosts] = useState<ScheduledPost[]>(() => {
@@ -274,6 +275,7 @@ export function Calendario({ workspaceId }: Props) {
                   onClick={() => {
                     if (dayPosts.length > 0) {
                       setSelectedPost(dayPosts[0]);
+                      setSelectedPostIndex(0);
                     } else {
                       handleOpenCreateModal(day);
                     }
@@ -330,8 +332,44 @@ export function Calendario({ workspaceId }: Props) {
           {selectedPost ? (
             <>
               <div className="space-y-3 pb-4 border-b border-border">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-foreground">Post Agendado</h3>
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="font-semibold text-foreground text-sm">
+                    Post {selectedPost && getPostsForDate(parseInt(selectedPost.date.split("-")[2])).length > 1
+                      ? `${selectedPostIndex + 1} de ${getPostsForDate(parseInt(selectedPost.date.split("-")[2])).length}`
+                      : "Agendado"}
+                  </h3>
+                  <div className="flex gap-1">
+                    {selectedPost && getPostsForDate(parseInt(selectedPost.date.split("-")[2])).length > 1 && (
+                      <>
+                        <button
+                          onClick={() => {
+                            const dayNum = parseInt(selectedPost.date.split("-")[2]);
+                            const dayPostsArray = getPostsForDate(dayNum);
+                            const newIndex = Math.max(0, selectedPostIndex - 1);
+                            setSelectedPostIndex(newIndex);
+                            setSelectedPost(dayPostsArray[newIndex]);
+                          }}
+                          disabled={selectedPostIndex === 0}
+                          className="text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            const dayNum = parseInt(selectedPost.date.split("-")[2]);
+                            const dayPostsArray = getPostsForDate(dayNum);
+                            const newIndex = Math.min(dayPostsArray.length - 1, selectedPostIndex + 1);
+                            setSelectedPostIndex(newIndex);
+                            setSelectedPost(dayPostsArray[newIndex]);
+                          }}
+                          disabled={selectedPostIndex === getPostsForDate(parseInt(selectedPost.date.split("-")[2])).length - 1}
+                          className="text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
+                  </div>
                   <button onClick={() => setSelectedPost(null)} className="text-muted-foreground hover:text-foreground">
                     <X className="w-4 h-4" />
                   </button>
