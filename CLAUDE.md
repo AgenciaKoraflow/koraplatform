@@ -99,6 +99,29 @@ src/components/empresa/
 - Tabs se adaptam a screens menores
 - Conteúdo sempre legível em mobile
 
+## Garantia de Qualidade (QA) ✅
+
+**Status:** 24/24 testes automatizados passando
+
+### Antes de qualquer commit ou push:
+1. ✅ Executar `npm run build` (deve suceder sem erros)
+2. ✅ Executar `./test-marketing-dashboard.sh` (deve ter 24/24 testes passando)
+3. ✅ Verificar console do navegador (zero erros)
+4. ✅ Testar 3 funcionalidades principais manualmente
+
+### Documentação de QA
+- `TESTING.md` - Checklist completo de testes (13 suites, 50+ items)
+- `QUALITY_ASSURANCE.md` - Certificação formal de qualidade e SLA
+- `test-marketing-dashboard.sh` - Script automatizado de validação
+
+### Processo de QA:
+```bash
+# Antes de cada commit:
+npm run build && ./test-marketing-dashboard.sh
+```
+
+Se algum teste falhar: NÃO comitar até corrigir
+
 ## Próximos Passos
 
 1. Integrar com backend (API endpoints)
@@ -111,3 +134,4 @@ src/components/empresa/
 - Estrutura seguida: `src/components/empresa/EmpresaTarefas.tsx`
 - Pattern de hooks: `useInternalTasks`, `useInternalTaskMutations`
 - UI components: shadcn/ui (Button, Input, Select, Dialog, etc)
+- QA Script: `./test-marketing-dashboard.sh` (execute antes de cada commit)
