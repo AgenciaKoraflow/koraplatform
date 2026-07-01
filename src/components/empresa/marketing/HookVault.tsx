@@ -33,6 +33,7 @@ import type { HookNiche, HookType, ContentType, VisualMode } from "./hooks";
 import type { CreateHookInput } from "@/types/hooks";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { generateHooksWithClaude, createHooksFromGenerated } from "@/lib/generateHooksWithClaude";
 
 interface Props {
   workspaceId: string;
@@ -233,26 +234,47 @@ ${hook.creator} (${hook.creatorHandle})
     }
 
     setIsGenerating(true);
+    const toastId = toast.loading("🚀 Gerando hooks com Claude...");
+
     try {
-      // This will connect to your Claude project via API
-      // For now, showing a placeholder message
-      toast.loading("🚀 Gerando hook com IA...");
+      // Generate hooks using Claude AI with the strategy prompt
+      const generatedHooks = await generateHooksWithClaude(
+        generateTopic,
+        generateContext,
+        "IA" // Default niche
+      );
 
-      // TODO: Connect to your Claude project's hook generation API
-      // The generated hook should include:
-      // - hook.text (the actual hook)
-      // - hook.painPoint (the pain point it solves)
-      // - hook.emotionalTrigger (the emotional trigger)
-      // - hook.template (the template structure)
+      if (!generatedHooks || generatedHooks.length === 0) {
+        toast.error("Nenhum hook foi gerado. Tente novamente.", { id: toastId });
+        return;
+      }
 
-      setTimeout(() => {
-        toast.success("✨ Conecte seu projeto Claude para gerar hooks com IA!");
-        setGenerateTopic("");
-        setGenerateContext("");
-      }, 1500);
-    } catch (error) {
-      toast.error("Erro ao gerar hook");
-      console.error(error);
+      // Create hooks in database
+      const hooksToCreate = await createHooksFromGenerated(workspaceId, generatedHooks);
+
+      for (const hook of hooksToCreate) {
+        await createHook.mutateAsync(hook);
+      }
+
+      // Refetch hooks
+      await queryClient.invalidateQueries({ queryKey: ["hooks", workspaceId] });
+
+      toast.success(
+        `✨ ${generatedHooks.length} hooks gerados com sucesso! Vá para a Biblioteca para usá-los.`,
+        { id: toastId }
+      );
+
+      // Clear form
+      setGenerateTopic("");
+      setGenerateContext("");
+
+      // Switch to library tab
+      setActiveTab("biblioteca");
+    } catch (error: any) {
+      console.error("Erro ao gerar hooks:", error);
+      const errorMessage =
+        error.message || "Erro ao gerar hooks com Claude. Verifique a chave de API.";
+      toast.error(errorMessage, { id: toastId });
     } finally {
       setIsGenerating(false);
     }
