@@ -2,7 +2,7 @@ import { useSearchParams } from "react-router-dom";
 import { MarketingLayout } from "./marketing/MarketingLayout";
 import { VisaoGeral } from "./marketing/VisaoGeral";
 import { HookVault } from "./marketing/HookVault";
-import { Analytics } from "./marketing/Analytics";
+import { AnalyticsComplete as Analytics } from "./marketing/AnalyticsComplete";
 import { Calendario } from "./marketing/Calendario";
 import { EmAlta } from "./marketing/EmAlta";
 
