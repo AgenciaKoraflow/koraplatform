@@ -4,7 +4,7 @@ import { MarketingLayout } from "./marketing/MarketingLayout";
 import { HookVault } from "./marketing/HookVault";
 import { AnalyticsComplete as Analytics } from "./marketing/AnalyticsComplete";
 import { Calendario } from "./marketing/Calendario";
-import { fetchCompleteInstagramAnalytics } from "@/lib/instagram-complete";
+import { fetchCompleteInstagramAnalytics } from "@/lib/instagram";
 
 interface Props {
   workspaceId: string;

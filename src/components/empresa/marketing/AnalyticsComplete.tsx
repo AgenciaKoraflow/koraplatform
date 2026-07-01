@@ -1,20 +1,39 @@
 import { useState, useEffect } from "react";
-import { Plus, LogOut, Loader, TrendingUp, Users, Zap, Globe, BarChart3, Calendar, Activity } from "lucide-react";
+import { Plus, LogOut, Loader, TrendingUp, Users, Zap, Globe, BarChart3, Calendar, Activity, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { fetchCompleteInstagramAnalytics, validateInstagramToken, type CompleteInstagramReport } from "@/lib/instagram-complete";
+import { usePermissions } from "@/hooks/usePermissions";
+import { supabase } from "@/integrations/supabase/client";
+import { formatSupabaseInvokeError } from "@/lib/supabaseFunctions";
+import { fetchCompleteInstagramAnalytics, validateInstagramToken, type CompleteInstagramReport } from "@/lib/instagram";
 
 interface Props {
   workspaceId: string;
 }
 
+const EMPTY_CREDENTIAL_FORM = { appId: "", appSecret: "", accessToken: "", businessAccountId: "" };
+
 export function AnalyticsComplete({ workspaceId }: Props) {
   const { toast } = useToast();
+  const { isAdmin } = usePermissions();
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [report, setReport] = useState<CompleteInstagramReport | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "historical" | "content" | "audience">("overview");
   const [period, setPeriod] = useState<"7d" | "30d" | "90d">("7d");
+  const [credentialDialogOpen, setCredentialDialogOpen] = useState(false);
+  const [credentialForm, setCredentialForm] = useState(EMPTY_CREDENTIAL_FORM);
+  const [isSavingCredential, setIsSavingCredential] = useState(false);
 
   useEffect(() => {
     const savedConnection = localStorage.getItem("ig_connected");
@@ -70,6 +89,93 @@ export function AnalyticsComplete({ workspaceId }: Props) {
     toast({ title: "Desconectado", description: "Conta removida" });
   };
 
+  const handleSaveCredential = async () => {
+    const { appId, appSecret, accessToken, businessAccountId } = credentialForm;
+    if (!appId || !appSecret || !accessToken || !businessAccountId) {
+      toast({ title: "Erro", description: "Preencha todos os campos", variant: "destructive" });
+      return;
+    }
+
+    setIsSavingCredential(true);
+    try {
+      const { error } = await supabase.functions.invoke("instagram-credential", {
+        body: { action: "connect", appId, appSecret, accessToken, businessAccountId },
+      });
+      if (error) throw new Error(await formatSupabaseInvokeError(error));
+
+      toast({ title: "Credencial salva", description: "Token do Instagram atualizado com sucesso" });
+      setCredentialDialogOpen(false);
+      setCredentialForm(EMPTY_CREDENTIAL_FORM);
+      await handleConnect();
+    } catch (error) {
+      toast({
+        title: "Erro ao salvar credencial",
+        description: error instanceof Error ? error.message : String(error),
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingCredential(false);
+    }
+  };
+
+  const credentialDialog = (
+    <Dialog open={credentialDialogOpen} onOpenChange={setCredentialDialogOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Gerenciar credencial do Instagram</DialogTitle>
+          <DialogDescription>
+            Cole aqui o App ID, App Secret e o Access Token gerados no Meta for Developers. Esses valores ficam
+            criptografados no banco e nunca são enviados ao navegador — só o servidor os usa para consultar a API.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 px-1">
+          <div className="space-y-1">
+            <Label htmlFor="ig-app-id">App ID</Label>
+            <Input
+              id="ig-app-id"
+              value={credentialForm.appId}
+              onChange={(e) => setCredentialForm((f) => ({ ...f, appId: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="ig-app-secret">App Secret</Label>
+            <Input
+              id="ig-app-secret"
+              type="password"
+              value={credentialForm.appSecret}
+              onChange={(e) => setCredentialForm((f) => ({ ...f, appSecret: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="ig-access-token">Access Token</Label>
+            <Input
+              id="ig-access-token"
+              type="password"
+              value={credentialForm.accessToken}
+              onChange={(e) => setCredentialForm((f) => ({ ...f, accessToken: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="ig-account-id">Business Account ID</Label>
+            <Input
+              id="ig-account-id"
+              value={credentialForm.businessAccountId}
+              onChange={(e) => setCredentialForm((f) => ({ ...f, businessAccountId: e.target.value }))}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setCredentialDialogOpen(false)}>
+            Cancelar
+          </Button>
+          <Button onClick={handleSaveCredential} disabled={isSavingCredential}>
+            {isSavingCredential ? <Loader className="w-4 h-4 animate-spin" /> : "Salvar"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
   const getMetricsForPeriod = () => {
     if (!report) return null;
 
@@ -120,6 +226,12 @@ export function AnalyticsComplete({ workspaceId }: Props) {
                 {isLoading ? <Loader className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                 {isLoading ? "Conectando..." : "Conectar Instagram"}
               </Button>
+              {isAdmin && (
+                <Button variant="ghost" size="sm" onClick={() => setCredentialDialogOpen(true)} className="gap-2">
+                  <Settings className="w-4 h-4" />
+                  Gerenciar credencial
+                </Button>
+              )}
             </div>
           </div>
         ) : (
@@ -127,6 +239,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
             <Loader className="w-8 h-8 animate-spin" />
           </div>
         )}
+        {credentialDialog}
       </div>
     );
   }
@@ -141,11 +254,20 @@ export function AnalyticsComplete({ workspaceId }: Props) {
             📊 @{report.account.username} • {report.account.followers.toLocaleString()} seguidores
           </p>
         </div>
-        <Button variant="outline" onClick={handleDisconnect} className="gap-2">
-          <LogOut className="w-4 h-4" />
-          Desconectar
-        </Button>
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <Button variant="ghost" size="sm" onClick={() => setCredentialDialogOpen(true)} className="gap-2">
+              <Settings className="w-4 h-4" />
+              Gerenciar credencial
+            </Button>
+          )}
+          <Button variant="outline" onClick={handleDisconnect} className="gap-2">
+            <LogOut className="w-4 h-4" />
+            Desconectar
+          </Button>
+        </div>
       </div>
+      {credentialDialog}
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-border">
