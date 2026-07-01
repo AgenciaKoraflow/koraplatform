@@ -1,7 +1,7 @@
 -- Create hooks table
 CREATE TABLE IF NOT EXISTS hooks (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  workspace_id UUID NOT NULL REFERENCES internal_workspace(id) ON DELETE CASCADE,
   text TEXT NOT NULL,
   template TEXT NOT NULL,
   creator TEXT NOT NULL,
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS hooks (
 -- Create audience_config table
 CREATE TABLE IF NOT EXISTS audience_configs (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  workspace_id UUID NOT NULL UNIQUE REFERENCES workspaces(id) ON DELETE CASCADE,
+  workspace_id UUID NOT NULL UNIQUE REFERENCES internal_workspace(id) ON DELETE CASCADE,
   segments JSONB DEFAULT '["PME", "Automação", "WhatsApp", "IA", "Campanhas"]',
   trending_keywords JSONB DEFAULT '["automação", "whatsapp", "chatbot", "ia", "pme", "pequeño negócio", "marketing automation", "lead generation", "vendas", "campanhas", "integrações", "produtividade"]',
   description TEXT DEFAULT 'PMEs que precisam de automações, agentes de IA no WhatsApp e campanhas de produtos',
@@ -34,7 +34,7 @@ ALTER TABLE audience_configs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view hooks in their workspace"
   ON hooks FOR SELECT
   USING (workspace_id IN (
-    SELECT id FROM workspaces
+    SELECT id FROM internal_workspace
     WHERE id = (SELECT current_setting('app.workspace_id')::uuid)
   ));
 
@@ -42,7 +42,7 @@ CREATE POLICY "Users can create hooks in their workspace"
   ON hooks FOR INSERT
   WITH CHECK (
     workspace_id IN (
-      SELECT id FROM workspaces
+      SELECT id FROM internal_workspace
       WHERE id = (SELECT current_setting('app.workspace_id')::uuid)
     )
     AND created_by = auth.uid()
@@ -60,14 +60,14 @@ CREATE POLICY "Users can delete their own hooks"
 CREATE POLICY "Users can view their audience config"
   ON audience_configs FOR SELECT
   USING (workspace_id IN (
-    SELECT id FROM workspaces
+    SELECT id FROM internal_workspace
     WHERE id = (SELECT current_setting('app.workspace_id')::uuid)
   ));
 
 CREATE POLICY "Users can update their audience config"
   ON audience_configs FOR UPDATE
   USING (workspace_id IN (
-    SELECT id FROM workspaces
+    SELECT id FROM internal_workspace
     WHERE id = (SELECT current_setting('app.workspace_id')::uuid)
   ));
 
