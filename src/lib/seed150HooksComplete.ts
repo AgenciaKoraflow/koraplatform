@@ -19,6 +19,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "IA",
+    content_type: "Carrossel",
+    visual_mode: "Clean",
   },
   {
     text: "IA: O segredo dos negócios que crescem exponencialmente.",
@@ -29,6 +31,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Seu atendimento ao cliente é um gargalo?",
@@ -39,6 +43,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "Automação",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Liberte sua equipe para o que realmente importa.",
@@ -49,6 +55,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Não seja o último a adotar a IA.",
@@ -59,6 +67,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CONTRARIAN",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Automação inteligente: Trabalhe menos, produza mais.",
@@ -69,6 +79,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "SWAP",
     niche: "Automação",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Decisões mais rápidas e precisas?",
@@ -79,6 +91,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Chega de erros humanos!",
@@ -89,6 +103,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "O futuro do trabalho é agora: Agentes de IA.",
@@ -99,6 +115,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Sua empresa está pronta para a revolução?",
@@ -109,6 +127,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "STORY",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Pare de apagar incêndios!",
@@ -119,6 +139,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Otimize seus gastos com a IA.",
@@ -129,6 +151,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CLAIM",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Vendas estagnadas?",
@@ -139,6 +163,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Personalização em massa.",
@@ -149,6 +175,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CONTRARIAN",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Segurança de dados e IA.",
@@ -159,6 +187,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CLAIM",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Contrate com inteligência.",
@@ -169,6 +199,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Inovação sem limites.",
@@ -179,6 +211,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Perdendo dinheiro para a burocracia?",
@@ -189,6 +223,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "Automação",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Cadeia de suprimentos otimizada.",
@@ -199,6 +235,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Transforme dados em decisões.",
@@ -209,6 +247,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Perdendo clientes para a concorrência?",
@@ -219,6 +259,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Maximize seu ROI com a IA.",
@@ -229,6 +271,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CLAIM",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Otimize sua produção.",
@@ -239,6 +283,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Equipe de marketing sobrecarregada?",
@@ -249,6 +295,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Deixe a IA fazer o trabalho pesado.",
@@ -259,6 +307,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "SWAP",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "IA como seu consultor estratégico.",
@@ -269,6 +319,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Reduza custos operacionais.",
@@ -279,6 +331,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CLAIM",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Gestão de projetos com IA.",
@@ -289,6 +343,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Sua empresa preparada para o futuro.",
@@ -299,6 +355,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "STORY",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Aumente a satisfação dos colaboradores.",
@@ -309,6 +367,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Desvende o comportamento do consumidor.",
@@ -319,6 +379,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Infraestrutura de TI moderna.",
@@ -329,6 +391,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Experiências memoráveis para clientes.",
@@ -339,6 +403,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "IA: Sua vantagem competitiva secreta.",
@@ -349,6 +415,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CONTRARIAN",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Automatize tarefas chatas.",
@@ -359,6 +427,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "SWAP",
     niche: "Automação",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Gestão financeira com IA.",
@@ -369,6 +439,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "IA na saúde (Vertical de impacto).",
@@ -379,6 +451,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Atendimento como diferencial.",
@@ -389,6 +463,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Estoque inteligente.",
@@ -399,6 +475,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CLAIM",
     niche: "Automação",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "IA no setor jurídico.",
@@ -409,6 +487,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Desbloqueie o potencial da equipe.",
@@ -419,6 +499,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "IA na educação.",
@@ -429,6 +511,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Gestão de frotas com IA.",
@@ -439,6 +523,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Onde estão as oportunidades de mercado?",
@@ -449,6 +535,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Automação de marketing inteligente.",
@@ -459,6 +547,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "IA na agricultura.",
@@ -469,6 +559,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Proteja-se contra fraudes.",
@@ -479,6 +571,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CLAIM",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "RH estratégico com IA.",
@@ -489,6 +583,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "IA no varejo físico e digital.",
@@ -499,6 +595,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "SaaS",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Pronto para a era dos agentes de IA?",
@@ -509,6 +607,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CONTRARIAN",
     niche: "IA",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
 
   // VERTICAL 2: DESENVOLVIMENTO DE SOFTWARE, SISTEMAS E E-COMMERCE (50 hooks)
@@ -521,6 +621,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Chega de sistemas engessados!",
@@ -531,6 +633,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "E-commerce pronto para o futuro?",
@@ -541,6 +645,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Transforme sua ideia em realidade.",
@@ -551,6 +657,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "STORY",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Checkout complicado mata vendas.",
@@ -561,6 +669,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Seu sistema de gestão é um pesadelo?",
@@ -571,6 +681,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "E-commerce que vende 24h.",
@@ -581,6 +693,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Por onde começar seu sistema?",
@@ -591,6 +705,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "LIST",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Sistemas inteligentes = Menos esforço.",
@@ -601,6 +717,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Seu e-commerce é seguro?",
@@ -611,6 +729,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CLAIM",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Transforme dados em lucro (BI).",
@@ -621,6 +741,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Seu app dos sonhos em iOS e Android.",
@@ -631,6 +753,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "E-commerce B2B simplificado.",
@@ -641,6 +765,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Modernize seu legado (Cloud).",
@@ -651,6 +777,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "MVP de sucesso para sua startup.",
@@ -661,6 +789,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "STORY",
     niche: "Startups",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Gestão de estoque sem perdas.",
@@ -671,6 +801,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CLAIM",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Portal exclusivo para clientes.",
@@ -681,6 +813,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Automação de processos internos.",
@@ -691,6 +825,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "SWAP",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Mais tráfego para seu e-commerce.",
@@ -701,6 +837,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CLAIM",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "APIs personalizadas: Integre tudo.",
@@ -711,6 +849,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "UX impecável retém clientes.",
@@ -721,6 +861,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "CRM personalizado vs. Planilhas.",
@@ -731,6 +873,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "SWAP",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "App que realmente engaja.",
@@ -741,6 +885,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Gestão de projetos sem estresse.",
@@ -751,6 +897,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Estabilidade em picos de venda.",
@@ -761,6 +909,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CLAIM",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Plataformas educacionais (EAD).",
@@ -771,6 +921,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Produtividade",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Automação de vendas para o time.",
@@ -781,6 +933,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Sistemas modulares e flexíveis.",
@@ -791,6 +945,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Diferencial competitivo no e-commerce.",
@@ -801,6 +957,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Gestão financeira total.",
@@ -811,6 +969,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Velocidade é dinheiro no e-commerce.",
@@ -821,6 +981,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CLAIM",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Crie um Marketplace de sucesso.",
@@ -831,6 +993,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Seu site não é responsivo?",
@@ -841,6 +1005,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Agendamento online automático.",
@@ -851,6 +1017,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Realidade Aumentada no E-commerce.",
@@ -861,6 +1029,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Intranet para comunicação interna.",
@@ -871,6 +1041,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "CMS: Controle total do seu site.",
@@ -881,6 +1053,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Apareça no topo do Google.",
@@ -891,6 +1065,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CLAIM",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Gamificação para engajamento.",
@@ -901,6 +1077,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Gestão de documentos (GED).",
@@ -911,6 +1089,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Aplicativo interno para sua equipe.",
@@ -921,6 +1101,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "E-commerce com IA integrada.",
@@ -931,6 +1113,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "CRM para fidelização extrema.",
@@ -941,6 +1125,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Mobile-First como prioridade.",
@@ -951,6 +1137,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Gestão de assinaturas (Recorrência).",
@@ -961,6 +1149,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "E-learning personalizado.",
@@ -971,6 +1161,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Produtividade",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Sistema de vendas ultrarrápido.",
@@ -981,6 +1173,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "SWAP",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Pagamentos flexíveis (Pix/Cartão).",
@@ -991,6 +1185,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Gestão de eventos e inscrições.",
@@ -1001,6 +1197,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Blog integrado ao E-commerce.",
@@ -1011,6 +1209,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Tech",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
 
   // VERTICAL 3: STUDIO CRIATIVO COM IA (50 hooks)
@@ -1023,6 +1223,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "Campanhas",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Chega de publicidade genérica.",
@@ -1033,6 +1235,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Campanhas",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "O futuro da publicidade é agora.",
@@ -1043,6 +1247,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "Campanhas",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Sua marca merece uma história épica.",
@@ -1053,6 +1259,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Campanhas",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Fim dos brainstormings infinitos.",
@@ -1063,6 +1271,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "Criatividade",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Personalização em escala (Criativos).",
@@ -1073,6 +1283,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Campanhas",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Orçamento de marketing limitado?",
@@ -1083,6 +1295,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "Marketing",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Anúncios que ninguém ignora.",
@@ -1093,6 +1307,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CLAIM",
     niche: "Campanhas",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Inove ou morra (Agências).",
@@ -1103,6 +1319,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CONTRARIAN",
     niche: "Campanhas",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Dados transformados em arte.",
@@ -1113,6 +1331,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Marketing",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Produção de vídeo ultrarrápida.",
@@ -1123,6 +1343,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "Criatividade",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Criativos para cada plataforma.",
@@ -1133,6 +1355,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Campanhas",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Uma voz única para sua marca.",
@@ -1143,6 +1367,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Marketing",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Campanhas que leem a mente.",
@@ -1153,6 +1379,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "Campanhas",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Edição de vídeo em minutos.",
@@ -1163,6 +1391,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "SWAP",
     niche: "Criatividade",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Personagens e cenários incríveis.",
@@ -1173,6 +1403,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Criatividade",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Publicidade que gera leads.",
@@ -1183,6 +1415,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CLAIM",
     niche: "Campanhas",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Qualidade de cinema para PMEs.",
@@ -1193,6 +1427,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "Marketing",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Saiba o que seu público quer ver.",
@@ -1203,6 +1439,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Campanhas",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Campanhas virais via IA.",
@@ -1213,6 +1451,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Campanhas",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Jingles inesquecíveis.",
@@ -1223,6 +1463,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Criatividade",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Estratégia de mídia inteligente.",
@@ -1233,6 +1475,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CLAIM",
     niche: "Marketing",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Anúncios em vídeo que convertem.",
@@ -1243,6 +1487,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Campanhas",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Sua marca sempre atualizada.",
@@ -1253,6 +1499,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Marketing",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Automação de design (Social Media).",
@@ -1263,6 +1511,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "SWAP",
     niche: "Criatividade",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "IA como seu Diretor de Arte.",
@@ -1273,6 +1523,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Criatividade",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Influenciadores perfeitos (IA).",
@@ -1283,6 +1535,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CLAIM",
     niche: "Marketing",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Logos memoráveis.",
@@ -1293,6 +1547,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Criatividade",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Conteúdo que engaja e converte.",
@@ -1303,6 +1559,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Campanhas",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Experiências imersivas (AR/VR).",
@@ -1313,6 +1571,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "Criatividade",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "E-mail Marketing que converte.",
@@ -1323,6 +1583,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Marketing",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Apresentações de impacto.",
@@ -1333,6 +1595,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Marketing",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Comunicação interna engajadora.",
@@ -1343,6 +1607,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Campanhas",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Mascotes de marca únicos.",
@@ -1353,6 +1619,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Criatividade",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Anúncios que se destacam no feed.",
@@ -1363,6 +1631,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CLAIM",
     niche: "Campanhas",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Tours Virtuais Imersivos.",
@@ -1373,6 +1643,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Criatividade",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "SEO de conteúdo via IA.",
@@ -1383,6 +1655,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Marketing",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Vídeos explicativos simples.",
@@ -1393,6 +1667,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Criatividade",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Slogans que vendem.",
@@ -1403,6 +1679,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Marketing",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Eventos e Stands interativos.",
@@ -1413,6 +1691,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Campanhas",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Toque humano na IA (Voz).",
@@ -1423,6 +1703,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Criatividade",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Campanhas de Impacto Social.",
@@ -1433,6 +1715,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "STORY",
     niche: "Campanhas",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Gestão estratégica de redes.",
@@ -1443,6 +1727,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Marketing",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Identidade Visual 360º.",
@@ -1453,6 +1739,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Criatividade",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Viralização em TikTok/Reels.",
@@ -1463,6 +1751,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CURIOSIDADE",
     niche: "Campanhas",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Publicidade baseada em insights.",
@@ -1473,6 +1763,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CLAIM",
     niche: "Marketing",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Podcasts e Áudios de marca.",
@@ -1483,6 +1775,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Criatividade",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Storytelling que emociona.",
@@ -1493,6 +1787,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "STORY",
     niche: "Campanhas",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Anúncios em Streaming (Netflix/Spotify).",
@@ -1503,6 +1799,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "BUILD",
     niche: "Marketing",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
   {
     text: "Adaptando-se à era da IA.",
@@ -1513,6 +1811,8 @@ const hooks150Complete: CreateHookInput[] = [
     creator_handle: "@koraflow",
     type: "CONTRARIAN",
     niche: "Campanhas",
+    content_type: "Reel",
+    visual_mode: "Clean",
   },
 ];
 
