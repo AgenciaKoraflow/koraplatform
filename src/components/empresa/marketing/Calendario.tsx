@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { ChevronLeft, ChevronRight, X, Calendar, Trash2, Copy, Edit2, Plus, BookOpen, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Calendar, Trash2, Copy, Edit2, Plus, BookOpen, Search, Instagram, Youtube, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
@@ -287,15 +287,19 @@ export function Calendario({ workspaceId }: Props) {
                     {dayPosts.slice(0, 3).map((post) => (
                       <div key={post.id} className="flex gap-1 flex-wrap">
                         {post.platforms.map((platform) => {
-                          const platformIcon =
-                            platform === "instagram" ? "📷" :
-                            platform === "tiktok" ? "🎵" :
-                            "📺";
-                          return (
-                            <span key={platform} className="text-sm leading-none">
-                              {platformIcon}
-                            </span>
-                          );
+                          if (platform === "instagram") {
+                            return (
+                              <Instagram key={platform} className="w-4 h-4 text-pink-500" />
+                            );
+                          } else if (platform === "youtube") {
+                            return (
+                              <Youtube key={platform} className="w-4 h-4 text-red-600" />
+                            );
+                          } else if (platform === "tiktok") {
+                            return (
+                              <Music key={platform} className="w-4 h-4 text-black dark:text-white" />
+                            );
+                          }
                         })}
                       </div>
                     ))}
