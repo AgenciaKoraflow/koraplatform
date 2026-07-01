@@ -421,40 +421,33 @@ ${hook.creator} (${hook.creatorHandle})
               key={hook.id}
               className="bg-card rounded-lg p-4 border border-border shadow-soft hover:shadow-medium transition-all"
             >
-              <div className="space-y-3">
-                {/* Hook Text */}
-                <div>
-                  <p className="text-foreground font-medium leading-relaxed">
-                    "{hook.text}"
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-2 italic">
-                    Template: {hook.template}
-                  </p>
-                </div>
-
-                {/* Metadados Psicológicos */}
-                {(hook.painPoint || hook.emotionalTrigger) && (
-                  <div className="bg-primary/5 border border-primary/20 rounded p-3 space-y-2">
-                    {hook.painPoint && (
-                      <div className="flex gap-2 items-start">
-                        <span className="text-lg">🎯</span>
-                        <div className="flex-1">
-                          <p className="text-xs font-semibold text-primary uppercase">Dor que resolve</p>
-                          <p className="text-sm text-foreground">{hook.painPoint}</p>
-                        </div>
-                      </div>
-                    )}
-                    {hook.emotionalTrigger && (
-                      <div className="flex gap-2 items-start">
-                        <span className="text-lg">💭</span>
-                        <div className="flex-1">
-                          <p className="text-xs font-semibold text-primary uppercase">Gatilho emocional</p>
-                          <p className="text-sm text-foreground">{hook.emotionalTrigger}</p>
-                        </div>
-                      </div>
-                    )}
+              <div className="space-y-4">
+                {/* 4 COLUNAS DO DOCUMENTO */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* COLUNA 1: Hook ou Gancho (Título) */}
+                  <div className="bg-accent/10 border border-accent/30 rounded-lg p-3">
+                    <p className="text-xs font-bold text-accent uppercase mb-1">🎯 Hook ou Gancho (Título)</p>
+                    <p className="text-sm text-foreground font-medium leading-relaxed">"{hook.text}"</p>
                   </div>
-                )}
+
+                  {/* COLUNA 2: Dor que Resolve */}
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                    <p className="text-xs font-bold text-red-600 dark:text-red-400 uppercase mb-1">💔 Dor que Resolve</p>
+                    <p className="text-sm text-foreground">{hook.painPoint || "—"}</p>
+                  </div>
+
+                  {/* COLUNA 3: Gatilho Emocional */}
+                  <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-3">
+                    <p className="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase mb-1">⚡ Gatilho Emocional</p>
+                    <p className="text-sm text-foreground">{hook.emotionalTrigger || "—"}</p>
+                  </div>
+
+                  {/* COLUNA 4: Descrição do Conteúdo */}
+                  <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
+                    <p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase mb-1">📝 Descrição do Conteúdo</p>
+                    <p className="text-sm text-foreground italic">{hook.template || "—"}</p>
+                  </div>
+                </div>
 
                 {/* Relevance & Reasons */}
                 <div className="bg-secondary/50 rounded p-3 space-y-2">
