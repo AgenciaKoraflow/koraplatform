@@ -1,5 +1,5 @@
 import { useSearchParams } from "react-router-dom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MarketingLayout } from "./marketing/MarketingLayout";
 import { VisaoGeral } from "./marketing/VisaoGeral";
 import { HookVault } from "./marketing/HookVault";
 import { Analytics } from "./marketing/Analytics";
@@ -13,69 +13,43 @@ interface Props {
 }
 
 const MARKETING_TABS = [
-  { id: "visao-geral", label: "Visão Geral" },
-  { id: "hook-vault", label: "Hook Vault" },
-  { id: "analytics", label: "Analytics" },
-  { id: "concorrentes", label: "Concorrentes" },
-  { id: "agendador", label: "Agendador" },
-  { id: "calendario", label: "Calendário" },
-  { id: "trending", label: "Trending" },
+  { id: "visao-geral", label: "◆ VISÃO GERAL" },
+  { id: "hook-vault", label: "▦ HOOK VAULT" },
+  { id: "analytics", label: "◯ ANALYTICS" },
+  { id: "concorrentes", label: "● CONCORRENTES" },
+  { id: "agendador", label: "⊞ AGENDADOR" },
+  { id: "calendario", label: "⊟ CALENDÁRIO" },
+  { id: "trending", label: "≡ TRENDING" },
 ];
 
+const pageComponents: Record<string, React.ComponentType<{ workspaceId: string }>> = {
+  "visao-geral": VisaoGeral,
+  "hook-vault": HookVault,
+  analytics: Analytics,
+  concorrentes: Concorrentes,
+  agendador: Agendador,
+  calendario: Calendario,
+  trending: EmAlta,
+};
+
 export function EmpresaMarketing({ workspaceId }: Props) {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const activeTab = searchParams.get("marketing") ?? "visao-geral";
 
   const isValidTab = MARKETING_TABS.some((tab) => tab.id === activeTab);
   const currentTab = isValidTab ? activeTab : "visao-geral";
 
-  function handleTabChange(value: string) {
-    setSearchParams({ marketing: value }, { replace: true });
-  }
+  const CurrentComponent = pageComponents[currentTab] || VisaoGeral;
 
   return (
-    <div className="space-y-6">
-      <Tabs value={currentTab} onValueChange={handleTabChange}>
-        <TabsList className="mb-6 flex-wrap h-auto gap-1 bg-transparent border-b border-border rounded-none p-0">
-          {MARKETING_TABS.map((tab) => (
-            <TabsTrigger
-              key={tab.id}
-              value={tab.id}
-              className="border-b-2 border-transparent data-[state=active]:border-primary rounded-none"
-            >
-              {tab.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        <TabsContent value="visao-geral">
-          <VisaoGeral workspaceId={workspaceId} />
-        </TabsContent>
-
-        <TabsContent value="hook-vault">
-          <HookVault workspaceId={workspaceId} />
-        </TabsContent>
-
-        <TabsContent value="analytics">
-          <Analytics workspaceId={workspaceId} />
-        </TabsContent>
-
-        <TabsContent value="concorrentes">
-          <Concorrentes workspaceId={workspaceId} />
-        </TabsContent>
-
-        <TabsContent value="agendador">
-          <Agendador workspaceId={workspaceId} />
-        </TabsContent>
-
-        <TabsContent value="calendario">
-          <Calendario workspaceId={workspaceId} />
-        </TabsContent>
-
-        <TabsContent value="trending">
-          <EmAlta workspaceId={workspaceId} />
-        </TabsContent>
-      </Tabs>
-    </div>
+    <MarketingLayout
+      userName="Fabiano"
+      userHandle="@fabianocarvalhojr"
+      followers="287.4K"
+      period="30D"
+      tabs={MARKETING_TABS}
+    >
+      <CurrentComponent workspaceId={workspaceId} />
+    </MarketingLayout>
   );
 }
