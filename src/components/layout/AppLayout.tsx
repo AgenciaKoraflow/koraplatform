@@ -4,7 +4,7 @@ import { AppSidebar } from "./AppSidebar";
 import {
   Menu, X, Sun, Moon,
   Filter, FolderKanban, CheckSquare, FileSignature,
-  MoreHorizontal, User, LogOut, Settings, Bell, Lock,
+  User, LogOut, Settings, Bell, Lock,
   BarChart3, Heart, BookOpen, LayoutDashboard, Users, Building2,
 } from "lucide-react";
 import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
@@ -21,7 +21,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserAvatar } from "@/hooks/useUserAvatar";
 import { useProfile } from "@/hooks/useProfile";
-import { KoraSystemLogo, KoraSystemLogoIcon } from "@/components/shared/KoraSystemLogo";
+import { KoraSystemLogoIcon } from "@/components/shared/KoraSystemLogo";
 
 function PageTransition({ children }: { children: ReactNode }) {
   const location = useLocation();
@@ -70,14 +70,6 @@ const TOP_NAV_ADMIN = [
   { name: "Usuários", href: "/usuarios",  icon: Users },
 ];
 
-// Five primary routes shown in the mobile bottom nav
-const BOTTOM_NAV = [
-  { href: "/",         icon: Filter,        label: "Funil" },
-  { href: "/tarefas",  icon: CheckSquare,   label: "Tarefas" },
-  { href: "/projetos", icon: FolderKanban,  label: "Projetos" },
-  { href: "/contratos",icon: FileSignature, label: "Contratos" },
-];
-
 export function AppLayout({ children }: AppLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -119,8 +111,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           </button>
 
           <NavLink to="/" className="flex items-center">
-            <KoraSystemLogo size={42} className="text-foreground hidden sm:block" />
-            <KoraSystemLogoIcon className="text-foreground sm:hidden" size={30} />
+            <KoraSystemLogoIcon className="text-foreground" size={30} />
           </NavLink>
         </div>
 
@@ -214,45 +205,11 @@ export function AppLayout({ children }: AppLayoutProps) {
       </header>
 
       {/* ── Page content ── */}
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 xl:p-10 overflow-y-auto pb-24 lg:pb-8" style={{ scrollbarGutter: 'stable' }}>
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 xl:p-10 overflow-y-auto" style={{ scrollbarGutter: 'stable' }}>
         <PageTransition>
           {children}
         </PageTransition>
       </main>
-
-      {/* ── Mobile Bottom Navigation ── */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-card border-t border-border safe-bottom">
-        <div className="flex items-stretch h-16">
-          {BOTTOM_NAV.map(({ href, icon: Icon, label }) => {
-            const isActive = location.pathname === href ||
-              (href !== "/" && location.pathname.startsWith(href));
-            return (
-              <NavLink
-                key={href}
-                to={href}
-                className={cn(
-                  "flex-1 flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors touch-manipulation",
-                  isActive
-                    ? "text-primary"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Icon className={cn("w-5 h-5 transition-transform", isActive && "scale-110")} />
-                <span>{label}</span>
-              </NavLink>
-            );
-          })}
-
-          {/* "Mais" opens the mobile sidebar */}
-          <button
-            onClick={() => setMobileMenuOpen(true)}
-            className="flex-1 flex flex-col items-center justify-center gap-1 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors touch-manipulation"
-          >
-            <MoreHorizontal className="w-5 h-5" />
-            <span>Mais</span>
-          </button>
-        </div>
-      </nav>
     </div>
   );
 }
