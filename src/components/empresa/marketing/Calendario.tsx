@@ -218,26 +218,26 @@ export function Calendario({ workspaceId }: Props) {
   const dayNames = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold">Calendário de Posts</h1>
-          <p className="text-muted-foreground text-sm">📅 Visualize e gerencie todos os seus posts agendados</p>
+      <div className="flex items-start justify-between gap-2">
+        <div className="space-y-1 sm:space-y-2 min-w-0">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Calendário de Posts</h1>
+          <p className="text-muted-foreground text-xs sm:text-sm">📅 Visualize e gerencie todos os seus posts agendados</p>
         </div>
-        <div className="text-right space-y-1">
-          <p className="text-sm text-muted-foreground">Total agendado</p>
-          <p className="text-2xl font-bold text-green-600">{posts.filter((p) => p.status === "scheduled").length}</p>
+        <div className="text-right space-y-1 shrink-0">
+          <p className="text-xs sm:text-sm text-muted-foreground">Total agendado</p>
+          <p className="text-lg sm:text-2xl font-bold text-green-600">{posts.filter((p) => p.status === "scheduled").length}</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Calendário */}
-        <div className="col-span-2 bg-card rounded-lg p-6 border border-border shadow-soft space-y-4">
+        <div className="md:col-span-2 bg-card rounded-lg p-3 sm:p-6 border border-border shadow-soft space-y-3 sm:space-y-4">
           {/* Month Navigation */}
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold capitalize">{monthName}</h2>
-            <div className="flex gap-2">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-base sm:text-xl font-bold capitalize truncate">{monthName}</h2>
+            <div className="flex gap-1 sm:gap-2 shrink-0">
               <Button size="sm" variant="outline" onClick={handlePrevMonth}>
                 <ChevronLeft className="w-4 h-4" />
               </Button>
@@ -251,16 +251,16 @@ export function Calendario({ workspaceId }: Props) {
           </div>
 
           {/* Day Headers */}
-          <div className="grid grid-cols-7 gap-2">
+          <div className="grid grid-cols-7 gap-1 sm:gap-2">
             {dayNames.map((day) => (
-              <div key={day} className="text-center font-semibold text-sm text-muted-foreground py-2">
+              <div key={day} className="text-center font-semibold text-[10px] sm:text-sm text-muted-foreground py-1 sm:py-2">
                 {day}
               </div>
             ))}
           </div>
 
           {/* Days Grid */}
-          <div className="grid grid-cols-7 gap-2">
+          <div className="grid grid-cols-7 gap-1 sm:gap-2">
             {days.map((day, idx) => {
               if (day === null) {
                 return <div key={`empty-${idx}`} className="aspect-square bg-secondary/20 rounded-lg" />;
@@ -280,7 +280,7 @@ export function Calendario({ workspaceId }: Props) {
                       handleOpenCreateModal(day);
                     }
                   }}
-                  className={`aspect-square rounded-lg p-2 border-2 transition-all hover:border-primary/50 flex flex-col items-start justify-between text-left group relative ${
+                  className={`aspect-square rounded-lg p-1 sm:p-2 border-2 transition-all hover:border-primary/50 flex flex-col items-start justify-between text-left group relative ${
                     isToday
                       ? "bg-primary/20 border-primary/50"
                       : dayPosts.length > 0
@@ -291,34 +291,34 @@ export function Calendario({ workspaceId }: Props) {
                   {/* + Icon for empty days */}
                   {dayPosts.length === 0 && (
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-50 transition-opacity">
-                      <Plus className="w-6 h-6 text-primary" />
+                      <Plus className="w-4 h-4 sm:w-6 sm:h-6 text-primary" />
                     </div>
                   )}
-                  <span className={`text-xs font-semibold ${isToday ? "text-primary font-bold" : "text-muted-foreground"}`}>
+                  <span className={`text-[9px] sm:text-xs font-semibold ${isToday ? "text-primary font-bold" : "text-muted-foreground"}`}>
                     {day}
                   </span>
 
                   <div className="space-y-1 w-full">
                     {dayPosts.slice(0, 3).map((post) => (
-                      <div key={post.id} className="flex gap-1 flex-wrap">
+                      <div key={post.id} className="flex gap-0.5 sm:gap-1 flex-wrap">
                         {post.platforms.map((platform) => {
                           if (platform === "instagram") {
                             return (
-                              <Instagram key={platform} className="w-4 h-4 text-pink-500" />
+                              <Instagram key={platform} className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-pink-500" />
                             );
                           } else if (platform === "youtube") {
                             return (
-                              <Youtube key={platform} className="w-4 h-4 text-red-600" />
+                              <Youtube key={platform} className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-red-600" />
                             );
                           } else if (platform === "tiktok") {
                             return (
-                              <Music key={platform} className="w-4 h-4 text-black dark:text-white" />
+                              <Music key={platform} className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-black dark:text-white" />
                             );
                           }
                         })}
                       </div>
                     ))}
-                    {dayPosts.length > 3 && <span className="text-xs text-muted-foreground font-semibold">+{dayPosts.length - 3}</span>}
+                    {dayPosts.length > 3 && <span className="text-[9px] sm:text-xs text-muted-foreground font-semibold">+{dayPosts.length - 3}</span>}
                   </div>
                 </button>
               );
@@ -328,7 +328,7 @@ export function Calendario({ workspaceId }: Props) {
         </div>
 
         {/* Sidebar - Post Details */}
-        <div className="bg-card rounded-lg p-6 border border-border shadow-soft space-y-4 h-fit sticky top-8">
+        <div className="bg-card rounded-lg p-4 sm:p-6 border border-border shadow-soft space-y-4 h-fit md:sticky md:top-8">
           {selectedPost ? (
             <>
               <div className="space-y-3 pb-4 border-b border-border">
@@ -504,25 +504,25 @@ export function Calendario({ workspaceId }: Props) {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
-        <div className="bg-green-500/10 rounded-lg p-4 border border-green-500/20">
-          <p className="text-xs font-semibold text-muted-foreground mb-1">AGENDADOS</p>
-          <p className="text-2xl font-bold text-green-600">{posts.filter((p) => p.status === "scheduled").length}</p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
+        <div className="bg-green-500/10 rounded-lg p-2.5 sm:p-4 border border-green-500/20">
+          <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground mb-1">AGENDADOS</p>
+          <p className="text-lg sm:text-2xl font-bold text-green-600">{posts.filter((p) => p.status === "scheduled").length}</p>
         </div>
 
-        <div className="bg-blue-500/10 rounded-lg p-4 border border-blue-500/20">
-          <p className="text-xs font-semibold text-muted-foreground mb-1">POSTADOS</p>
-          <p className="text-2xl font-bold text-blue-600">{posts.filter((p) => p.status === "posted").length}</p>
+        <div className="bg-blue-500/10 rounded-lg p-2.5 sm:p-4 border border-blue-500/20">
+          <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground mb-1">POSTADOS</p>
+          <p className="text-lg sm:text-2xl font-bold text-blue-600">{posts.filter((p) => p.status === "posted").length}</p>
         </div>
 
-        <div className="bg-amber-500/10 rounded-lg p-4 border border-amber-500/20">
-          <p className="text-xs font-semibold text-muted-foreground mb-1">RASCUNHOS</p>
-          <p className="text-2xl font-bold text-amber-600">{posts.filter((p) => p.status === "draft").length}</p>
+        <div className="bg-amber-500/10 rounded-lg p-2.5 sm:p-4 border border-amber-500/20">
+          <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground mb-1">RASCUNHOS</p>
+          <p className="text-lg sm:text-2xl font-bold text-amber-600">{posts.filter((p) => p.status === "draft").length}</p>
         </div>
 
-        <div className="bg-purple-500/10 rounded-lg p-4 border border-purple-500/20">
-          <p className="text-xs font-semibold text-muted-foreground mb-1">TOTAL</p>
-          <p className="text-2xl font-bold text-purple-600">{posts.length}</p>
+        <div className="bg-purple-500/10 rounded-lg p-2.5 sm:p-4 border border-purple-500/20">
+          <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground mb-1">TOTAL</p>
+          <p className="text-lg sm:text-2xl font-bold text-purple-600">{posts.length}</p>
         </div>
       </div>
 
@@ -797,7 +797,7 @@ export function Calendario({ workspaceId }: Props) {
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>🎬 Tipo de Conteúdo</Label>
                 <select

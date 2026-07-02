@@ -313,7 +313,7 @@ export default function Dashboard() {
         </div>
 
         {/* Gráfico + Funil */}
-        <div className="grid gap-4 lg:grid-cols-5">
+        <div className="grid gap-4 grid-cols-1 lg:grid-cols-5">
           <Card className="lg:col-span-3">
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
@@ -428,7 +428,7 @@ export default function Dashboard() {
         </div>
 
         {/* Alertas + Próximas Tarefas + OKRs */}
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
           {/* Alertas */}
           <Card>
             <CardHeader className="pb-2">

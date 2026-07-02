@@ -47,20 +47,22 @@ export default function Empresa() {
           </div>
         ) : (
           <Tabs value={activeTab} onValueChange={handleTabChange}>
-            <TabsList className="mb-4 flex-wrap h-auto gap-1">
-              <TabsTrigger value="geral">Geral</TabsTrigger>
-              <TabsTrigger value="okr">OKR</TabsTrigger>
-              <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
-              <TabsTrigger value="servicos">Serviços</TabsTrigger>
-              <TabsTrigger value="processos">Processos</TabsTrigger>
-              <TabsTrigger value="contratos">Contratos</TabsTrigger>
-              <TabsTrigger value="senhas">Senhas</TabsTrigger>
-              <TabsTrigger value="insights">Insights</TabsTrigger>
-              <TabsTrigger value="tarefas">Tarefas</TabsTrigger>
-              <TabsTrigger value="marketing">Marketing</TabsTrigger>
-              <TabsTrigger value="documentacao">Documentação</TabsTrigger>
-              <TabsTrigger value="gantt">Gantt</TabsTrigger>
-            </TabsList>
+            <div className="mb-4 overflow-x-auto scrollbar-none scroll-smooth snap-x snap-proximity sm:overflow-visible">
+              <TabsList className="w-max flex-nowrap gap-1">
+                <TabsTrigger className="shrink-0 snap-start" value="geral">Geral</TabsTrigger>
+                <TabsTrigger className="shrink-0 snap-start" value="okr">OKR</TabsTrigger>
+                <TabsTrigger className="shrink-0 snap-start" value="financeiro">Financeiro</TabsTrigger>
+                <TabsTrigger className="shrink-0 snap-start" value="servicos">Serviços</TabsTrigger>
+                <TabsTrigger className="shrink-0 snap-start" value="processos">Processos</TabsTrigger>
+                <TabsTrigger className="shrink-0 snap-start" value="contratos">Contratos</TabsTrigger>
+                <TabsTrigger className="shrink-0 snap-start" value="senhas">Senhas</TabsTrigger>
+                <TabsTrigger className="shrink-0 snap-start" value="insights">Insights</TabsTrigger>
+                <TabsTrigger className="shrink-0 snap-start" value="tarefas">Tarefas</TabsTrigger>
+                <TabsTrigger className="shrink-0 snap-start" value="marketing">Marketing</TabsTrigger>
+                <TabsTrigger className="shrink-0 snap-start" value="documentacao">Documentação</TabsTrigger>
+                <TabsTrigger className="shrink-0 snap-start" value="gantt">Gantt</TabsTrigger>
+              </TabsList>
+            </div>
 
             <TabsContent value="geral">
               <EmpresaGeral />

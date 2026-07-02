@@ -284,7 +284,7 @@ export function EmpresaProcessos() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             {BU_LIST.map((bu) => {
               const Icon = bu.icon;
               const count = processCountByBU[bu.id] || 0;

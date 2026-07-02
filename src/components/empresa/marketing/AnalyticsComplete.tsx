@@ -203,19 +203,19 @@ export function AnalyticsComplete({ workspaceId }: Props) {
 
   if (!isConnected || !report) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <div className="flex items-start justify-between">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold">Analytics Profissional</h1>
-            <p className="text-muted-foreground text-sm">Painel completo com TODOS os dados do Instagram</p>
+          <div className="space-y-1 sm:space-y-2">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Analytics Profissional</h1>
+            <p className="text-muted-foreground text-xs sm:text-sm">Painel completo com TODOS os dados do Instagram</p>
           </div>
         </div>
 
         {!isConnected ? (
-          <div className="flex items-center justify-center min-h-[400px]">
+          <div className="flex items-center justify-center min-h-[400px] px-4">
             <div className="text-center space-y-4 max-w-sm">
-              <div className="text-6xl">📊</div>
-              <h2 className="text-2xl font-bold">Painel Profissional</h2>
+              <div className="text-5xl sm:text-6xl">📊</div>
+              <h2 className="text-xl sm:text-2xl font-bold">Painel Profissional</h2>
               <p className="text-muted-foreground">Histórico completo, audiência, crescimento, tipos de conteúdo, tudo!</p>
               <Button
                 size="lg"
@@ -245,35 +245,35 @@ export function AnalyticsComplete({ workspaceId }: Props) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold">Analytics Profissional</h1>
-          <p className="text-muted-foreground text-sm">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-3">
+        <div className="space-y-1 sm:space-y-2 min-w-0">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Analytics Profissional</h1>
+          <p className="text-muted-foreground text-xs sm:text-sm truncate">
             📊 @{report.account.username} • {report.account.followers.toLocaleString()} seguidores
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {isAdmin && (
             <Button variant="ghost" size="sm" onClick={() => setCredentialDialogOpen(true)} className="gap-2">
               <Settings className="w-4 h-4" />
-              Gerenciar credencial
+              <span className="hidden sm:inline">Gerenciar credencial</span>
             </Button>
           )}
-          <Button variant="outline" onClick={handleDisconnect} className="gap-2">
+          <Button variant="outline" size="sm" onClick={handleDisconnect} className="gap-2">
             <LogOut className="w-4 h-4" />
-            Desconectar
+            <span className="hidden sm:inline">Desconectar</span>
           </Button>
         </div>
       </div>
       {credentialDialog}
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-border">
+      <div className="flex gap-1 sm:gap-2 border-b border-border overflow-x-auto">
         <button
           onClick={() => setActiveTab("overview")}
-          className={`px-4 py-2 text-sm font-medium transition-colors ${
+          className={`shrink-0 whitespace-nowrap px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${
             activeTab === "overview"
               ? "text-primary border-b-2 border-primary"
               : "text-muted-foreground hover:text-foreground"
@@ -283,7 +283,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
         </button>
         <button
           onClick={() => setActiveTab("historical")}
-          className={`px-4 py-2 text-sm font-medium transition-colors ${
+          className={`shrink-0 whitespace-nowrap px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${
             activeTab === "historical"
               ? "text-primary border-b-2 border-primary"
               : "text-muted-foreground hover:text-foreground"
@@ -293,7 +293,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
         </button>
         <button
           onClick={() => setActiveTab("content")}
-          className={`px-4 py-2 text-sm font-medium transition-colors ${
+          className={`shrink-0 whitespace-nowrap px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${
             activeTab === "content"
               ? "text-primary border-b-2 border-primary"
               : "text-muted-foreground hover:text-foreground"
@@ -303,7 +303,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
         </button>
         <button
           onClick={() => setActiveTab("audience")}
-          className={`px-4 py-2 text-sm font-medium transition-colors ${
+          className={`shrink-0 whitespace-nowrap px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${
             activeTab === "audience"
               ? "text-primary border-b-2 border-primary"
               : "text-muted-foreground hover:text-foreground"
@@ -315,12 +315,12 @@ export function AnalyticsComplete({ workspaceId }: Props) {
 
       {/* TAB 1: OVERVIEW */}
       {activeTab === "overview" && (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Period Selector */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 overflow-x-auto">
             <button
               onClick={() => setPeriod("7d")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                 period === "7d"
                   ? "bg-primary text-primary-foreground"
                   : "bg-secondary text-muted-foreground hover:text-foreground"
@@ -330,7 +330,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
             </button>
             <button
               onClick={() => setPeriod("30d")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                 period === "30d"
                   ? "bg-primary text-primary-foreground"
                   : "bg-secondary text-muted-foreground hover:text-foreground"
@@ -340,7 +340,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
             </button>
             <button
               onClick={() => setPeriod("90d")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                 period === "90d"
                   ? "bg-primary text-primary-foreground"
                   : "bg-secondary text-muted-foreground hover:text-foreground"
@@ -351,81 +351,81 @@ export function AnalyticsComplete({ workspaceId }: Props) {
           </div>
 
           {/* Main Metrics */}
-          <div className="grid grid-cols-4 gap-3">
-            <div className="bg-gradient-to-br from-pink-500/10 to-red-500/10 rounded-lg p-4 border border-pink-500/20">
-              <p className="text-xs font-semibold text-muted-foreground mb-1">SEGUIDORES</p>
-              <p className="text-2xl font-bold">{report.account.followers.toLocaleString()}</p>
-              <p className="text-xs text-green-500 mt-1">+{report.growth.newFollowers7d} (7d)</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+            <div className="bg-gradient-to-br from-pink-500/10 to-red-500/10 rounded-lg p-2.5 sm:p-4 border border-pink-500/20">
+              <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground mb-1">SEGUIDORES</p>
+              <p className="text-lg sm:text-2xl font-bold">{report.account.followers.toLocaleString()}</p>
+              <p className="text-[10px] sm:text-xs text-green-500 mt-1">+{report.growth.newFollowers7d} (7d)</p>
             </div>
 
-            <div className="bg-gradient-to-br from-purple-500/10 to-blue-500/10 rounded-lg p-4 border border-purple-500/20">
-              <p className="text-xs font-semibold text-muted-foreground mb-1">POSTS</p>
-              <p className="text-2xl font-bold">{report.account.totalPosts}</p>
-              <p className="text-xs text-muted-foreground mt-1">Total</p>
+            <div className="bg-gradient-to-br from-purple-500/10 to-blue-500/10 rounded-lg p-2.5 sm:p-4 border border-purple-500/20">
+              <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground mb-1">POSTS</p>
+              <p className="text-lg sm:text-2xl font-bold">{report.account.totalPosts}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Total</p>
             </div>
 
-            <div className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-lg p-4 border border-amber-500/20">
-              <p className="text-xs font-semibold text-muted-foreground mb-1">ALCANCE ({period})</p>
-              <p className="text-2xl font-bold">{formatNumber(getMetricsForPeriod()?.reach ?? 0)}</p>
-              <p className="text-xs text-muted-foreground mt-1">Média: {formatNumber(getMetricsForPeriod()?.reachAvg ?? 0)}/dia</p>
+            <div className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-lg p-2.5 sm:p-4 border border-amber-500/20">
+              <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground mb-1">ALCANCE ({period})</p>
+              <p className="text-lg sm:text-2xl font-bold">{formatNumber(getMetricsForPeriod()?.reach ?? 0)}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Média: {formatNumber(getMetricsForPeriod()?.reachAvg ?? 0)}/dia</p>
             </div>
 
-            <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-lg p-4 border border-green-500/20">
-              <p className="text-xs font-semibold text-muted-foreground mb-1">VISUALIZAÇÕES ({period})</p>
-              <p className="text-2xl font-bold">{formatNumber(getMetricsForPeriod()?.views ?? 0)}</p>
-              <p className="text-xs text-muted-foreground mt-1">Média: {formatNumber(getMetricsForPeriod()?.viewsAvg ?? 0)}/dia</p>
+            <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-lg p-2.5 sm:p-4 border border-green-500/20">
+              <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground mb-1">VISUALIZAÇÕES ({period})</p>
+              <p className="text-lg sm:text-2xl font-bold">{formatNumber(getMetricsForPeriod()?.views ?? 0)}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Média: {formatNumber(getMetricsForPeriod()?.viewsAvg ?? 0)}/dia</p>
             </div>
           </div>
 
           {/* Engagement Breakdown */}
-          <div className="grid grid-cols-4 gap-3">
-            <div className="bg-card rounded-lg p-4 border border-border">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-red-500">❤️</span>
-                <p className="text-xs font-semibold text-muted-foreground">CURTIDAS</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+            <div className="bg-card rounded-lg p-2.5 sm:p-4 border border-border">
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                <span className="text-red-500 text-sm sm:text-base">❤️</span>
+                <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground">CURTIDAS</p>
               </div>
-              <p className="text-2xl font-bold text-foreground">{report.engagement.totalLikes.toLocaleString()}</p>
+              <p className="text-lg sm:text-2xl font-bold text-foreground">{report.engagement.totalLikes.toLocaleString()}</p>
             </div>
 
-            <div className="bg-card rounded-lg p-4 border border-border">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-blue-500">💬</span>
-                <p className="text-xs font-semibold text-muted-foreground">COMENTÁRIOS</p>
+            <div className="bg-card rounded-lg p-2.5 sm:p-4 border border-border">
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                <span className="text-blue-500 text-sm sm:text-base">💬</span>
+                <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground">COMENTÁRIOS</p>
               </div>
-              <p className="text-2xl font-bold text-foreground">{report.engagement.totalComments.toLocaleString()}</p>
+              <p className="text-lg sm:text-2xl font-bold text-foreground">{report.engagement.totalComments.toLocaleString()}</p>
             </div>
 
-            <div className="bg-card rounded-lg p-4 border border-border">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-purple-500">📌</span>
-                <p className="text-xs font-semibold text-muted-foreground">SALVOS</p>
+            <div className="bg-card rounded-lg p-2.5 sm:p-4 border border-border">
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                <span className="text-purple-500 text-sm sm:text-base">📌</span>
+                <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground">SALVOS</p>
               </div>
-              <p className="text-2xl font-bold text-foreground">{report.engagement.totalSaves.toLocaleString()}</p>
+              <p className="text-lg sm:text-2xl font-bold text-foreground">{report.engagement.totalSaves.toLocaleString()}</p>
             </div>
 
-            <div className="bg-card rounded-lg p-4 border border-border">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-amber-500">↗️</span>
-                <p className="text-xs font-semibold text-muted-foreground">COMPARTILHADOS</p>
+            <div className="bg-card rounded-lg p-2.5 sm:p-4 border border-border">
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                <span className="text-amber-500 text-sm sm:text-base">↗️</span>
+                <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground">COMPARTILHADOS</p>
               </div>
-              <p className="text-2xl font-bold text-foreground">{report.engagement.totalShares.toLocaleString()}</p>
+              <p className="text-lg sm:text-2xl font-bold text-foreground">{report.engagement.totalShares.toLocaleString()}</p>
             </div>
           </div>
 
           {/* Top 5 Posts */}
-          <div className="bg-card rounded-lg p-6 border border-border space-y-4">
-            <h3 className="font-semibold text-lg">🔥 TOP 5 POSTS</h3>
+          <div className="bg-card rounded-lg p-3 sm:p-6 border border-border space-y-3 sm:space-y-4">
+            <h3 className="font-semibold text-sm sm:text-lg">🔥 TOP 5 POSTS</h3>
             <div className="space-y-2">
               {report.topPosts.map((post, idx) => (
-                <div key={idx} className="flex items-center gap-3 p-3 bg-secondary/30 rounded hover:bg-secondary/50 transition-colors">
-                  <span className="text-sm font-bold text-pink-500">#{idx + 1}</span>
+                <div key={idx} className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-secondary/30 rounded hover:bg-secondary/50 transition-colors">
+                  <span className="text-xs sm:text-sm font-bold text-pink-500">#{idx + 1}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-foreground truncate">{post.caption}</p>
-                    <p className="text-xs text-muted-foreground">{post.date} • {post.type}</p>
+                    <p className="text-xs sm:text-sm text-foreground truncate">{post.caption}</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">{post.date} • {post.type}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="text-sm font-bold">❤️ {post.likes}</p>
-                    <p className="text-xs text-muted-foreground">Engagement: {(post.engagementRate * 100).toFixed(1)}%</p>
+                    <p className="text-xs sm:text-sm font-bold">❤️ {post.likes}</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">Engagement: {(post.engagementRate * 100).toFixed(1)}%</p>
                   </div>
                 </div>
               ))}
@@ -437,9 +437,9 @@ export function AnalyticsComplete({ workspaceId }: Props) {
       {/* TAB 2: HISTÓRICO */}
       {activeTab === "historical" && (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-card rounded-lg p-6 border border-border space-y-4">
-              <h3 className="font-semibold text-lg">📈 Alcance por Dia</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className="bg-card rounded-lg p-4 sm:p-6 border border-border space-y-4">
+              <h3 className="font-semibold text-base sm:text-lg">📈 Alcance por Dia</h3>
               <div className="space-y-2">
                 {report.metrics.reach.daily.map((day, idx) => (
                   <div key={idx} className="flex items-center justify-between p-2 hover:bg-secondary/30 rounded">
@@ -453,8 +453,8 @@ export function AnalyticsComplete({ workspaceId }: Props) {
               </div>
             </div>
 
-            <div className="bg-card rounded-lg p-6 border border-border space-y-4">
-              <h3 className="font-semibold text-lg">🔗 Cliques no Website</h3>
+            <div className="bg-card rounded-lg p-4 sm:p-6 border border-border space-y-4">
+              <h3 className="font-semibold text-base sm:text-lg">🔗 Cliques no Website</h3>
               <div className="space-y-2">
                 {report.metrics.websiteClicks.daily.map((day, idx) => (
                   <div key={idx} className="flex items-center justify-between p-2 hover:bg-secondary/30 rounded">
@@ -466,9 +466,9 @@ export function AnalyticsComplete({ workspaceId }: Props) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-card rounded-lg p-6 border border-border space-y-4">
-              <h3 className="font-semibold text-lg">📊 Alcance por Semana</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className="bg-card rounded-lg p-4 sm:p-6 border border-border space-y-4">
+              <h3 className="font-semibold text-base sm:text-lg">📊 Alcance por Semana</h3>
               <div className="space-y-2">
                 {report.metrics.reach.weekly.map((week, idx) => (
                   <div key={idx} className="flex items-center justify-between p-2 hover:bg-secondary/30 rounded">
@@ -479,8 +479,8 @@ export function AnalyticsComplete({ workspaceId }: Props) {
               </div>
             </div>
 
-            <div className="bg-card rounded-lg p-6 border border-border space-y-4">
-              <h3 className="font-semibold text-lg">📅 Visitas de Perfil</h3>
+            <div className="bg-card rounded-lg p-4 sm:p-6 border border-border space-y-4">
+              <h3 className="font-semibold text-base sm:text-lg">📅 Visitas de Perfil</h3>
               <div className="space-y-2">
                 {report.metrics.profileViews.daily.map((day, idx) => (
                   <div key={idx} className="flex items-center justify-between p-2 hover:bg-secondary/30 rounded">
@@ -502,10 +502,10 @@ export function AnalyticsComplete({ workspaceId }: Props) {
               <p>Sem dados de conteúdo disponíveis</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               {report.contentByType.map((content) => (
-                <div key={content.type} className="bg-card rounded-lg p-6 border border-border space-y-4">
-                  <h3 className="font-semibold text-lg">
+                <div key={content.type} className="bg-card rounded-lg p-4 sm:p-6 border border-border space-y-4">
+                  <h3 className="font-semibold text-base sm:text-lg">
                     {content.type === "REEL" && "📹"} {content.type === "POST" && "📸"} {content.type === "CAROUSEL" && "📷"} {content.type}
                   </h3>
 
@@ -549,10 +549,10 @@ export function AnalyticsComplete({ workspaceId }: Props) {
       {/* TAB 4: AUDIÊNCIA */}
       {activeTab === "audience" && (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {/* Países */}
-            <div className="bg-card rounded-lg p-6 border border-border space-y-4">
-              <h3 className="font-semibold text-lg">🌍 Principais Países</h3>
+            <div className="bg-card rounded-lg p-4 sm:p-6 border border-border space-y-4">
+              <h3 className="font-semibold text-base sm:text-lg">🌍 Principais Países</h3>
               <div className="space-y-3">
                 {report.audience.topCountries.map((country) => (
                   <div key={country.country} className="space-y-1">
@@ -569,8 +569,8 @@ export function AnalyticsComplete({ workspaceId }: Props) {
             </div>
 
             {/* Gênero */}
-            <div className="bg-card rounded-lg p-6 border border-border space-y-4">
-              <h3 className="font-semibold text-lg">👥 Gênero</h3>
+            <div className="bg-card rounded-lg p-4 sm:p-6 border border-border space-y-4">
+              <h3 className="font-semibold text-base sm:text-lg">👥 Gênero</h3>
               <div className="space-y-3">
                 <div className="space-y-1">
                   <div className="flex justify-between">
@@ -594,10 +594,10 @@ export function AnalyticsComplete({ workspaceId }: Props) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {/* Idade */}
-            <div className="bg-card rounded-lg p-6 border border-border space-y-4">
-              <h3 className="font-semibold text-lg">🎂 Faixa Etária</h3>
+            <div className="bg-card rounded-lg p-4 sm:p-6 border border-border space-y-4">
+              <h3 className="font-semibold text-base sm:text-lg">🎂 Faixa Etária</h3>
               <div className="space-y-2">
                 {Object.entries(report.audience.ageDistribution).map(([age, percentage]) => (
                   <div key={age} className="space-y-1">
@@ -614,8 +614,8 @@ export function AnalyticsComplete({ workspaceId }: Props) {
             </div>
 
             {/* Cidades */}
-            <div className="bg-card rounded-lg p-6 border border-border space-y-4">
-              <h3 className="font-semibold text-lg">🏙️ Principais Cidades</h3>
+            <div className="bg-card rounded-lg p-4 sm:p-6 border border-border space-y-4">
+              <h3 className="font-semibold text-base sm:text-lg">🏙️ Principais Cidades</h3>
               <div className="space-y-2">
                 {report.audience.topCities.map((city) => (
                   <div key={city.city} className="flex items-center justify-between p-2 hover:bg-secondary/30 rounded">

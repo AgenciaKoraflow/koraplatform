@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, Mail } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import logoImage from '@/logo/kora-logo-preto.png';
 import Silk from '@/components/Silk';
 
-function Logo() {
+export function Logo() {
   return (
     <div className="flex items-start gap-1 flex-col">
       <img src={logoImage} alt="KORA System" className="h-12 object-cover" />
@@ -123,6 +123,9 @@ export default function Login() {
                     />
                     <span className="text-sm text-gray-600">Lembrar-me</span>
                   </label>
+                  <Link to="/esqueci-senha" className="text-sm text-gray-500 hover:text-[#ff8800] transition-colors">
+                    Esqueceu a senha?
+                  </Link>
                 </div>
 
                 {/* Erro */}

@@ -53,12 +53,12 @@ const trendTypeColors: Record<Trend["type"], string> = {
 
 export function EmAlta({ workspaceId }: Props) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold">Feed de hoje · 12 fontes</h1>
-          <p className="text-muted-foreground text-sm">
+        <div className="space-y-1 sm:space-y-2 min-w-0">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Feed de hoje · 12 fontes</h1>
+          <p className="text-muted-foreground text-xs sm:text-sm">
             5 COM POTENCIAL
           </p>
         </div>
@@ -69,12 +69,12 @@ export function EmAlta({ workspaceId }: Props) {
         {mockTrends.map((trend) => (
           <div
             key={trend.id}
-            className="bg-card rounded-lg p-4 border border-border shadow-soft hover:shadow-medium transition-all cursor-pointer"
+            className="bg-card rounded-lg p-3 sm:p-4 border border-border shadow-soft hover:shadow-medium transition-all cursor-pointer"
           >
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1 space-y-2">
-                <p className="text-foreground">{trend.title}</p>
-                <div className="flex items-center gap-2">
+            <div className="flex items-start justify-between gap-3 sm:gap-4">
+              <div className="flex-1 min-w-0 space-y-2">
+                <p className="text-foreground text-sm sm:text-base">{trend.title}</p>
+                <div className="flex items-center gap-2 flex-wrap">
                   <span
                     className={`text-xs font-semibold px-2.5 py-1 rounded ${
                       trendTypeColors[trend.type]
@@ -87,7 +87,7 @@ export function EmAlta({ workspaceId }: Props) {
                   </span>
                 </div>
               </div>
-              <div>
+              <div className="shrink-0">
                 <Flame className="w-5 h-5 text-orange-500" />
               </div>
             </div>

@@ -44,13 +44,16 @@ export function StatCardWithChart({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col items-center text-center">
+        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center relative z-10 mb-3">
+          <Icon className="w-6 h-6 text-primary" />
+        </div>
         <div className="relative z-10">
-          <p className="text-sm text-muted-foreground font-medium">{title}</p>
-          <p className="text-3xl font-bold mt-2 text-foreground">{value}</p>
+          <p className="text-[11px] sm:text-sm text-muted-foreground font-medium">{title}</p>
+          <p className="text-2xl sm:text-3xl font-bold mt-1 sm:mt-2 text-foreground">{value}</p>
           {change && (
             <p className={cn(
-              "text-sm mt-2 font-medium",
+              "text-[11px] sm:text-sm mt-1 sm:mt-2 font-medium",
               changeType === "positive" && "text-green-500",
               changeType === "negative" && "text-red-500",
               changeType === "neutral" && "text-muted-foreground"
@@ -58,9 +61,6 @@ export function StatCardWithChart({
               {change}
             </p>
           )}
-        </div>
-        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center relative z-10">
-          <Icon className="w-6 h-6 text-primary" />
         </div>
       </div>
 

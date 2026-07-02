@@ -331,7 +331,7 @@ export default function Funil() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground font-medium">Valor Total Pipeline</p>
+                  <p className="text-[11px] sm:text-sm text-muted-foreground font-medium">Valor Total Pipeline</p>
                   <p className="text-2xl font-bold text-foreground mt-1">
                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalPipelineValue)}
                   </p>
@@ -347,7 +347,7 @@ export default function Funil() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground font-medium">Total de Leads</p>
+                  <p className="text-[11px] sm:text-sm text-muted-foreground font-medium">Total de Leads</p>
                   <p className="text-2xl font-bold text-foreground mt-1">{totalLeads}</p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
@@ -361,7 +361,7 @@ export default function Funil() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground font-medium">Taxa de Conversão</p>
+                  <p className="text-[11px] sm:text-sm text-muted-foreground font-medium">Taxa de Conversão</p>
                   <p className="text-2xl font-bold text-foreground mt-1">{conversionRate}%</p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
@@ -375,7 +375,7 @@ export default function Funil() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground font-medium">Em Negociação</p>
+                  <p className="text-[11px] sm:text-sm text-muted-foreground font-medium">Em Negociação</p>
                   <p className="text-2xl font-bold text-foreground mt-1">{getClientsByStage('negociacao').length}</p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">

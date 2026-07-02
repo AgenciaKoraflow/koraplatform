@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Eye, EyeOff, KeyRound, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { getPasswordStrength, PASSWORD_RULES, callChangePassword } from '@/lib/password';
 
 function InputField({
   id, label, value, onChange, show, onToggle, placeholder,
@@ -37,29 +38,6 @@ function InputField({
   );
 }
 
-interface PasswordStrength {
-  score: number; // 0–4
-  label: string;
-  color: string;
-}
-
-function getStrength(password: string): PasswordStrength {
-  let score = 0;
-  if (password.length >= 8) score++;
-  if (/[A-Z]/.test(password)) score++;
-  if (/[0-9]/.test(password)) score++;
-  if (/[^A-Za-z0-9]/.test(password)) score++;
-
-  const levels: PasswordStrength[] = [
-    { score: 0, label: 'Muito fraca', color: 'bg-red-500' },
-    { score: 1, label: 'Fraca', color: 'bg-orange-500' },
-    { score: 2, label: 'Média', color: 'bg-yellow-500' },
-    { score: 3, label: 'Forte', color: 'bg-lime-500' },
-    { score: 4, label: 'Muito forte', color: 'bg-green-500' },
-  ];
-  return levels[score];
-}
-
 export function ForcePasswordChangeModal() {
   const { refreshProfile, user } = useAuth();
   const [newPassword, setNewPassword] = useState('');
@@ -69,7 +47,7 @@ export function ForcePasswordChangeModal() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const strength = getStrength(newPassword);
+  const strength = getPasswordStrength(newPassword);
   const isStrong = strength.score === 4;
   const matches = newPassword === confirm;
   const canSubmit = isStrong && matches && newPassword.length > 0 && !submitting;
@@ -85,19 +63,9 @@ export function ForcePasswordChangeModal() {
       const token = session?.access_token;
       if (!token) throw new Error('Sessão inválida.');
 
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const res = await fetch(`${supabaseUrl}/functions/v1/change-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ new_password: newPassword }),
-      });
-
-      const body = await res.json();
-      if (!res.ok) {
-        setError(body.error ?? 'Não foi possível alterar a senha. Tente novamente.');
+      const result = await callChangePassword(token, newPassword);
+      if (!result.ok) {
+        setError(result.error ?? 'Não foi possível alterar a senha. Tente novamente.');
         setSubmitting(false);
         return;
       }
@@ -161,15 +129,10 @@ export function ForcePasswordChangeModal() {
                   {strength.label}
                 </p>
                 <ul className="text-xs text-gray-400 space-y-0.5 mt-1">
-                  {[
-                    [/[A-Z]/, 'Uma letra maiúscula'],
-                    [/[a-z]/, 'Uma letra minúscula'],
-                    [/[0-9]/, 'Um número'],
-                    [/[^A-Za-z0-9]/, 'Um caractere especial (ex: @#$!)'],
-                  ].map(([regex, label]) => (
-                    <li key={label as string} className={`flex items-center gap-1.5 ${(regex as RegExp).test(newPassword) ? 'text-green-600' : ''}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${(regex as RegExp).test(newPassword) ? 'bg-green-500' : 'bg-gray-300'}`} />
-                      {label as string}
+                  {PASSWORD_RULES.map(({ regex, label }) => (
+                    <li key={label} className={`flex items-center gap-1.5 ${regex.test(newPassword) ? 'text-green-600' : ''}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${regex.test(newPassword) ? 'bg-green-500' : 'bg-gray-300'}`} />
+                      {label}
                     </li>
                   ))}
                 </ul>

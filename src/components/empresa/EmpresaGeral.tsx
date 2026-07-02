@@ -55,13 +55,13 @@ function StatCard({
   }[accent];
 
   return (
-    <div className="bg-card rounded-xl border border-border p-5 flex items-center gap-4">
-      <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${accentClass}`}>
+    <div className="bg-card rounded-xl border border-border p-5 flex flex-col items-center text-center">
+      <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 mb-3 ${accentClass}`}>
         <Icon className="w-5 h-5" />
       </div>
       <div>
-        <p className="text-2xl font-bold">{value}</p>
-        <p className="text-sm text-muted-foreground">{label}</p>
+        <p className="text-[11px] sm:text-sm text-muted-foreground">{label}</p>
+        <p className="text-2xl font-bold mt-1">{value}</p>
       </div>
     </div>
   );

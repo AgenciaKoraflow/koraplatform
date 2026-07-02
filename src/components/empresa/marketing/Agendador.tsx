@@ -116,15 +116,15 @@ export function Agendador({ workspaceId }: Props) {
 
   if (!selectedHook) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <div className="flex items-start justify-between">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold">Agendar Este Reel</h1>
-            <p className="text-muted-foreground text-sm">Nenhum hook selecionado</p>
+          <div className="space-y-1 sm:space-y-2 min-w-0">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Agendar Este Reel</h1>
+            <p className="text-muted-foreground text-xs sm:text-sm">Nenhum hook selecionado</p>
           </div>
         </div>
-        <div className="bg-card rounded-lg p-8 border border-border shadow-soft flex items-center gap-3">
-          <AlertCircle className="w-5 h-5 text-muted-foreground" />
+        <div className="bg-card rounded-lg p-4 sm:p-8 border border-border shadow-soft flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-muted-foreground shrink-0" />
           <p className="text-muted-foreground">Volte para Hook Vault e selecione um hook para começar</p>
         </div>
       </div>
@@ -132,19 +132,19 @@ export function Agendador({ workspaceId }: Props) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold">Agendar Este Reel</h1>
-          <p className="text-muted-foreground text-sm">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+        <div className="space-y-1 sm:space-y-2 min-w-0">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Agendar Este Reel</h1>
+          <p className="text-muted-foreground text-xs sm:text-sm">
             Hook: <span className="text-foreground font-medium">{selectedHook.type}</span>
           </p>
         </div>
         <Button
           size="lg"
           onClick={handleSchedule}
-          className="bg-[#B8532E] hover:bg-[#B8532E]/90"
+          className="bg-[#B8532E] hover:bg-[#B8532E]/90 shrink-0 w-full sm:w-auto"
         >
           <Plus className="w-4 h-4 mr-2" />
           AGENDAR TUDO
@@ -152,7 +152,7 @@ export function Agendador({ workspaceId }: Props) {
       </div>
 
       {/* Hook Selecionado */}
-      <div className="bg-card rounded-lg p-6 border border-border shadow-soft space-y-3">
+      <div className="bg-card rounded-lg p-4 sm:p-6 border border-border shadow-soft space-y-3">
         <h3 className="font-semibold text-foreground text-sm uppercase tracking-wide">Hook Base</h3>
         <p className="text-base text-foreground leading-relaxed">{selectedHook.text}</p>
         <div className="flex flex-wrap gap-2 pt-2">
@@ -169,8 +169,8 @@ export function Agendador({ workspaceId }: Props) {
       </div>
 
       {/* Ângulo e CTA */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-card rounded-lg p-6 border border-border shadow-soft space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="bg-card rounded-lg p-4 sm:p-6 border border-border shadow-soft space-y-3">
           <label className="text-xs font-semibold text-muted-foreground uppercase mb-2 block">
             Seu Ângulo / Insight
           </label>
@@ -183,7 +183,7 @@ export function Agendador({ workspaceId }: Props) {
           <p className="text-xs text-muted-foreground">Personalize o hook com seu contexto</p>
         </div>
 
-        <div className="bg-card rounded-lg p-6 border border-border shadow-soft space-y-3">
+        <div className="bg-card rounded-lg p-4 sm:p-6 border border-border shadow-soft space-y-3">
           <label className="text-xs font-semibold text-muted-foreground uppercase mb-2 block">
             Call-to-Action
           </label>
@@ -198,14 +198,14 @@ export function Agendador({ workspaceId }: Props) {
       </div>
 
       {/* Legenda Gerada */}
-      <div className="bg-card rounded-lg p-6 border border-border shadow-soft space-y-3">
-        <div className="flex items-center justify-between">
+      <div className="bg-card rounded-lg p-4 sm:p-6 border border-border shadow-soft space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <h3 className="font-semibold text-foreground text-sm uppercase tracking-wide">Legenda Gerada</h3>
           <Button
             size="sm"
             variant="outline"
             onClick={handleCopyCaption}
-            className="gap-2"
+            className="gap-2 self-start sm:self-auto"
           >
             {copied ? (
               <>
@@ -231,7 +231,7 @@ export function Agendador({ workspaceId }: Props) {
       </div>
 
       {/* Platform Selection */}
-      <div className="bg-card rounded-lg p-6 border border-border shadow-soft">
+      <div className="bg-card rounded-lg p-4 sm:p-6 border border-border shadow-soft">
         <h3 className="font-semibold text-foreground mb-4">
           Selecione as plataformas
         </h3>
@@ -254,10 +254,10 @@ export function Agendador({ workspaceId }: Props) {
       </div>
 
       {/* Schedule Form */}
-      <div className="bg-card rounded-lg p-6 border border-border shadow-soft">
+      <div className="bg-card rounded-lg p-4 sm:p-6 border border-border shadow-soft">
         <h3 className="font-semibold text-foreground mb-4">Agendar para</h3>
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-xs font-semibold text-muted-foreground uppercase mb-2 block">
                 Data

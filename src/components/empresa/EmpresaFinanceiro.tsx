@@ -911,7 +911,7 @@ export function EmpresaFinanceiro() {
         </div>
 
         {/* Summary Cards — 5 cards responsive to filtered period */}
-        <div className="grid gap-4 md:grid-cols-5">
+        <div className="grid gap-4 grid-cols-2 md:grid-cols-5">
           <Card className="bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-500/20">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -981,7 +981,7 @@ export function EmpresaFinanceiro() {
         </div>
 
         {/* Charts row */}
-        <div className="grid gap-4 lg:grid-cols-5">
+        <div className="grid gap-4 grid-cols-1 lg:grid-cols-5">
           <div className="lg:col-span-3">
             <FinancialTrendChart transactions={transactions} />
           </div>

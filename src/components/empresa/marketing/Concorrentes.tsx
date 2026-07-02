@@ -53,16 +53,16 @@ const mockCompetitors: Competitor[] = [
 
 export function Concorrentes({ workspaceId }: Props) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold">8 criadores monitorados</h1>
-          <p className="text-muted-foreground text-sm">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+        <div className="space-y-1 sm:space-y-2 min-w-0">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">8 criadores monitorados</h1>
+          <p className="text-muted-foreground text-xs sm:text-sm">
             DOM 06:00 · AUTO
           </p>
         </div>
-        <Button size="lg" className="bg-primary hover:bg-primary/90">
+        <Button size="lg" className="bg-primary hover:bg-primary/90 shrink-0 w-full sm:w-auto">
           <Plus className="w-4 h-4 mr-2" />
           ADICIONAR
         </Button>
@@ -83,19 +83,19 @@ export function Concorrentes({ workspaceId }: Props) {
         {mockCompetitors.map((competitor) => (
           <div
             key={competitor.id}
-            className="bg-card rounded-lg p-4 border border-border shadow-soft hover:shadow-medium transition-all"
+            className="bg-card rounded-lg p-3 sm:p-4 border border-border shadow-soft hover:shadow-medium transition-all"
           >
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <h3 className="font-semibold text-foreground">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-foreground truncate">
                   {competitor.username}
                 </h3>
                 <p className="text-muted-foreground text-sm">
                   {competitor.lastScraped}
                 </p>
               </div>
-              <div className="text-right">
-                <p className="text-xl font-bold text-primary">
+              <div className="text-right shrink-0">
+                <p className="text-lg sm:text-xl font-bold text-primary">
                   {competitor.followers}
                 </p>
                 <p className="text-muted-foreground text-xs">

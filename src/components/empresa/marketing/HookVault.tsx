@@ -270,21 +270,21 @@ ${hook.creator} (${hook.creatorHandle})
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold">
+        <div className="space-y-1 sm:space-y-2">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">
             {hooks.length} hooks · Biblioteca por Vertical
           </h1>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-muted-foreground text-xs sm:text-sm">
             150 hooks organizados em 3 verticais: Agentes de IA, Desenvolvimento e Studio Criativo
           </p>
         </div>
       </div>
 
       {/* Vertical Selector */}
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-1.5 sm:gap-2 flex-wrap">
         {(Object.keys(verticalLabels) as Vertical[]).map((vertical) => (
           <button
             key={vertical}
@@ -295,7 +295,7 @@ ${hook.creator} (${hook.creatorHandle})
               setSelectedEmotionalTrigger("");
             }}
             className={cn(
-              "px-4 py-2.5 rounded-lg font-semibold transition-all border",
+              "px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all border",
               activeVertical === vertical
                 ? "bg-primary text-primary-foreground border-primary"
                 : "bg-secondary text-foreground border-border hover:border-primary/50"
@@ -306,17 +306,17 @@ ${hook.creator} (${hook.creatorHandle})
         ))}
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Audience Summary */}
-        <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-          <p className="text-sm">
+        <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 sm:p-4">
+          <p className="text-xs sm:text-sm">
             <span className="font-semibold">Sua Audiência:</span> {defaultAudience.description}
           </p>
-          <div className="flex gap-2 mt-2 flex-wrap">
+          <div className="flex gap-1.5 sm:gap-2 mt-2 flex-wrap">
             {defaultAudience.segments.map((seg) => (
               <span
                 key={seg}
-                className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded"
+                className="text-[10px] sm:text-xs bg-primary/10 text-primary px-2 sm:px-2.5 py-0.5 sm:py-1 rounded"
               >
                 {seg}
               </span>
@@ -325,7 +325,7 @@ ${hook.creator} (${hook.creatorHandle})
         </div>
 
         {/* Library Actions */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button
             size="lg"
             variant="outline"
@@ -355,7 +355,7 @@ ${hook.creator} (${hook.creatorHandle})
         </div>
 
         {/* Filters */}
-        <div className="space-y-4 bg-secondary/30 rounded-lg p-4 border border-border">
+        <div className="space-y-3 sm:space-y-4 bg-secondary/30 rounded-lg p-3 sm:p-4 border border-border">
           {/* Search */}
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -364,12 +364,12 @@ ${hook.creator} (${hook.creatorHandle})
               placeholder="Buscar hook ou criador..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full h-10 pl-10 pr-4 rounded-lg bg-input border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className="w-full h-9 sm:h-10 pl-10 pr-4 rounded-lg bg-input border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
           </div>
 
           {/* Filter Controls */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Pain Point Filter */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-muted-foreground uppercase">
@@ -425,8 +425,8 @@ ${hook.creator} (${hook.creatorHandle})
         </div>
 
         {/* Results Count & Pagination Info */}
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
+        <div className="flex items-center justify-between flex-wrap gap-1">
+          <div className="text-xs sm:text-sm text-muted-foreground">
             {filteredHooks.length} hook{filteredHooks.length !== 1 ? "s" : ""} encontrado na vertical {verticalLabels[activeVertical]}
             {filteredHooks.length !== hooks.length && ` (de ${hooks.length} total)`}
           </div>
@@ -447,10 +447,10 @@ ${hook.creator} (${hook.creatorHandle})
             paginatedHooks.map(({ hook, relevance }) => (
               <div
               key={hook.id}
-              className="bg-card rounded-lg p-4 border border-border shadow-soft hover:shadow-medium transition-all"
+              className="bg-card rounded-lg p-3 sm:p-4 border border-border shadow-soft hover:shadow-medium transition-all"
             >
               {/* 5 COLUNAS - MINIMALISTA */}
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {/* LINHA 1: Hook */}
                 <div className="pl-3 border-l border-primary/20">
                   <p className="text-xs font-semibold text-primary/60 uppercase tracking-wide mb-2">Hook</p>
@@ -458,7 +458,7 @@ ${hook.creator} (${hook.creatorHandle})
                 </div>
 
                 {/* LINHA 2: Formato + Dor */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
                   <div className="pl-3 border-l border-purple-500/20">
                     <p className="text-xs font-semibold text-purple-600/60 dark:text-purple-400/60 uppercase tracking-wide mb-2">Formato</p>
                     <p className="text-sm text-foreground font-medium">{hook.format || "—"}</p>
@@ -568,7 +568,7 @@ ${hook.creator} (${hook.creatorHandle})
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Hora</Label>
                 <input
@@ -639,7 +639,7 @@ ${hook.creator} (${hook.creatorHandle})
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Tipo *</Label>
                 <Select

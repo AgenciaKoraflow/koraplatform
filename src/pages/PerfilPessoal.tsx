@@ -12,6 +12,7 @@ import type { UserPreferences } from '@/hooks/useProfile';
 import { useUserAvatar } from '@/hooks/useUserAvatar';
 import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/integrations/supabase/client';
+import { getPasswordStrength, PASSWORD_RULES, callChangePassword } from '@/lib/password';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -45,32 +46,6 @@ const NOTIF_LABELS: Record<NotificationType, string> = {
 };
 
 const NOTIF_TYPES = Object.keys(NOTIF_LABELS) as NotificationType[];
-
-// ── Password strength ─────────────────────────────────────────────────────────
-
-function getStrength(password: string) {
-  let score = 0;
-  if (password.length >= 8) score++;
-  if (/[A-Z]/.test(password)) score++;
-  if (/[0-9]/.test(password)) score++;
-  if (/[^A-Za-z0-9]/.test(password)) score++;
-  return score;
-}
-
-const strengthMeta = [
-  { label: 'Muito fraca', color: 'bg-red-500', text: 'text-red-500' },
-  { label: 'Fraca', color: 'bg-orange-500', text: 'text-orange-500' },
-  { label: 'Média', color: 'bg-yellow-500', text: 'text-yellow-600' },
-  { label: 'Forte', color: 'bg-lime-500', text: 'text-lime-600' },
-  { label: 'Muito forte', color: 'bg-green-500', text: 'text-green-600' },
-];
-
-const passwordRules = [
-  { regex: /[A-Z]/, label: 'Uma letra maiúscula' },
-  { regex: /[a-z]/, label: 'Uma letra minúscula' },
-  { regex: /[0-9]/, label: 'Um número' },
-  { regex: /[^A-Za-z0-9]/, label: 'Um caractere especial' },
-];
 
 // ── Field ─────────────────────────────────────────────────────────────────────
 
@@ -126,8 +101,8 @@ export default function PerfilPessoal() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
 
-  const strengthScore = getStrength(newPassword);
-  const isStrongEnough = strengthScore === 4;
+  const strength = getPasswordStrength(newPassword);
+  const isStrongEnough = strength.score === 4;
   const passwordsMatch = newPassword === confirmPassword;
 
   const prefs: UserPreferences = profile?.preferences ?? {};
@@ -175,15 +150,9 @@ export default function PerfilPessoal() {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       if (!token) throw new Error('Sessão inválida');
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const res = await fetch(`${supabaseUrl}/functions/v1/change-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ new_password: newPassword }),
-      });
-      const body = await res.json();
-      if (!res.ok) {
-        toast.error(body.error ?? 'Não foi possível alterar a senha.');
+      const result = await callChangePassword(token, newPassword);
+      if (!result.ok) {
+        toast.error(result.error ?? 'Não foi possível alterar a senha.');
       } else {
         toast.success('Senha alterada com sucesso!');
         setNewPassword('');
@@ -405,12 +374,12 @@ export default function PerfilPessoal() {
                     <div className="mt-2 space-y-1.5">
                       <div className="flex gap-1">
                         {[0, 1, 2, 3].map((i) => (
-                          <div key={i} className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${i < strengthScore ? strengthMeta[strengthScore].color : 'bg-muted'}`} />
+                          <div key={i} className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${i < strength.score ? strength.color : 'bg-muted'}`} />
                         ))}
                       </div>
-                      <p className={`text-xs font-medium ${strengthMeta[strengthScore].text}`}>{strengthMeta[strengthScore].label}</p>
+                      <p className={`text-xs font-medium ${strength.textColor}`}>{strength.label}</p>
                       <ul className="text-xs text-muted-foreground space-y-0.5">
-                        {passwordRules.map(({ regex, label }) => (
+                        {PASSWORD_RULES.map(({ regex, label }) => (
                           <li key={label} className={`flex items-center gap-1.5 ${regex.test(newPassword) ? 'text-green-600' : ''}`}>
                             <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${regex.test(newPassword) ? 'bg-green-500' : 'bg-muted-foreground/40'}`} />
                             {label}

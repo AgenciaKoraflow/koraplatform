@@ -235,7 +235,7 @@ export default function ClientesAtivos() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground font-medium">Clientes Ativos</p>
+                  <p className="text-[11px] sm:text-sm text-muted-foreground font-medium">Clientes Ativos</p>
                   <p className="text-xl font-bold text-foreground mt-1">{activeClients.length}</p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
@@ -249,7 +249,7 @@ export default function ClientesAtivos() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground font-medium">Interações este Mês</p>
+                  <p className="text-[11px] sm:text-sm text-muted-foreground font-medium">Interações este Mês</p>
                   <p className="text-xl font-bold text-foreground mt-1">{interactions.length}</p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center">
@@ -266,7 +266,7 @@ export default function ClientesAtivos() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground font-medium">Aniversários Próximos</p>
+                  <p className="text-[11px] sm:text-sm text-muted-foreground font-medium">Aniversários Próximos</p>
                   <p className="text-xl font-bold text-foreground mt-1">{upcomingBirthdays.length}</p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center">
@@ -280,7 +280,7 @@ export default function ClientesAtivos() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground font-medium">Taxa de Retenção</p>
+                  <p className="text-[11px] sm:text-sm text-muted-foreground font-medium">Taxa de Retenção</p>
                   <p className="text-xl font-bold text-foreground mt-1">94%</p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">

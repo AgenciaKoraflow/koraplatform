@@ -27,6 +27,8 @@ const importSignContract = () => import("./pages/SignContract");
 const importNotFound = () => import("./pages/NotFound");
 const importBuscar = () => import("./pages/Buscar");
 const importLogin = () => import("./pages/Login");
+const importEsqueciSenha = () => import("./pages/EsqueciSenha");
+const importRedefinirSenha = () => import("./pages/RedefinirSenha");
 const importPerfilPessoal = () => import("./pages/PerfilPessoal");
 const importGerenciarUsuarios = () => import("./pages/GerenciarUsuarios");
 const importEmpresa = () => import("./pages/Empresa");
@@ -43,6 +45,8 @@ const SignContract = lazy(importSignContract);
 const NotFound = lazy(importNotFound);
 const Buscar = lazy(importBuscar);
 const Login = lazy(importLogin);
+const EsqueciSenha = lazy(importEsqueciSenha);
+const RedefinirSenha = lazy(importRedefinirSenha);
 const PerfilPessoal = lazy(importPerfilPessoal);
 const GerenciarUsuarios = lazy(importGerenciarUsuarios);
 const Empresa = lazy(importEmpresa);
@@ -98,6 +102,8 @@ function usePreloadAllPages() {
       importNotFound();
       importBuscar();
       importLogin();
+      importEsqueciSenha();
+      importRedefinirSenha();
       importPerfilPessoal();
       importGerenciarUsuarios();
       importEmpresa();
@@ -165,6 +171,8 @@ function AppRoutes() {
           <Route path="/empresa" element={<ProtectedRoute><Empresa /></ProtectedRoute>} />
           <Route path="/usuarios" element={<ProtectedRoute><GerenciarUsuarios /></ProtectedRoute>} />
           <Route path="/login" element={<Login />} />
+          <Route path="/esqueci-senha" element={<EsqueciSenha />} />
+          <Route path="/redefinir-senha" element={<RedefinirSenha />} />
           <Route path="/sign/:token" element={<SignContract />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
