@@ -37,7 +37,7 @@ export function EmpresaMarketing({ workspaceId }: Props) {
       try {
         const report = await fetchCompleteInstagramAnalytics();
         if (report?.account?.profilePictureUrl) {
-          console.log("📷 Profile picture loaded:", report.account.profilePictureUrl);
+          console.log("Profile picture loaded:", report.account.profilePictureUrl);
           setProfileImage(report.account.profilePictureUrl);
         }
       } catch (error) {

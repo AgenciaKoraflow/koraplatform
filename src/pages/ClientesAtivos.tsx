@@ -874,7 +874,7 @@ export default function ClientesAtivos() {
                     </div>
                     <div className="text-right">
                       <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20">
-                        {daysUntil === 0 ? "Hoje! 🎉" : daysUntil === 1 ? "Amanhã" : `${daysUntil} dias`}
+                        {daysUntil === 0 ? "Hoje!" : daysUntil === 1 ? "Amanhã" : `${daysUntil} dias`}
                       </Badge>
                     </div>
                   </div>

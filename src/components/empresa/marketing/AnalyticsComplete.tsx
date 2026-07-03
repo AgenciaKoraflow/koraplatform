@@ -1,5 +1,27 @@
 import { useState, useEffect } from "react";
-import { Plus, LogOut, Loader, TrendingUp, Users, Zap, Globe, BarChart3, Calendar, Activity, Settings } from "lucide-react";
+import {
+  Plus,
+  LogOut,
+  Loader,
+  TrendingUp,
+  Users,
+  Globe,
+  BarChart3,
+  Calendar,
+  Settings,
+  Clapperboard,
+  Heart,
+  MessageCircle,
+  Bookmark,
+  ArrowUpRight,
+  Flame,
+  Link2,
+  Video,
+  Camera,
+  Images,
+  Cake,
+  Building2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,6 +29,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogBody,
   DialogTitle,
   DialogDescription,
   DialogFooter,
@@ -128,8 +151,8 @@ export function AnalyticsComplete({ workspaceId }: Props) {
             criptografados no banco e nunca são enviados ao navegador — só o servidor os usa para consultar a API.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3 px-1">
-          <div className="space-y-1">
+        <DialogBody className="space-y-4">
+          <div className="space-y-1.5">
             <Label htmlFor="ig-app-id">App ID</Label>
             <Input
               id="ig-app-id"
@@ -137,7 +160,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
               onChange={(e) => setCredentialForm((f) => ({ ...f, appId: e.target.value }))}
             />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <Label htmlFor="ig-app-secret">App Secret</Label>
             <Input
               id="ig-app-secret"
@@ -146,7 +169,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
               onChange={(e) => setCredentialForm((f) => ({ ...f, appSecret: e.target.value }))}
             />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <Label htmlFor="ig-access-token">Access Token</Label>
             <Input
               id="ig-access-token"
@@ -155,7 +178,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
               onChange={(e) => setCredentialForm((f) => ({ ...f, accessToken: e.target.value }))}
             />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <Label htmlFor="ig-account-id">Business Account ID</Label>
             <Input
               id="ig-account-id"
@@ -163,7 +186,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
               onChange={(e) => setCredentialForm((f) => ({ ...f, businessAccountId: e.target.value }))}
             />
           </div>
-        </div>
+        </DialogBody>
         <DialogFooter>
           <Button variant="outline" onClick={() => setCredentialDialogOpen(false)}>
             Cancelar
@@ -214,24 +237,26 @@ export function AnalyticsComplete({ workspaceId }: Props) {
         {!isConnected ? (
           <div className="flex items-center justify-center min-h-[400px] px-4">
             <div className="text-center space-y-4 max-w-sm">
-              <div className="text-5xl sm:text-6xl">📊</div>
+              <BarChart3 className="w-12 h-12 sm:w-14 sm:h-14 mx-auto text-primary" />
               <h2 className="text-xl sm:text-2xl font-bold">Painel Profissional</h2>
               <p className="text-muted-foreground">Histórico completo, audiência, crescimento, tipos de conteúdo, tudo!</p>
-              <Button
-                size="lg"
-                onClick={handleConnect}
-                disabled={isLoading}
-                className="bg-primary hover:bg-primary/90 gap-2"
-              >
-                {isLoading ? <Loader className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                {isLoading ? "Conectando..." : "Conectar Instagram"}
-              </Button>
-              {isAdmin && (
-                <Button variant="ghost" size="sm" onClick={() => setCredentialDialogOpen(true)} className="gap-2">
-                  <Settings className="w-4 h-4" />
-                  Gerenciar credencial
+              <div className="flex flex-col items-center gap-2">
+                <Button
+                  size="lg"
+                  onClick={handleConnect}
+                  disabled={isLoading}
+                  className="bg-primary hover:bg-primary/90 gap-2"
+                >
+                  {isLoading ? <Loader className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  {isLoading ? "Conectando..." : "Conectar Instagram"}
                 </Button>
-              )}
+                {isAdmin && (
+                  <Button variant="ghost" size="sm" onClick={() => setCredentialDialogOpen(true)} className="gap-2">
+                    <Settings className="w-4 h-4" />
+                    Gerenciar credencial
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         ) : (
@@ -250,8 +275,9 @@ export function AnalyticsComplete({ workspaceId }: Props) {
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-3">
         <div className="space-y-1 sm:space-y-2 min-w-0">
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Analytics Profissional</h1>
-          <p className="text-muted-foreground text-xs sm:text-sm truncate">
-            📊 @{report.account.username} • {report.account.followers.toLocaleString()} seguidores
+          <p className="text-muted-foreground text-xs sm:text-sm truncate flex items-center gap-1.5">
+            <BarChart3 className="w-3.5 h-3.5 shrink-0" />
+            @{report.account.username} • {report.account.followers.toLocaleString()} seguidores
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -273,43 +299,43 @@ export function AnalyticsComplete({ workspaceId }: Props) {
       <div className="flex gap-1 sm:gap-2 border-b border-border overflow-x-auto">
         <button
           onClick={() => setActiveTab("overview")}
-          className={`shrink-0 whitespace-nowrap px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${
-            activeTab === "overview"
+          className={`shrink-0 whitespace-nowrap flex items-center gap-1.5 px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${activeTab === "overview"
               ? "text-primary border-b-2 border-primary"
               : "text-muted-foreground hover:text-foreground"
-          }`}
+            }`}
         >
-          📈 Visão Geral
+          <TrendingUp className="w-4 h-4" />
+          Visão Geral
         </button>
         <button
           onClick={() => setActiveTab("historical")}
-          className={`shrink-0 whitespace-nowrap px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${
-            activeTab === "historical"
+          className={`shrink-0 whitespace-nowrap flex items-center gap-1.5 px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${activeTab === "historical"
               ? "text-primary border-b-2 border-primary"
               : "text-muted-foreground hover:text-foreground"
-          }`}
+            }`}
         >
-          📅 Histórico (Dia/Semana/Mês)
+          <Calendar className="w-4 h-4" />
+          Histórico (Dia/Semana/Mês)
         </button>
         <button
           onClick={() => setActiveTab("content")}
-          className={`shrink-0 whitespace-nowrap px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${
-            activeTab === "content"
+          className={`shrink-0 whitespace-nowrap flex items-center gap-1.5 px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${activeTab === "content"
               ? "text-primary border-b-2 border-primary"
               : "text-muted-foreground hover:text-foreground"
-          }`}
+            }`}
         >
-          🎬 Por Tipo de Conteúdo
+          <Clapperboard className="w-4 h-4" />
+          Por Tipo de Conteúdo
         </button>
         <button
           onClick={() => setActiveTab("audience")}
-          className={`shrink-0 whitespace-nowrap px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${
-            activeTab === "audience"
+          className={`shrink-0 whitespace-nowrap flex items-center gap-1.5 px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${activeTab === "audience"
               ? "text-primary border-b-2 border-primary"
               : "text-muted-foreground hover:text-foreground"
-          }`}
+            }`}
         >
-          👥 Audiência
+          <Users className="w-4 h-4" />
+          Audiência
         </button>
       </div>
 
@@ -320,31 +346,28 @@ export function AnalyticsComplete({ workspaceId }: Props) {
           <div className="flex gap-2 overflow-x-auto">
             <button
               onClick={() => setPeriod("7d")}
-              className={`shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
-                period === "7d"
+              className={`shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${period === "7d"
                   ? "bg-primary text-primary-foreground"
                   : "bg-secondary text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
             >
               Últimos 7 dias
             </button>
             <button
               onClick={() => setPeriod("30d")}
-              className={`shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
-                period === "30d"
+              className={`shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${period === "30d"
                   ? "bg-primary text-primary-foreground"
                   : "bg-secondary text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
             >
               Últimos 30 dias
             </button>
             <button
               onClick={() => setPeriod("90d")}
-              className={`shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
-                period === "90d"
+              className={`shrink-0 whitespace-nowrap px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${period === "90d"
                   ? "bg-primary text-primary-foreground"
                   : "bg-secondary text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
             >
               Últimos 90 dias
             </button>
@@ -381,7 +404,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
             <div className="bg-card rounded-lg p-2.5 sm:p-4 border border-border">
               <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
-                <span className="text-primary text-sm sm:text-base">❤️</span>
+                <Heart className="w-4 h-4 text-primary" />
                 <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground">CURTIDAS</p>
               </div>
               <p className="text-lg sm:text-2xl font-bold text-foreground">{report.engagement.totalLikes.toLocaleString()}</p>
@@ -389,7 +412,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
 
             <div className="bg-card rounded-lg p-2.5 sm:p-4 border border-border">
               <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
-                <span className="text-primary text-sm sm:text-base">💬</span>
+                <MessageCircle className="w-4 h-4 text-primary" />
                 <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground">COMENTÁRIOS</p>
               </div>
               <p className="text-lg sm:text-2xl font-bold text-foreground">{report.engagement.totalComments.toLocaleString()}</p>
@@ -397,7 +420,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
 
             <div className="bg-card rounded-lg p-2.5 sm:p-4 border border-border">
               <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
-                <span className="text-primary text-sm sm:text-base">📌</span>
+                <Bookmark className="w-4 h-4 text-primary" />
                 <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground">SALVOS</p>
               </div>
               <p className="text-lg sm:text-2xl font-bold text-foreground">{report.engagement.totalSaves.toLocaleString()}</p>
@@ -405,7 +428,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
 
             <div className="bg-card rounded-lg p-2.5 sm:p-4 border border-border">
               <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
-                <span className="text-primary text-sm sm:text-base">↗️</span>
+                <ArrowUpRight className="w-4 h-4 text-primary" />
                 <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground">COMPARTILHADOS</p>
               </div>
               <p className="text-lg sm:text-2xl font-bold text-foreground">{report.engagement.totalShares.toLocaleString()}</p>
@@ -414,7 +437,10 @@ export function AnalyticsComplete({ workspaceId }: Props) {
 
           {/* Top 5 Posts */}
           <div className="bg-card rounded-lg p-3 sm:p-6 border border-border space-y-3 sm:space-y-4">
-            <h3 className="font-semibold text-sm sm:text-lg">🔥 TOP 5 POSTS</h3>
+            <h3 className="font-semibold text-sm sm:text-lg flex items-center gap-1.5">
+              <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+              TOP 5 POSTS
+            </h3>
             <div className="space-y-2">
               {report.topPosts.map((post, idx) => (
                 <div key={idx} className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-secondary/30 rounded hover:bg-secondary/50 transition-colors">
@@ -424,7 +450,10 @@ export function AnalyticsComplete({ workspaceId }: Props) {
                     <p className="text-[10px] sm:text-xs text-muted-foreground">{post.date} • {post.type}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="text-xs sm:text-sm font-bold">❤️ {post.likes}</p>
+                    <p className="text-xs sm:text-sm font-bold flex items-center gap-1 justify-end">
+                      <Heart className="w-3.5 h-3.5" />
+                      {post.likes}
+                    </p>
                     <p className="text-[10px] sm:text-xs text-muted-foreground">Engagement: {(post.engagementRate * 100).toFixed(1)}%</p>
                   </div>
                 </div>
@@ -439,7 +468,10 @@ export function AnalyticsComplete({ workspaceId }: Props) {
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="bg-card rounded-lg p-4 sm:p-6 border border-border space-y-4">
-              <h3 className="font-semibold text-base sm:text-lg">📈 Alcance por Dia</h3>
+              <h3 className="font-semibold text-base sm:text-lg flex items-center gap-1.5">
+                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
+                Alcance por Dia
+              </h3>
               <div className="space-y-2">
                 {report.metrics.reach.daily.map((day, idx) => (
                   <div key={idx} className="flex items-center justify-between p-2 hover:bg-secondary/30 rounded">
@@ -454,7 +486,10 @@ export function AnalyticsComplete({ workspaceId }: Props) {
             </div>
 
             <div className="bg-card rounded-lg p-4 sm:p-6 border border-border space-y-4">
-              <h3 className="font-semibold text-base sm:text-lg">🔗 Cliques no Website</h3>
+              <h3 className="font-semibold text-base sm:text-lg flex items-center gap-1.5">
+                <Link2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                Cliques no Website
+              </h3>
               <div className="space-y-2">
                 {report.metrics.websiteClicks.daily.map((day, idx) => (
                   <div key={idx} className="flex items-center justify-between p-2 hover:bg-secondary/30 rounded">
@@ -468,7 +503,10 @@ export function AnalyticsComplete({ workspaceId }: Props) {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="bg-card rounded-lg p-4 sm:p-6 border border-border space-y-4">
-              <h3 className="font-semibold text-base sm:text-lg">📊 Alcance por Semana</h3>
+              <h3 className="font-semibold text-base sm:text-lg flex items-center gap-1.5">
+                <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5" />
+                Alcance por Semana
+              </h3>
               <div className="space-y-2">
                 {report.metrics.reach.weekly.map((week, idx) => (
                   <div key={idx} className="flex items-center justify-between p-2 hover:bg-secondary/30 rounded">
@@ -480,7 +518,10 @@ export function AnalyticsComplete({ workspaceId }: Props) {
             </div>
 
             <div className="bg-card rounded-lg p-4 sm:p-6 border border-border space-y-4">
-              <h3 className="font-semibold text-base sm:text-lg">📅 Visitas de Perfil</h3>
+              <h3 className="font-semibold text-base sm:text-lg flex items-center gap-1.5">
+                <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
+                Visitas de Perfil
+              </h3>
               <div className="space-y-2">
                 {report.metrics.profileViews.daily.map((day, idx) => (
                   <div key={idx} className="flex items-center justify-between p-2 hover:bg-secondary/30 rounded">
@@ -505,8 +546,11 @@ export function AnalyticsComplete({ workspaceId }: Props) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               {report.contentByType.map((content) => (
                 <div key={content.type} className="bg-card rounded-lg p-4 sm:p-6 border border-border space-y-4">
-                  <h3 className="font-semibold text-base sm:text-lg">
-                    {content.type === "REEL" && "📹"} {content.type === "POST" && "📸"} {content.type === "CAROUSEL" && "📷"} {content.type}
+                  <h3 className="font-semibold text-base sm:text-lg flex items-center gap-1.5">
+                    {content.type === "REEL" && <Video className="w-4 h-4 sm:w-5 sm:h-5" />}
+                    {content.type === "POST" && <Camera className="w-4 h-4 sm:w-5 sm:h-5" />}
+                    {content.type === "CAROUSEL" && <Images className="w-4 h-4 sm:w-5 sm:h-5" />}
+                    {content.type}
                   </h3>
 
                   <div className="space-y-2">
@@ -536,7 +580,10 @@ export function AnalyticsComplete({ workspaceId }: Props) {
                     <div className="bg-secondary/30 rounded p-3 space-y-1">
                       <p className="text-xs font-semibold text-muted-foreground">Top post</p>
                       <p className="text-sm text-foreground">{content.topPost.caption}</p>
-                      <p className="text-xs text-primary">❤️ {content.topPost.likes} curtidas</p>
+                      <p className="text-xs text-primary flex items-center gap-1">
+                        <Heart className="w-3.5 h-3.5" />
+                        {content.topPost.likes} curtidas
+                      </p>
                     </div>
                   )}
                 </div>
@@ -552,7 +599,10 @@ export function AnalyticsComplete({ workspaceId }: Props) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {/* Países */}
             <div className="bg-card rounded-lg p-4 sm:p-6 border border-border space-y-4">
-              <h3 className="font-semibold text-base sm:text-lg">🌍 Principais Países</h3>
+              <h3 className="font-semibold text-base sm:text-lg flex items-center gap-1.5">
+                <Globe className="w-4 h-4 sm:w-5 sm:h-5" />
+                Principais Países
+              </h3>
               <div className="space-y-3">
                 {report.audience.topCountries.map((country) => (
                   <div key={country.country} className="space-y-1">
@@ -570,11 +620,17 @@ export function AnalyticsComplete({ workspaceId }: Props) {
 
             {/* Gênero */}
             <div className="bg-card rounded-lg p-4 sm:p-6 border border-border space-y-4">
-              <h3 className="font-semibold text-base sm:text-lg">👥 Gênero</h3>
+              <h3 className="font-semibold text-base sm:text-lg flex items-center gap-1.5">
+                <Users className="w-4 h-4 sm:w-5 sm:h-5" />
+                Gênero
+              </h3>
               <div className="space-y-3">
                 <div className="space-y-1">
                   <div className="flex justify-between">
-                    <span className="text-sm text-foreground">🔵 Masculino</span>
+                    <span className="text-sm text-foreground flex items-center gap-1.5">
+                      <span className="inline-block w-2 h-2 rounded-full bg-blue-500 shrink-0" />
+                      Masculino
+                    </span>
                     <span className="text-sm font-bold">{report.audience.genderDistribution.male}%</span>
                   </div>
                   <div className="w-full h-2 bg-secondary/50 rounded overflow-hidden">
@@ -583,7 +639,10 @@ export function AnalyticsComplete({ workspaceId }: Props) {
                 </div>
                 <div className="space-y-1">
                   <div className="flex justify-between">
-                    <span className="text-sm text-foreground">🔴 Feminino</span>
+                    <span className="text-sm text-foreground flex items-center gap-1.5">
+                      <span className="inline-block w-2 h-2 rounded-full bg-pink-500 shrink-0" />
+                      Feminino
+                    </span>
                     <span className="text-sm font-bold">{report.audience.genderDistribution.female}%</span>
                   </div>
                   <div className="w-full h-2 bg-secondary/50 rounded overflow-hidden">
@@ -597,7 +656,10 @@ export function AnalyticsComplete({ workspaceId }: Props) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {/* Idade */}
             <div className="bg-card rounded-lg p-4 sm:p-6 border border-border space-y-4">
-              <h3 className="font-semibold text-base sm:text-lg">🎂 Faixa Etária</h3>
+              <h3 className="font-semibold text-base sm:text-lg flex items-center gap-1.5">
+                <Cake className="w-4 h-4 sm:w-5 sm:h-5" />
+                Faixa Etária
+              </h3>
               <div className="space-y-2">
                 {Object.entries(report.audience.ageDistribution).map(([age, percentage]) => (
                   <div key={age} className="space-y-1">
@@ -615,7 +677,10 @@ export function AnalyticsComplete({ workspaceId }: Props) {
 
             {/* Cidades */}
             <div className="bg-card rounded-lg p-4 sm:p-6 border border-border space-y-4">
-              <h3 className="font-semibold text-base sm:text-lg">🏙️ Principais Cidades</h3>
+              <h3 className="font-semibold text-base sm:text-lg flex items-center gap-1.5">
+                <Building2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                Principais Cidades
+              </h3>
               <div className="space-y-2">
                 {report.audience.topCities.map((city) => (
                   <div key={city.city} className="flex items-center justify-between p-2 hover:bg-secondary/30 rounded">

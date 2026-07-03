@@ -1,4 +1,4 @@
-import { Settings } from "lucide-react";
+import { Settings, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -115,7 +115,7 @@ export function AudienceConfig({ isOpen, onClose }: Props) {
                     </p>
                   </div>
                   {isSelected && (
-                    <span className="text-primary font-semibold text-sm">✓</span>
+                    <Check className="w-4 h-4 text-primary" />
                   )}
                 </label>
               );

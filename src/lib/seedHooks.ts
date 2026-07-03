@@ -567,7 +567,7 @@ export async function seedHooksToDatabase(workspaceId: string) {
 
     if (!userId) throw new Error("User not authenticated");
 
-    console.log("🌱 Iniciando seed de hooks...");
+    console.log("Iniciando seed de hooks...");
     console.log(`   Total de hooks para inserir: ${seedHooks.length}`);
 
     // Delete existing hooks first to avoid duplicates
@@ -577,9 +577,9 @@ export async function seedHooksToDatabase(workspaceId: string) {
       .eq("workspace_id", workspaceId);
 
     if (deleteError) {
-      console.warn("⚠️ Erro ao deletar hooks antigos:", deleteError);
+      console.warn("Erro ao deletar hooks antigos:", deleteError);
     } else {
-      console.log("✅ Hooks antigos deletados");
+      console.log("Hooks antigos deletados");
     }
 
     // Insert all hooks in smaller batches
@@ -616,16 +616,16 @@ export async function seedHooksToDatabase(workspaceId: string) {
         .select();
 
       if (insertError) {
-        console.error(`❌ Erro no batch ${Math.floor(i / batchSize) + 1}:`, insertError);
+        console.error(`Erro no batch ${Math.floor(i / batchSize) + 1}:`, insertError);
         throw insertError;
       }
 
       const batchCount = inserted?.length || 0;
       totalInserted += batchCount;
-      console.log(`✅ Batch ${Math.floor(i / batchSize) + 1}: ${batchCount} hooks inseridos (total: ${totalInserted})`);
+      console.log(`Batch ${Math.floor(i / batchSize) + 1}: ${batchCount} hooks inseridos (total: ${totalInserted})`);
     }
 
-    console.log(`🎉 Seed concluído! Total: ${totalInserted} hooks`);
+    console.log(`Seed concluído! Total: ${totalInserted} hooks`);
     return { success: true, count: totalInserted, message: `${totalInserted} hooks importados com sucesso!` };
   } catch (error) {
     console.error("Error seeding hooks:", error);

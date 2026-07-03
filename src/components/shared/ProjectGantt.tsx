@@ -1,4 +1,5 @@
 import { useMemo, useRef, useEffect } from "react";
+import { AlertTriangle } from "lucide-react";
 import { Task, Project } from "@/types/data";
 import { cn } from "@/lib/utils";
 import { taskStatus } from "@/lib/colors";
@@ -267,7 +268,12 @@ export function ProjectGantt({ project, tasks }: Props) {
                         {task.assignees.length > 0 && (
                           <p className="text-muted-foreground text-[10px]">Resp.: {task.assignees.join(", ")}</p>
                         )}
-                        {isOverdue && <p className="text-red-500 text-[10px] font-medium">⚠ Atrasada</p>}
+                        {isOverdue && (
+                          <p className="text-red-500 text-[10px] font-medium flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3" />
+                            Atrasada
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>

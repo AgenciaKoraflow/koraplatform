@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Search, Copy, Share2, Trash2, Settings, Zap, Plus, Calendar, Sparkles, BookOpen } from "lucide-react";
+import { Search, Copy, Share2, Trash2, Settings, Zap, Plus, Calendar, Sparkles, BookOpen, Bot, Code2, Palette, Target, Brain, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -60,9 +60,15 @@ const verticalMap: Record<Vertical, string[]> = {
 };
 
 const verticalLabels: Record<Vertical, string> = {
-  agent: "🤖 Agentes de IA",
-  dev: "💻 Desenvolvimento",
-  studio: "🎨 Studio Criativo",
+  agent: "Agentes de IA",
+  dev: "Desenvolvimento",
+  studio: "Studio Criativo",
+};
+
+const verticalIcons: Record<Vertical, typeof Bot> = {
+  agent: Bot,
+  dev: Code2,
+  studio: Palette,
 };
 
 const EMPTY_FORM: NewHookForm = {
@@ -158,33 +164,33 @@ export function HookVault({ workspaceId }: Props) {
 
   const handleUseHook = (hook: typeof hooks[0]) => {
     const content = `
-🎯 HOOK
+HOOK
 ${hook.text}
 
-📋 TEMPLATE
+TEMPLATE
 ${hook.template}
 
-🎯 DOR QUE RESOLVE
+DOR QUE RESOLVE
 ${hook.painPoint || "N/A"}
 
-💭 GATILHO EMOCIONAL
+GATILHO EMOCIONAL
 ${hook.emotionalTrigger || "N/A"}
 
-📱 TIPO DE CONTEÚDO
+TIPO DE CONTEÚDO
 ${hook.contentType || "N/A"}
 
-🎨 MODO VISUAL
+MODO VISUAL
 ${hook.visualMode || "N/A"}
 
-🏷️ NICHO
+NICHO
 ${hook.niche}
 
-👤 CRIADOR
+CRIADOR
 ${hook.creator} (${hook.creatorHandle})
 `.trim();
 
     navigator.clipboard.writeText(content);
-    toast.success("✅ Hook completo copiado! Use em Canva, CapCut, etc.");
+    toast.success("Hook completo copiado! Use em Canva, CapCut, etc.");
   };
 
   const handleOpenScheduleModal = (hook: typeof hooks[0]) => {
@@ -221,7 +227,7 @@ ${hook.creator} (${hook.creatorHandle})
     existingPosts.push(scheduledPost);
     localStorage.setItem("scheduledPosts", JSON.stringify(existingPosts));
 
-    toast.success(`📅 Post agendado para ${scheduleDate}! Veja no Calendário.`);
+    toast.success(`Post agendado para ${scheduleDate}! Veja no Calendário.`);
     setScheduleModalOpen(false);
   };
 
@@ -254,7 +260,7 @@ ${hook.creator} (${hook.creatorHandle})
     try {
       await seed150HooksNew(workspaceId);
       await queryClient.invalidateQueries({ queryKey: ["hooks", workspaceId] });
-      toast.success(`✅ 150 hooks novos importados com sucesso!`);
+      toast.success(`150 hooks novos importados com sucesso!`);
     } catch (error) {
       toast.error("Erro ao importar hooks");
       console.error(error);
@@ -285,25 +291,29 @@ ${hook.creator} (${hook.creatorHandle})
 
       {/* Vertical Selector */}
       <div className="flex gap-1.5 sm:gap-2 flex-wrap">
-        {(Object.keys(verticalLabels) as Vertical[]).map((vertical) => (
-          <button
-            key={vertical}
-            onClick={() => {
-              setActiveVertical(vertical);
-              setSearchInput("");
-              setSelectedPainPoint("");
-              setSelectedEmotionalTrigger("");
-            }}
-            className={cn(
-              "px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all border",
-              activeVertical === vertical
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-secondary text-foreground border-border hover:border-primary/50"
-            )}
-          >
-            {verticalLabels[vertical]}
-          </button>
-        ))}
+        {(Object.keys(verticalLabels) as Vertical[]).map((vertical) => {
+          const VerticalIcon = verticalIcons[vertical];
+          return (
+            <button
+              key={vertical}
+              onClick={() => {
+                setActiveVertical(vertical);
+                setSearchInput("");
+                setSelectedPainPoint("");
+                setSelectedEmotionalTrigger("");
+              }}
+              className={cn(
+                "flex items-center gap-1.5 px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all border",
+                activeVertical === vertical
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-secondary text-foreground border-border hover:border-primary/50"
+              )}
+            >
+              <VerticalIcon className="w-4 h-4" />
+              {verticalLabels[vertical]}
+            </button>
+          );
+        })}
       </div>
 
       <div className="space-y-4 sm:space-y-6">
@@ -372,8 +382,9 @@ ${hook.creator} (${hook.creatorHandle})
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Pain Point Filter */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-muted-foreground uppercase">
-                🎯 Dor que resolve
+              <label className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1">
+                <Target className="w-3.5 h-3.5" />
+                Dor que resolve
               </label>
               <select
                 value={selectedPainPoint}
@@ -391,8 +402,9 @@ ${hook.creator} (${hook.creatorHandle})
 
             {/* Emotional Trigger Filter */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-muted-foreground uppercase">
-                💭 Gatilho emocional
+              <label className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1">
+                <Brain className="w-3.5 h-3.5" />
+                Gatilho emocional
               </label>
               <select
                 value={selectedEmotionalTrigger}
@@ -522,10 +534,12 @@ ${hook.creator} (${hook.creatorHandle})
             <Button
               variant="outline"
               size="sm"
+              className="gap-1"
               onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
             >
-              ← Anterior
+              <ChevronLeft className="w-4 h-4" />
+              Anterior
             </Button>
             <div className="text-sm text-muted-foreground">
               {startIdx + 1}–{Math.min(startIdx + ITEMS_PER_PAGE, filteredHooks.length)} de {filteredHooks.length}
@@ -533,10 +547,12 @@ ${hook.creator} (${hook.creatorHandle})
             <Button
               variant="outline"
               size="sm"
+              className="gap-1"
               onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage === totalPages}
             >
-              Próxima →
+              Próxima
+              <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
         )}
@@ -546,7 +562,10 @@ ${hook.creator} (${hook.creatorHandle})
       <Dialog open={scheduleModalOpen} onOpenChange={setScheduleModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>📅 Agendar Post no Instagram</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5" />
+              Agendar Post no Instagram
+            </DialogTitle>
             <DialogDescription>
               Defina quando este hook será postado
             </DialogDescription>
@@ -586,10 +605,10 @@ ${hook.creator} (${hook.creatorHandle})
                   onChange={(e) => setContentType(e.target.value as any)}
                   className="w-full h-10 px-3 rounded-lg bg-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                 >
-                  <option value="Reel">📹 Reel</option>
-                  <option value="Stories">📖 Stories</option>
-                  <option value="Carrossel">📸 Carrossel</option>
-                  <option value="Post">📄 Post</option>
+                  <option value="Reel">Reel</option>
+                  <option value="Stories">Stories</option>
+                  <option value="Carrossel">Carrossel</option>
+                  <option value="Post">Post</option>
                 </select>
               </div>
             </div>

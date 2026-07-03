@@ -309,5 +309,5 @@ export const hookMetadata = [
 
 // Validação
 if (hookMetadata.length !== 50) {
-  console.warn(`⚠️ hookMetadata tem ${hookMetadata.length} entradas, mas seedHooks tem 50`);
+  console.warn(`hookMetadata tem ${hookMetadata.length} entradas, mas seedHooks tem 50`);
 }

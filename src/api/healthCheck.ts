@@ -173,7 +173,7 @@ async function notifyHealthStatus(status: string, message: string): Promise<void
  * Função auxiliar para testar manualmente
  */
 export async function testHealthCheck(): Promise<void> {
-  console.log('🔍 Testing health check...');
+  console.log('Testing health check...');
   const result = await performHealthCheck();
-  console.log('✅ Health check complete:', result.status);
+  console.log('Health check complete:', result.status);
 }

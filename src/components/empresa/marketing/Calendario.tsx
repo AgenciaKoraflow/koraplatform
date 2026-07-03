@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { ChevronLeft, ChevronRight, X, Calendar, Trash2, Copy, Edit2, Plus, BookOpen, Search, Instagram, Youtube, Music } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Calendar, Trash2, Copy, Edit2, Plus, BookOpen, Search, Instagram, Youtube, Music, FileText, CheckCircle2, Target, Brain, Link2, Clapperboard, Zap, Clock, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
@@ -24,9 +24,9 @@ interface Props {
 
 
 const PLATFORM_CONFIG = {
-  instagram: { label: "Instagram", color: "bg-pink-500", icon: "📷" },
-  tiktok: { label: "TikTok", color: "bg-black dark:bg-white", icon: "🎵" },
-  youtube: { label: "YouTube", color: "bg-red-600", icon: "📺" },
+  instagram: { label: "Instagram", color: "bg-pink-500", icon: Instagram },
+  tiktok: { label: "TikTok", color: "bg-black dark:bg-white", icon: Music },
+  youtube: { label: "YouTube", color: "bg-red-600", icon: Youtube },
 };
 
 export function Calendario({ workspaceId }: Props) {
@@ -206,7 +206,7 @@ export function Calendario({ workspaceId }: Props) {
     scheduled.push(newPost);
     localStorage.setItem("scheduledPosts", JSON.stringify(scheduled));
 
-    toast({ title: "✅ Post criado!", description: "Novo post adicionado ao calendário" });
+    toast({ title: "Post criado!", description: "Novo post adicionado ao calendário" });
     setCreateModalOpen(false);
   };
 
@@ -223,7 +223,10 @@ export function Calendario({ workspaceId }: Props) {
       <div className="flex items-start justify-between gap-2">
         <div className="space-y-1 sm:space-y-2 min-w-0">
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Calendário de Posts</h1>
-          <p className="text-muted-foreground text-xs sm:text-sm">📅 Visualize e gerencie todos os seus posts agendados</p>
+          <p className="text-muted-foreground text-xs sm:text-sm flex items-center gap-1.5">
+            <Calendar className="w-3.5 h-3.5 shrink-0" />
+            Visualize e gerencie todos os seus posts agendados
+          </p>
         </div>
         <div className="text-right space-y-1 shrink-0">
           <p className="text-xs sm:text-sm text-muted-foreground">Total agendado</p>
@@ -334,9 +337,13 @@ export function Calendario({ workspaceId }: Props) {
               <div className="space-y-3 pb-4 border-b border-border">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">
-                      {selectedPost.status === "draft" ? "📝" : selectedPost.status === "scheduled" ? "📅" : "✅"}
-                    </span>
+                    {selectedPost.status === "draft" ? (
+                      <FileText className="w-4 h-4 text-muted-foreground" />
+                    ) : selectedPost.status === "scheduled" ? (
+                      <Calendar className="w-4 h-4 text-amber-500" />
+                    ) : (
+                      <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    )}
                     <h3 className="font-semibold text-foreground text-sm">
                       Post {selectedPost && getPostsForDate(parseInt(selectedPost.date.split("-")[2])).length > 1
                         ? `${selectedPostIndex + 1} de ${getPostsForDate(parseInt(selectedPost.date.split("-")[2])).length}`
@@ -395,11 +402,15 @@ export function Calendario({ workspaceId }: Props) {
                 <div className="space-y-1">
                   <p className="text-xs font-semibold text-muted-foreground">PLATAFORMAS</p>
                   <div className="flex flex-wrap gap-2 mb-3">
-                    {selectedPost.platforms.map((platform) => (
-                      <span key={platform} className={`text-xs font-semibold px-2 py-1 rounded text-white ${PLATFORM_CONFIG[platform].color}`}>
-                        {PLATFORM_CONFIG[platform].icon} {PLATFORM_CONFIG[platform].label}
-                      </span>
-                    ))}
+                    {selectedPost.platforms.map((platform) => {
+                      const PlatformIcon = PLATFORM_CONFIG[platform].icon;
+                      return (
+                        <span key={platform} className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded text-white ${PLATFORM_CONFIG[platform].color}`}>
+                          <PlatformIcon className="w-3 h-3" />
+                          {PLATFORM_CONFIG[platform].label}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -414,7 +425,10 @@ export function Calendario({ workspaceId }: Props) {
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
-                      📝 Rascunho
+                      <span className="flex items-center justify-center gap-1">
+                        <FileText className="w-3.5 h-3.5" />
+                        Rascunho
+                      </span>
                     </button>
                     <button
                       onClick={() => handleUpdatePostStatus(selectedPost.id, "scheduled")}
@@ -424,7 +438,10 @@ export function Calendario({ workspaceId }: Props) {
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
-                      📅 Agendado
+                      <span className="flex items-center justify-center gap-1">
+                        <Calendar className="w-3.5 h-3.5" />
+                        Agendado
+                      </span>
                     </button>
                     <button
                       onClick={() => handleUpdatePostStatus(selectedPost.id, "posted")}
@@ -434,7 +451,10 @@ export function Calendario({ workspaceId }: Props) {
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
-                      ✅ Postado
+                      <span className="flex items-center justify-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        Postado
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -442,41 +462,59 @@ export function Calendario({ workspaceId }: Props) {
 
               {selectedPost.hook && (
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted-foreground">🎯 HOOK</p>
+                  <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                    <Target className="w-3.5 h-3.5" />
+                    HOOK
+                  </p>
                   <p className="text-sm text-foreground bg-primary/10 rounded p-2 border border-primary/20">{selectedPost.hook}</p>
                 </div>
               )}
 
               {selectedPost.emotionalTrigger && (
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted-foreground">💭 GATILHO EMOCIONAL</p>
+                  <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                    <Brain className="w-3.5 h-3.5" />
+                    GATILHO EMOCIONAL
+                  </p>
                   <p className="text-sm text-foreground bg-secondary/30 rounded p-2 border border-border">{selectedPost.emotionalTrigger}</p>
                 </div>
               )}
 
               {selectedPost.painPoint && (
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted-foreground">🎯 DOR QUE RESOLVE</p>
+                  <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                    <Target className="w-3.5 h-3.5" />
+                    DOR QUE RESOLVE
+                  </p>
                   <p className="text-sm text-foreground bg-secondary/30 rounded p-2 border border-border">{selectedPost.painPoint}</p>
                 </div>
               )}
 
               {selectedPost.angle && (
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted-foreground">💡 ÂNGULO</p>
+                  <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                    <Zap className="w-3.5 h-3.5" />
+                    ÂNGULO
+                  </p>
                   <p className="text-sm text-foreground bg-secondary/30 rounded p-2 border border-border">{selectedPost.angle}</p>
                 </div>
               )}
 
               {selectedPost.cta && (
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted-foreground">🔗 CTA</p>
+                  <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                    <Link2 className="w-3.5 h-3.5" />
+                    CTA
+                  </p>
                   <p className="text-sm text-foreground bg-secondary/30 rounded p-2 border border-border">{selectedPost.cta}</p>
                 </div>
               )}
 
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-muted-foreground">📝 LEGENDA</p>
+                <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                  <FileText className="w-3.5 h-3.5" />
+                  LEGENDA
+                </p>
                 <div className="bg-secondary/30 rounded p-3 border border-border">
                   <p className="text-sm text-foreground line-clamp-4">{selectedPost.caption}</p>
                 </div>
@@ -530,7 +568,10 @@ export function Calendario({ workspaceId }: Props) {
       <Dialog open={chooseMethodModalOpen} onOpenChange={setChooseMethodModalOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>📝 Como deseja criar o post?</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Como deseja criar o post?
+            </DialogTitle>
           </DialogHeader>
           <DialogBody className="space-y-3">
             <p className="text-sm text-muted-foreground">Escolha se quer usar um hook já pronto ou criar do zero</p>
@@ -568,7 +609,10 @@ export function Calendario({ workspaceId }: Props) {
       }}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>📚 Selecione um Hook</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <BookOpen className="w-5 h-5" />
+              Selecione um Hook
+            </DialogTitle>
           </DialogHeader>
           <DialogBody className="flex-1 overflow-y-auto space-y-4">
             {/* Search */}
@@ -590,7 +634,10 @@ export function Calendario({ workspaceId }: Props) {
             <div className="space-y-3 bg-secondary/30 rounded-lg p-3 border border-border">
               {/* Vertical */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase">🎯 Vertical</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1">
+                  <Target className="w-3.5 h-3.5" />
+                  Vertical
+                </label>
                 <select
                   value={selectedVertical}
                   onChange={(e) => {
@@ -608,7 +655,10 @@ export function Calendario({ workspaceId }: Props) {
 
               {/* Pain Point */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase">💔 Dor que resolve</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1">
+                  <Target className="w-3.5 h-3.5" />
+                  Dor que resolve
+                </label>
                 <select
                   value={selectedPainPoint}
                   onChange={(e) => {
@@ -626,7 +676,10 @@ export function Calendario({ workspaceId }: Props) {
 
               {/* Emotional Trigger */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase">💭 Gatilho emocional</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1">
+                  <Brain className="w-3.5 h-3.5" />
+                  Gatilho emocional
+                </label>
                 <select
                   value={selectedEmotionalTrigger}
                   onChange={(e) => {
@@ -662,18 +715,21 @@ export function Calendario({ workspaceId }: Props) {
                     <p className="text-sm font-medium text-foreground">{hook.text}</p>
                     <div className="flex gap-2 flex-wrap">
                       {hook.format && (
-                        <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
-                          🎬 {hook.format}
+                        <span className="flex items-center gap-1 text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
+                          <Clapperboard className="w-3 h-3" />
+                          {hook.format}
                         </span>
                       )}
                       {hook.painPoint && (
-                        <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
-                          🎯 {hook.painPoint}
+                        <span className="flex items-center gap-1 text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
+                          <Target className="w-3 h-3" />
+                          {hook.painPoint}
                         </span>
                       )}
                       {hook.emotionalTrigger && (
-                        <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
-                          💭 {hook.emotionalTrigger}
+                        <span className="flex items-center gap-1 text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
+                          <Brain className="w-3 h-3" />
+                          {hook.emotionalTrigger}
                         </span>
                       )}
                     </div>
@@ -688,10 +744,12 @@ export function Calendario({ workspaceId }: Props) {
                 <Button
                   variant="outline"
                   size="sm"
+                  className="gap-1"
                   onClick={() => setHookPage(Math.max(1, hookPage - 1))}
                   disabled={hookPage === 1}
                 >
-                  ← Anterior
+                  <ChevronLeft className="w-4 h-4" />
+                  Anterior
                 </Button>
                 <span className="text-xs text-muted-foreground">
                   Página {hookPage} de {totalHookPages}
@@ -699,10 +757,12 @@ export function Calendario({ workspaceId }: Props) {
                 <Button
                   variant="outline"
                   size="sm"
+                  className="gap-1"
                   onClick={() => setHookPage(Math.min(totalHookPages, hookPage + 1))}
                   disabled={hookPage === totalHookPages}
                 >
-                  Próxima →
+                  Próxima
+                  <ChevronRight className="w-4 h-4" />
                 </Button>
               </div>
             )}
@@ -714,7 +774,10 @@ export function Calendario({ workspaceId }: Props) {
       <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>📝 Criar Novo Post</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Criar Novo Post
+            </DialogTitle>
           </DialogHeader>
           <DialogBody className="space-y-4">
             <div className="bg-primary/10 rounded-lg p-3 border border-primary/20">
@@ -730,17 +793,22 @@ export function Calendario({ workspaceId }: Props) {
 
             {selectedHookForCreate && (
               <div className="bg-primary/10 rounded-lg p-3 border border-primary/20">
-                <p className="text-xs font-semibold text-muted-foreground mb-1">📚 Hook Selecionado:</p>
+                <p className="text-xs font-semibold text-muted-foreground mb-1 flex items-center gap-1">
+                  <BookOpen className="w-3.5 h-3.5" />
+                  Hook Selecionado:
+                </p>
                 <p className="text-sm text-foreground font-medium">{selectedHookForCreate.text}</p>
                 <div className="flex gap-2 mt-2 flex-wrap">
                   {selectedHookForCreate.painPoint && (
-                    <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
-                      🎯 {selectedHookForCreate.painPoint}
+                    <span className="flex items-center gap-1 text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
+                      <Target className="w-3 h-3" />
+                      {selectedHookForCreate.painPoint}
                     </span>
                   )}
                   {selectedHookForCreate.emotionalTrigger && (
-                    <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
-                      💭 {selectedHookForCreate.emotionalTrigger}
+                    <span className="flex items-center gap-1 text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
+                      <Brain className="w-3 h-3" />
+                      {selectedHookForCreate.emotionalTrigger}
                     </span>
                   )}
                 </div>
@@ -756,7 +824,10 @@ export function Calendario({ workspaceId }: Props) {
             )}
 
             <div className="space-y-2">
-              <Label>🎯 Hook ou Gancho (Título) *</Label>
+              <Label className="flex items-center gap-1">
+                <Target className="w-3.5 h-3.5" />
+                Hook ou Gancho (Título) *
+              </Label>
               <Textarea
                 placeholder="Ex: Para de fazer X. Começa a fazer Y..."
                 value={newPostForm.hook}
@@ -766,7 +837,10 @@ export function Calendario({ workspaceId }: Props) {
             </div>
 
             <div className="space-y-2">
-              <Label>💔 Dor que Resolve</Label>
+              <Label className="flex items-center gap-1">
+                <Target className="w-3.5 h-3.5" />
+                Dor que Resolve
+              </Label>
               <input
                 type="text"
                 placeholder="Ex: Desperdício de recursos"
@@ -777,7 +851,10 @@ export function Calendario({ workspaceId }: Props) {
             </div>
 
             <div className="space-y-2">
-              <Label>⚡ Gatilho Emocional</Label>
+              <Label className="flex items-center gap-1">
+                <Brain className="w-3.5 h-3.5" />
+                Gatilho Emocional
+              </Label>
               <input
                 type="text"
                 placeholder="Ex: Aversão à Perda, Urgência"
@@ -788,7 +865,10 @@ export function Calendario({ workspaceId }: Props) {
             </div>
 
             <div className="space-y-2">
-              <Label>📝 Descrição do Conteúdo *</Label>
+              <Label className="flex items-center gap-1">
+                <FileText className="w-3.5 h-3.5" />
+                Descrição do Conteúdo *
+              </Label>
               <Textarea
                 placeholder="O que deve conter no post? (storyline, pontos principais, exemplos...)"
                 value={newPostForm.contentDescription}
@@ -799,21 +879,27 @@ export function Calendario({ workspaceId }: Props) {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label>🎬 Tipo de Conteúdo</Label>
+                <Label className="flex items-center gap-1">
+                  <Clapperboard className="w-3.5 h-3.5" />
+                  Tipo de Conteúdo
+                </Label>
                 <select
                   value={newPostForm.contentType}
                   onChange={(e) => setNewPostForm({ ...newPostForm, contentType: e.target.value as any })}
                   className="w-full h-10 px-3 rounded-lg bg-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                 >
-                  <option value="Reel">📹 Reel</option>
-                  <option value="Stories">📖 Stories</option>
-                  <option value="Carrossel">📸 Carrossel</option>
-                  <option value="Post">📄 Post</option>
+                  <option value="Reel">Reel</option>
+                  <option value="Stories">Stories</option>
+                  <option value="Carrossel">Carrossel</option>
+                  <option value="Post">Post</option>
                 </select>
               </div>
 
               <div className="space-y-2">
-                <Label>🕐 Hora</Label>
+                <Label className="flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5" />
+                  Hora
+                </Label>
                 <input
                   type="time"
                   value={newPostForm.time}
@@ -823,15 +909,18 @@ export function Calendario({ workspaceId }: Props) {
               </div>
 
               <div className="space-y-2">
-                <Label>📊 Status</Label>
+                <Label className="flex items-center gap-1">
+                  <BarChart3 className="w-3.5 h-3.5" />
+                  Status
+                </Label>
                 <select
                   value={newPostForm.status}
                   onChange={(e) => setNewPostForm({ ...newPostForm, status: e.target.value as any })}
                   className="w-full h-10 px-3 rounded-lg bg-input border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                 >
-                  <option value="draft">📝 Rascunho</option>
-                  <option value="scheduled">📅 Agendado</option>
-                  <option value="posted">✅ Postado</option>
+                  <option value="draft">Rascunho</option>
+                  <option value="scheduled">Agendado</option>
+                  <option value="posted">Postado</option>
                 </select>
               </div>
             </div>

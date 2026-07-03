@@ -60,15 +60,15 @@ export const hookTypeLabels: Record<HookType, string> = {
 };
 
 export const contentTypeLabels: Record<ContentType, string> = {
-  Reel: "📱 Reel (9:16)",
-  Carrossel: "📸 Carrossel (4:5)",
-  Post: "📄 Post (1:1)",
-  Story: "📖 Story (9:16)",
+  Reel: "Reel (9:16)",
+  Carrossel: "Carrossel (4:5)",
+  Post: "Post (1:1)",
+  Story: "Story (9:16)",
 };
 
 export const visualModeLabels: Record<VisualMode, string> = {
-  Clean: "☀️ Clean Mode",
-  Dark: "🌙 Dark Mode",
+  Clean: "Clean Mode",
+  Dark: "Dark Mode",
 };
 
 export const typeColors: Record<HookType, string> = {

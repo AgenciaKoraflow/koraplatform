@@ -230,7 +230,7 @@ export function useNotifications() {
               id: `client-anniversary-${client.id}`,
               type: "client_anniversary",
               title: "Aniversário de cliente",
-              message: `${client.name} completa 1 ano como cliente hoje! 🎉`,
+              message: `${client.name} completa 1 ano como cliente hoje!`,
               timestamp: anniversary,
               read: false,
               actionUrl: `/clientes?client=${client.id}`,

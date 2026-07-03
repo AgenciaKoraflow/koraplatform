@@ -1222,7 +1222,7 @@ export const hooks150New = [
 
 async function createMissingColumns() {
   try {
-    console.log("📋 Criando colunas necessárias...");
+    console.log("Criando colunas necessárias...");
 
     // Add columns one by one
     const columnsToAdd = [
@@ -1240,13 +1240,13 @@ async function createMissingColumns() {
           .from("hooks")
           .select(col.name)
           .limit(1);
-        console.log(`✅ Coluna '${col.name}' já existe`);
+        console.log(`Coluna '${col.name}' já existe`);
       } catch (error) {
-        console.log(`ℹ️ Coluna '${col.name}' será criada via insert`);
+        console.log(`Coluna '${col.name}' será criada via insert`);
       }
     }
   } catch (error) {
-    console.log("ℹ️ Continuando com insert");
+    console.log("Continuando com insert");
   }
 }
 
@@ -1258,13 +1258,13 @@ export async function seed150HooksNew(workspaceId: string) {
     // First, ensure columns exist
     await createMissingColumns();
 
-    console.log("🗑️ Deletando hooks existentes...");
+    console.log("Deletando hooks existentes...");
     await supabase
       .from("hooks")
       .delete()
       .eq("workspace_id", workspaceId);
 
-    console.log("📝 Inserindo 150 hooks novos...");
+    console.log("Inserindo 150 hooks novos...");
 
     // Inserir em lotes de 5
     for (let i = 0; i < hooks150New.length; i += 5) {
@@ -1299,13 +1299,13 @@ export async function seed150HooksNew(workspaceId: string) {
         throw error;
       }
 
-      console.log(`✅ Lote ${Math.floor(i / 5) + 1} inserido (${Math.min(i + 5, hooks150New.length)}/${hooks150New.length})`);
+      console.log(`Lote ${Math.floor(i / 5) + 1} inserido (${Math.min(i + 5, hooks150New.length)}/${hooks150New.length})`);
     }
 
-    console.log("✅ Todos os 150 hooks foram importados com sucesso!");
+    console.log("Todos os 150 hooks foram importados com sucesso!");
     return true;
   } catch (error) {
-    console.error("❌ Erro ao importar hooks:", error);
+    console.error("Erro ao importar hooks:", error);
     throw error;
   }
 }

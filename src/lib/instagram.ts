@@ -357,9 +357,9 @@ export async function fetchCompleteInstagramAnalytics(): Promise<CompleteInstagr
       },
       audience: {
         topCountries: [
-          { country: "🇧🇷 Brasil", percentage: 85 },
-          { country: "🇺🇸 USA", percentage: 8 },
-          { country: "🇦🇷 Argentina", percentage: 4 },
+          { country: "Brasil", percentage: 85 },
+          { country: "USA", percentage: 8 },
+          { country: "Argentina", percentage: 4 },
           { country: "Outros", percentage: 3 },
         ],
         topCities: [

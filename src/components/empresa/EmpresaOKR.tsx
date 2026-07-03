@@ -341,7 +341,15 @@ export function EmpresaOKR() {
                   </div>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm"><span className="text-muted-foreground">Progresso Geral</span>
-                      <span className={cn("font-medium", objective.progress > 100 ? "text-emerald-600" : "text-foreground")}>{objective.progress}%{objective.progress > 100 && " ✓ Meta superada"}</span></div>
+                      <span className={cn("font-medium flex items-center gap-1", objective.progress > 100 ? "text-emerald-600" : "text-foreground")}>
+                        {objective.progress}%
+                        {objective.progress > 100 && (
+                          <>
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            Meta superada
+                          </>
+                        )}
+                      </span></div>
                     <Progress value={Math.min(100, objective.progress)} className={cn("h-3", objective.progress > 100 && "[&>div]:bg-emerald-500")} />
                     <div className="flex justify-between text-xs text-muted-foreground"><span>0%</span><span>{objective.progress > 100 ? <span className="text-emerald-600 font-medium">{objective.progress}%</span> : "100%"}</span></div>
                   </div>

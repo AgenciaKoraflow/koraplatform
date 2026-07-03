@@ -1861,7 +1861,7 @@ export async function seed150HooksComplete(workspaceId: string) {
         .select();
 
       if (insertError) {
-        console.error(`❌ Erro no batch ${Math.floor(i / batchSize) + 1}:`, insertError);
+        console.error(`Erro no batch ${Math.floor(i / batchSize) + 1}:`, insertError);
         throw insertError;
       }
 
@@ -1872,7 +1872,7 @@ export async function seed150HooksComplete(workspaceId: string) {
     return {
       success: true,
       count: totalInserted,
-      message: `150 hooks foram importados com sucesso! ✅`,
+      message: `150 hooks foram importados com sucesso!`,
     };
   } catch (error) {
     console.error("Erro ao fazer seed dos 150 hooks:", error);

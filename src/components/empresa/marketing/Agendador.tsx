@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { Plus, Copy, Check, AlertCircle } from "lucide-react";
+import { Plus, Copy, Check, AlertCircle, Target, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import type { Hook } from "@/components/empresa/marketing/hooks";
@@ -50,7 +50,7 @@ export function Agendador({ workspaceId }: Props) {
     let caption = selectedHook.text;
 
     if (angle) {
-      caption += `\n\n💡 ${angle}`;
+      caption += `\n\n${angle}`;
     }
 
     if (cta) {
@@ -107,7 +107,7 @@ export function Agendador({ workspaceId }: Props) {
       .join(", ");
 
     toast({
-      title: "Agendado com sucesso! 🚀",
+      title: "Agendado com sucesso!",
       description: `Seu conteúdo foi agendado para ${platformNames} em ${scheduleDate} às ${scheduleTime}`,
     });
 
@@ -157,10 +157,16 @@ export function Agendador({ workspaceId }: Props) {
         <p className="text-base text-foreground leading-relaxed">{selectedHook.text}</p>
         <div className="flex flex-wrap gap-2 pt-2">
           {selectedHook.painPoint && (
-            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">🎯 {selectedHook.painPoint}</span>
+            <span className="flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+              <Target className="w-3 h-3" />
+              {selectedHook.painPoint}
+            </span>
           )}
           {selectedHook.emotionalTrigger && (
-            <span className="text-xs bg-secondary text-muted-foreground px-2 py-1 rounded">💭 {selectedHook.emotionalTrigger}</span>
+            <span className="flex items-center gap-1 text-xs bg-secondary text-muted-foreground px-2 py-1 rounded">
+              <Brain className="w-3 h-3" />
+              {selectedHook.emotionalTrigger}
+            </span>
           )}
           {selectedHook.contentType && (
             <span className="text-xs bg-secondary text-muted-foreground px-2 py-1 rounded">{selectedHook.contentType}</span>
@@ -240,13 +246,13 @@ export function Agendador({ workspaceId }: Props) {
             <button
               key={platform.id}
               onClick={() => togglePlatform(platform.id)}
-              className={`px-4 py-2 rounded-lg border-2 ${platform.color} ${
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg border-2 ${platform.color} ${
                 selectedPlatforms.includes(platform.id)
                   ? "bg-secondary/50 text-foreground"
                   : `bg-transparent text-foreground ${platform.bgHover}`
               } font-semibold transition-all`}
             >
-              {selectedPlatforms.includes(platform.id) && "✓ "}
+              {selectedPlatforms.includes(platform.id) && <Check className="w-4 h-4" />}
               {platform.name}
             </button>
           ))}
