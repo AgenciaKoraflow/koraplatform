@@ -263,10 +263,10 @@ ${hook.creator} (${hook.creatorHandle})
 
 
   const getRelevanceColor = (score: number) => {
-    if (score >= 80) return "text-green-600 bg-green-50 dark:bg-green-950/30";
-    if (score >= 60) return "text-blue-600 bg-blue-50 dark:bg-blue-950/30";
-    if (score >= 40) return "text-amber-600 bg-amber-50 dark:bg-amber-950/30";
-    return "text-gray-600 bg-gray-50 dark:bg-gray-950/30";
+    if (score >= 80) return "text-green-600 bg-green-500/10";
+    if (score >= 60) return "text-blue-600 bg-blue-500/10";
+    if (score >= 40) return "text-amber-600 bg-amber-500/10";
+    return "text-muted-foreground bg-secondary";
   };
 
   return (
@@ -459,25 +459,25 @@ ${hook.creator} (${hook.creatorHandle})
 
                 {/* LINHA 2: Formato + Dor */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
-                  <div className="pl-3 border-l border-purple-500/20">
-                    <p className="text-xs font-semibold text-purple-600/60 dark:text-purple-400/60 uppercase tracking-wide mb-2">Formato</p>
+                  <div className="pl-3 border-l border-border">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Formato</p>
                     <p className="text-sm text-foreground font-medium">{hook.format || "—"}</p>
                   </div>
-                  <div className="pl-3 border-l border-red-500/20">
-                    <p className="text-xs font-semibold text-red-600/60 dark:text-red-400/60 uppercase tracking-wide mb-2">Dor que Resolve</p>
+                  <div className="pl-3 border-l border-border">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Dor que Resolve</p>
                     <p className="text-sm text-foreground">{hook.painPoint || "—"}</p>
                   </div>
                 </div>
 
                 {/* LINHA 3: Gatilho Emocional */}
-                <div className="pl-3 border-l border-orange-500/20">
-                  <p className="text-xs font-semibold text-orange-600/60 dark:text-orange-400/60 uppercase tracking-wide mb-2">Gatilho Emocional</p>
+                <div className="pl-3 border-l border-border">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Gatilho Emocional</p>
                   <p className="text-sm text-foreground">{hook.emotionalTrigger || "—"}</p>
                 </div>
 
                 {/* LINHA 4: Roteiro */}
-                <div className="pl-3 border-l border-green-500/20">
-                  <p className="text-xs font-semibold text-green-600/60 dark:text-green-400/60 uppercase tracking-wide mb-2">Roteiro de Execução</p>
+                <div className="pl-3 border-l border-border">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Roteiro de Execução</p>
                   <p className="text-sm text-foreground italic text-muted-foreground">{hook.roteiro || "—"}</p>
                 </div>
 

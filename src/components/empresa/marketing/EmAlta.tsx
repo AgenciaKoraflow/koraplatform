@@ -45,10 +45,10 @@ const mockTrends: Trend[] = [
 ];
 
 const trendTypeColors: Record<Trend["type"], string> = {
-  "COM POTENCIAL": "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400",
-  HOOK: "bg-orange-50 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400",
-  EXPLICAR: "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400",
-  PULAR: "bg-gray-50 text-gray-700 dark:bg-gray-950/30 dark:text-gray-400",
+  "COM POTENCIAL": "bg-green-500/10 text-green-600",
+  HOOK: "bg-primary/10 text-primary",
+  EXPLICAR: "bg-amber-500/10 text-amber-600",
+  PULAR: "bg-secondary text-muted-foreground",
 };
 
 export function EmAlta({ workspaceId }: Props) {
@@ -88,7 +88,7 @@ export function EmAlta({ workspaceId }: Props) {
                 </div>
               </div>
               <div className="shrink-0">
-                <Flame className="w-5 h-5 text-orange-500" />
+                <Flame className="w-5 h-5 text-primary" />
               </div>
             </div>
           </div>

@@ -24,7 +24,7 @@ const pageComponents: Record<string, React.ComponentType<{ workspaceId: string }
 
 export function EmpresaMarketing({ workspaceId }: Props) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [profileImage, setProfileImage] = useState<string>("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%23B8532E'/%3E%3Ctext x='50%25' y='50%25' font-size='80' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='middle' font-family='Arial'%3EK%3C/text%3E%3C/svg%3E");
+  const [profileImage, setProfileImage] = useState<string>("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%23FF8800'/%3E%3Ctext x='50%25' y='50%25' font-size='80' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='middle' font-family='Arial'%3EK%3C/text%3E%3C/svg%3E");
 
   const activeTab = searchParams.get("marketing") ?? "analytics";
   const isValidTab = MARKETING_TABS.some((tab) => tab.id === activeTab);

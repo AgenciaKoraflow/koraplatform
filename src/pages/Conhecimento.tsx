@@ -29,28 +29,30 @@ export default function Conhecimento() {
         />
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="bg-input border border-border flex-wrap h-auto gap-1">
-            <TabsTrigger value="geral" className="gap-2">
-              <LayoutGrid className="w-4 h-4" />
-              Geral
-            </TabsTrigger>
-            <TabsTrigger value="senhas" className="gap-2">
-              <Key className="w-4 h-4" />
-              Senhas
-            </TabsTrigger>
-            <TabsTrigger value="documentos" className="gap-2">
-              <FileText className="w-4 h-4" />
-              Documentos
-            </TabsTrigger>
-            <TabsTrigger value="links" className="gap-2">
-              <Link2 className="w-4 h-4" />
-              Links Importantes
-            </TabsTrigger>
-            <TabsTrigger value="insights" className="gap-2">
-              <Lightbulb className="w-4 h-4" />
-              Insights
-            </TabsTrigger>
-          </TabsList>
+          <div className="mb-4 overflow-x-auto scrollbar-none scroll-smooth snap-x snap-proximity sm:overflow-visible">
+            <TabsList className="w-max flex-nowrap gap-1">
+              <TabsTrigger value="geral" className="shrink-0 snap-start gap-2">
+                <LayoutGrid className="w-4 h-4" />
+                Geral
+              </TabsTrigger>
+              <TabsTrigger value="senhas" className="shrink-0 snap-start gap-2">
+                <Key className="w-4 h-4" />
+                Senhas
+              </TabsTrigger>
+              <TabsTrigger value="documentos" className="shrink-0 snap-start gap-2">
+                <FileText className="w-4 h-4" />
+                Documentos
+              </TabsTrigger>
+              <TabsTrigger value="links" className="shrink-0 snap-start gap-2">
+                <Link2 className="w-4 h-4" />
+                Links Importantes
+              </TabsTrigger>
+              <TabsTrigger value="insights" className="shrink-0 snap-start gap-2">
+                <Lightbulb className="w-4 h-4" />
+                Insights
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="geral" className="mt-6">
             <ConhecimentoGeral />

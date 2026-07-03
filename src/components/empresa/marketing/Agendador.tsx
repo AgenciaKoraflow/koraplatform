@@ -144,7 +144,7 @@ export function Agendador({ workspaceId }: Props) {
         <Button
           size="lg"
           onClick={handleSchedule}
-          className="bg-[#B8532E] hover:bg-[#B8532E]/90 shrink-0 w-full sm:w-auto"
+          className="bg-primary hover:bg-primary/90 shrink-0 w-full sm:w-auto"
         >
           <Plus className="w-4 h-4 mr-2" />
           AGENDAR TUDO
@@ -157,13 +157,13 @@ export function Agendador({ workspaceId }: Props) {
         <p className="text-base text-foreground leading-relaxed">{selectedHook.text}</p>
         <div className="flex flex-wrap gap-2 pt-2">
           {selectedHook.painPoint && (
-            <span className="text-xs bg-[#B8532E]/10 text-[#B8532E] px-2 py-1 rounded">🎯 {selectedHook.painPoint}</span>
+            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">🎯 {selectedHook.painPoint}</span>
           )}
           {selectedHook.emotionalTrigger && (
-            <span className="text-xs bg-purple-500/10 text-purple-400 px-2 py-1 rounded">💭 {selectedHook.emotionalTrigger}</span>
+            <span className="text-xs bg-secondary text-muted-foreground px-2 py-1 rounded">💭 {selectedHook.emotionalTrigger}</span>
           )}
           {selectedHook.contentType && (
-            <span className="text-xs bg-blue-500/10 text-blue-400 px-2 py-1 rounded">{selectedHook.contentType}</span>
+            <span className="text-xs bg-secondary text-muted-foreground px-2 py-1 rounded">{selectedHook.contentType}</span>
           )}
         </div>
       </div>

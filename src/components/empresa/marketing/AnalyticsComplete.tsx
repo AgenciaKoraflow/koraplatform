@@ -221,7 +221,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
                 size="lg"
                 onClick={handleConnect}
                 disabled={isLoading}
-                className="bg-gradient-to-r from-pink-500 to-purple-500 gap-2"
+                className="bg-primary hover:bg-primary/90 gap-2"
               >
                 {isLoading ? <Loader className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                 {isLoading ? "Conectando..." : "Conectar Instagram"}
@@ -352,25 +352,25 @@ export function AnalyticsComplete({ workspaceId }: Props) {
 
           {/* Main Metrics */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-            <div className="bg-gradient-to-br from-pink-500/10 to-red-500/10 rounded-lg p-2.5 sm:p-4 border border-pink-500/20">
+            <div className="bg-primary/10 rounded-lg p-2.5 sm:p-4 border border-primary/20">
               <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground mb-1">SEGUIDORES</p>
               <p className="text-lg sm:text-2xl font-bold">{report.account.followers.toLocaleString()}</p>
-              <p className="text-[10px] sm:text-xs text-green-500 mt-1">+{report.growth.newFollowers7d} (7d)</p>
+              <p className="text-[10px] sm:text-xs text-green-600 mt-1">+{report.growth.newFollowers7d} (7d)</p>
             </div>
 
-            <div className="bg-gradient-to-br from-purple-500/10 to-blue-500/10 rounded-lg p-2.5 sm:p-4 border border-purple-500/20">
+            <div className="bg-secondary/50 rounded-lg p-2.5 sm:p-4 border border-border">
               <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground mb-1">POSTS</p>
               <p className="text-lg sm:text-2xl font-bold">{report.account.totalPosts}</p>
               <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Total</p>
             </div>
 
-            <div className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-lg p-2.5 sm:p-4 border border-amber-500/20">
+            <div className="bg-blue-500/10 rounded-lg p-2.5 sm:p-4 border border-blue-500/20">
               <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground mb-1">ALCANCE ({period})</p>
               <p className="text-lg sm:text-2xl font-bold">{formatNumber(getMetricsForPeriod()?.reach ?? 0)}</p>
               <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Média: {formatNumber(getMetricsForPeriod()?.reachAvg ?? 0)}/dia</p>
             </div>
 
-            <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-lg p-2.5 sm:p-4 border border-green-500/20">
+            <div className="bg-green-500/10 rounded-lg p-2.5 sm:p-4 border border-green-500/20">
               <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground mb-1">VISUALIZAÇÕES ({period})</p>
               <p className="text-lg sm:text-2xl font-bold">{formatNumber(getMetricsForPeriod()?.views ?? 0)}</p>
               <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Média: {formatNumber(getMetricsForPeriod()?.viewsAvg ?? 0)}/dia</p>
@@ -381,7 +381,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
             <div className="bg-card rounded-lg p-2.5 sm:p-4 border border-border">
               <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
-                <span className="text-red-500 text-sm sm:text-base">❤️</span>
+                <span className="text-primary text-sm sm:text-base">❤️</span>
                 <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground">CURTIDAS</p>
               </div>
               <p className="text-lg sm:text-2xl font-bold text-foreground">{report.engagement.totalLikes.toLocaleString()}</p>
@@ -389,7 +389,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
 
             <div className="bg-card rounded-lg p-2.5 sm:p-4 border border-border">
               <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
-                <span className="text-blue-500 text-sm sm:text-base">💬</span>
+                <span className="text-primary text-sm sm:text-base">💬</span>
                 <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground">COMENTÁRIOS</p>
               </div>
               <p className="text-lg sm:text-2xl font-bold text-foreground">{report.engagement.totalComments.toLocaleString()}</p>
@@ -397,7 +397,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
 
             <div className="bg-card rounded-lg p-2.5 sm:p-4 border border-border">
               <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
-                <span className="text-purple-500 text-sm sm:text-base">📌</span>
+                <span className="text-primary text-sm sm:text-base">📌</span>
                 <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground">SALVOS</p>
               </div>
               <p className="text-lg sm:text-2xl font-bold text-foreground">{report.engagement.totalSaves.toLocaleString()}</p>
@@ -405,7 +405,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
 
             <div className="bg-card rounded-lg p-2.5 sm:p-4 border border-border">
               <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
-                <span className="text-amber-500 text-sm sm:text-base">↗️</span>
+                <span className="text-primary text-sm sm:text-base">↗️</span>
                 <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground">COMPARTILHADOS</p>
               </div>
               <p className="text-lg sm:text-2xl font-bold text-foreground">{report.engagement.totalShares.toLocaleString()}</p>
@@ -418,7 +418,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
             <div className="space-y-2">
               {report.topPosts.map((post, idx) => (
                 <div key={idx} className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-secondary/30 rounded hover:bg-secondary/50 transition-colors">
-                  <span className="text-xs sm:text-sm font-bold text-pink-500">#{idx + 1}</span>
+                  <span className="text-xs sm:text-sm font-bold text-primary">#{idx + 1}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs sm:text-sm text-foreground truncate">{post.caption}</p>
                     <p className="text-[10px] sm:text-xs text-muted-foreground">{post.date} • {post.type}</p>
@@ -459,7 +459,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
                 {report.metrics.websiteClicks.daily.map((day, idx) => (
                   <div key={idx} className="flex items-center justify-between p-2 hover:bg-secondary/30 rounded">
                     <span className="text-sm text-muted-foreground">{day.date}</span>
-                    <span className="text-sm font-bold text-amber-500">{day.value}</span>
+                    <span className="text-sm font-bold text-primary">{day.value}</span>
                   </div>
                 ))}
               </div>
@@ -485,7 +485,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
                 {report.metrics.profileViews.daily.map((day, idx) => (
                   <div key={idx} className="flex items-center justify-between p-2 hover:bg-secondary/30 rounded">
                     <span className="text-sm text-muted-foreground">{day.date}</span>
-                    <span className="text-sm font-bold text-cyan-500">{day.value}</span>
+                    <span className="text-sm font-bold text-primary">{day.value}</span>
                   </div>
                 ))}
               </div>
@@ -516,15 +516,15 @@ export function AnalyticsComplete({ workspaceId }: Props) {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-muted-foreground">Total de curtidas</span>
-                      <span className="font-bold text-red-500">{content.totalLikes}</span>
+                      <span className="font-bold text-primary">{content.totalLikes}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-muted-foreground">Total de comentários</span>
-                      <span className="font-bold text-blue-500">{content.totalComments}</span>
+                      <span className="font-bold text-primary">{content.totalComments}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-muted-foreground">Total de salvos</span>
-                      <span className="font-bold text-purple-500">{content.totalSaves}</span>
+                      <span className="font-bold text-primary">{content.totalSaves}</span>
                     </div>
                     <div className="flex justify-between pt-2 border-t border-border">
                       <span className="text-sm text-muted-foreground">Engajamento médio</span>
@@ -536,7 +536,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
                     <div className="bg-secondary/30 rounded p-3 space-y-1">
                       <p className="text-xs font-semibold text-muted-foreground">Top post</p>
                       <p className="text-sm text-foreground">{content.topPost.caption}</p>
-                      <p className="text-xs text-pink-500">❤️ {content.topPost.likes} curtidas</p>
+                      <p className="text-xs text-primary">❤️ {content.topPost.likes} curtidas</p>
                     </div>
                   )}
                 </div>
@@ -578,7 +578,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
                     <span className="text-sm font-bold">{report.audience.genderDistribution.male}%</span>
                   </div>
                   <div className="w-full h-2 bg-secondary/50 rounded overflow-hidden">
-                    <div className="h-full bg-blue-500" style={{ width: `${report.audience.genderDistribution.male}%` }} />
+                    <div className="h-full bg-primary" style={{ width: `${report.audience.genderDistribution.male}%` }} />
                   </div>
                 </div>
                 <div className="space-y-1">
@@ -587,7 +587,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
                     <span className="text-sm font-bold">{report.audience.genderDistribution.female}%</span>
                   </div>
                   <div className="w-full h-2 bg-secondary/50 rounded overflow-hidden">
-                    <div className="h-full bg-pink-500" style={{ width: `${report.audience.genderDistribution.female}%` }} />
+                    <div className="h-full bg-primary/60" style={{ width: `${report.audience.genderDistribution.female}%` }} />
                   </div>
                 </div>
               </div>
@@ -606,7 +606,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
                       <span className="text-sm font-bold">{percentage}%</span>
                     </div>
                     <div className="w-full h-2 bg-secondary/50 rounded overflow-hidden">
-                      <div className="h-full bg-amber-500" style={{ width: `${percentage}%` }} />
+                      <div className="h-full bg-primary" style={{ width: `${percentage}%` }} />
                     </div>
                   </div>
                 ))}
@@ -620,7 +620,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
                 {report.audience.topCities.map((city) => (
                   <div key={city.city} className="flex items-center justify-between p-2 hover:bg-secondary/30 rounded">
                     <span className="text-sm text-foreground">{city.city}</span>
-                    <span className="text-sm font-bold text-green-500">{city.percentage}%</span>
+                    <span className="text-sm font-bold text-green-600">{city.percentage}%</span>
                   </div>
                 ))}
               </div>

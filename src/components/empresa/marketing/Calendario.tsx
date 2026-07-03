@@ -410,7 +410,7 @@ export function Calendario({ workspaceId }: Props) {
                       onClick={() => handleUpdatePostStatus(selectedPost.id, "draft")}
                       className={`flex-1 px-3 py-2 rounded text-xs font-semibold transition-all ${
                         selectedPost.status === "draft"
-                          ? "bg-gray-500 text-white"
+                          ? "bg-secondary text-secondary-foreground"
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
@@ -450,28 +450,28 @@ export function Calendario({ workspaceId }: Props) {
               {selectedPost.emotionalTrigger && (
                 <div className="space-y-2">
                   <p className="text-xs font-semibold text-muted-foreground">💭 GATILHO EMOCIONAL</p>
-                  <p className="text-sm text-foreground bg-orange-500/10 rounded p-2 border border-orange-500/20">{selectedPost.emotionalTrigger}</p>
+                  <p className="text-sm text-foreground bg-secondary/30 rounded p-2 border border-border">{selectedPost.emotionalTrigger}</p>
                 </div>
               )}
 
               {selectedPost.painPoint && (
                 <div className="space-y-2">
                   <p className="text-xs font-semibold text-muted-foreground">🎯 DOR QUE RESOLVE</p>
-                  <p className="text-sm text-foreground bg-red-500/10 rounded p-2 border border-red-500/20">{selectedPost.painPoint}</p>
+                  <p className="text-sm text-foreground bg-secondary/30 rounded p-2 border border-border">{selectedPost.painPoint}</p>
                 </div>
               )}
 
               {selectedPost.angle && (
                 <div className="space-y-2">
                   <p className="text-xs font-semibold text-muted-foreground">💡 ÂNGULO</p>
-                  <p className="text-sm text-foreground bg-purple-500/10 rounded p-2 border border-purple-500/20">{selectedPost.angle}</p>
+                  <p className="text-sm text-foreground bg-secondary/30 rounded p-2 border border-border">{selectedPost.angle}</p>
                 </div>
               )}
 
               {selectedPost.cta && (
                 <div className="space-y-2">
                   <p className="text-xs font-semibold text-muted-foreground">🔗 CTA</p>
-                  <p className="text-sm text-foreground bg-amber-500/10 rounded p-2 border border-amber-500/20">{selectedPost.cta}</p>
+                  <p className="text-sm text-foreground bg-secondary/30 rounded p-2 border border-border">{selectedPost.cta}</p>
                 </div>
               )}
 
@@ -488,7 +488,7 @@ export function Calendario({ workspaceId }: Props) {
                   Copiar Legenda
                 </Button>
 
-                <Button size="sm" className="w-full gap-2 bg-red-600/20 text-red-600 hover:bg-red-600/30" variant="outline" onClick={() => handleDeletePost(selectedPost.id)}>
+                <Button size="sm" className="w-full gap-2" variant="destructive" onClick={() => handleDeletePost(selectedPost.id)}>
                   <Trash2 className="w-4 h-4" />
                   Deletar Post
                 </Button>
@@ -520,9 +520,9 @@ export function Calendario({ workspaceId }: Props) {
           <p className="text-lg sm:text-2xl font-bold text-amber-600">{posts.filter((p) => p.status === "draft").length}</p>
         </div>
 
-        <div className="bg-purple-500/10 rounded-lg p-2.5 sm:p-4 border border-purple-500/20">
+        <div className="bg-primary/10 rounded-lg p-2.5 sm:p-4 border border-primary/20">
           <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground mb-1">TOTAL</p>
-          <p className="text-lg sm:text-2xl font-bold text-purple-600">{posts.length}</p>
+          <p className="text-lg sm:text-2xl font-bold text-primary">{posts.length}</p>
         </div>
       </div>
 
@@ -662,7 +662,7 @@ export function Calendario({ workspaceId }: Props) {
                     <p className="text-sm font-medium text-foreground">{hook.text}</p>
                     <div className="flex gap-2 flex-wrap">
                       {hook.format && (
-                        <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded">
+                        <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
                           🎬 {hook.format}
                         </span>
                       )}
@@ -672,7 +672,7 @@ export function Calendario({ workspaceId }: Props) {
                         </span>
                       )}
                       {hook.emotionalTrigger && (
-                        <span className="text-xs bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded">
+                        <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
                           💭 {hook.emotionalTrigger}
                         </span>
                       )}
@@ -729,7 +729,7 @@ export function Calendario({ workspaceId }: Props) {
             </div>
 
             {selectedHookForCreate && (
-              <div className="bg-blue-500/10 rounded-lg p-3 border border-blue-500/20">
+              <div className="bg-primary/10 rounded-lg p-3 border border-primary/20">
                 <p className="text-xs font-semibold text-muted-foreground mb-1">📚 Hook Selecionado:</p>
                 <p className="text-sm text-foreground font-medium">{selectedHookForCreate.text}</p>
                 <div className="flex gap-2 mt-2 flex-wrap">
@@ -739,7 +739,7 @@ export function Calendario({ workspaceId }: Props) {
                     </span>
                   )}
                   {selectedHookForCreate.emotionalTrigger && (
-                    <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded">
+                    <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
                       💭 {selectedHookForCreate.emotionalTrigger}
                     </span>
                   )}
@@ -840,7 +840,7 @@ export function Calendario({ workspaceId }: Props) {
             <Button variant="outline" onClick={() => setCreateModalOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleCreateNewPost} className="bg-[#B8532E] hover:bg-[#B8532E]/90 gap-2">
+            <Button onClick={handleCreateNewPost} className="bg-primary hover:bg-primary/90 gap-2">
               <Plus className="w-4 h-4" />
               Criar Post
             </Button>
