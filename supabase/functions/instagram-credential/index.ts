@@ -4,8 +4,7 @@
 // for the function that actually calls the Graph API on behalf of the frontend.
 //
 // { action: "status" }                                            → any authenticated user: connection metadata only
-// { action: "connect", appId, appSecret, accessToken,
-//   businessAccountId }                                           → admin only: encrypt + upsert
+// { action: "connect", appId, appSecret, accessToken }             → admin only: encrypt + upsert
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -98,7 +97,6 @@ Deno.serve(async (req: Request) => {
     appId?: string;
     appSecret?: string;
     accessToken?: string;
-    businessAccountId?: string;
   };
   try {
     body = await req.json();
@@ -113,15 +111,14 @@ Deno.serve(async (req: Request) => {
   if (body.action === "status") {
     const { data: row } = await client
       .from("instagram_credentials")
-      .select("business_account_id, token_updated_at")
+      .select("token_updated_at")
       .order("token_updated_at", { ascending: false })
       .limit(1)
-      .maybeSingle<{ business_account_id: string; token_updated_at: string }>();
+      .maybeSingle<{ token_updated_at: string }>();
 
     return json({
       data: {
         connected: !!row,
-        businessAccountId: row?.business_account_id ?? null,
         tokenUpdatedAt: row?.token_updated_at ?? null,
       },
     });
@@ -135,9 +132,9 @@ Deno.serve(async (req: Request) => {
       return err("Apenas administradores podem gerenciar a credencial do Instagram", 403);
     }
 
-    const { appId, appSecret, accessToken, businessAccountId } = body;
-    if (!appId || !appSecret || !accessToken || !businessAccountId) {
-      return err("appId, appSecret, accessToken e businessAccountId são obrigatórios", 400);
+    const { appId, appSecret, accessToken } = body;
+    if (!appId || !appSecret || !accessToken) {
+      return err("appId, appSecret e accessToken são obrigatórios", 400);
     }
 
     const [appSecretEncrypted, accessTokenEncrypted] = await Promise.all([
@@ -151,7 +148,6 @@ Deno.serve(async (req: Request) => {
       app_id: appId,
       app_secret_encrypted: appSecretEncrypted,
       access_token_encrypted: accessTokenEncrypted,
-      business_account_id: businessAccountId,
       token_updated_at: new Date().toISOString(),
       updated_by: userId,
     });

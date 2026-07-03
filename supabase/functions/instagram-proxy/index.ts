@@ -119,26 +119,27 @@ Deno.serve(async (req: Request) => {
 
   const { data: row } = await client
     .from("instagram_credentials")
-    .select("access_token_encrypted, business_account_id")
+    .select("access_token_encrypted")
     .order("token_updated_at", { ascending: false })
     .limit(1)
-    .maybeSingle<{ access_token_encrypted: string; business_account_id: string }>();
+    .maybeSingle<{ access_token_encrypted: string }>();
 
   if (!row) return err("Instagram não conectado", 404);
 
   const accessToken = await decrypt(row.access_token_encrypted);
-  const businessAccountId = row.business_account_id;
 
+  // The Instagram API with Instagram Login resolves the account directly from
+  // the access token, so "/me" is used instead of a separate business account id.
   let path: string;
   switch (operation) {
     case "account":
-      path = `/${encodeURIComponent(businessAccountId)}?fields=${encodeURIComponent(params.fields ?? "id,username,name,biography,followers_count,follows_count,media_count,profile_picture_url,website")}`;
+      path = `/me?fields=${encodeURIComponent(params.fields ?? "id,username,name,biography,followers_count,follows_count,media_count,profile_picture_url,website")}`;
       break;
     case "account-insights":
-      path = `/${encodeURIComponent(businessAccountId)}/insights?metric=${encodeURIComponent(params.metric ?? "reach")}&period=${encodeURIComponent(params.period ?? "week")}`;
+      path = `/me/insights?metric=${encodeURIComponent(params.metric ?? "reach")}&period=${encodeURIComponent(params.period ?? "week")}`;
       break;
     case "media":
-      path = `/${encodeURIComponent(businessAccountId)}/media?fields=${encodeURIComponent(params.fields ?? "id,caption,media_type,permalink,timestamp,like_count,comments_count")}&limit=${encodeURIComponent(params.limit ?? "50")}`;
+      path = `/me/media?fields=${encodeURIComponent(params.fields ?? "id,caption,media_type,permalink,timestamp,like_count,comments_count")}&limit=${encodeURIComponent(params.limit ?? "50")}`;
       break;
     case "media-insights": {
       if (!params.mediaId) return err("params.mediaId required for media-insights", 400);
@@ -146,7 +147,7 @@ Deno.serve(async (req: Request) => {
       break;
     }
     case "validate":
-      path = `/${encodeURIComponent(businessAccountId)}?fields=id`;
+      path = `/me?fields=id`;
       break;
     default:
       return err(`Unknown operation: ${operation}`, 400);

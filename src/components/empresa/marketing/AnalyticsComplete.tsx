@@ -44,7 +44,7 @@ interface Props {
   workspaceId: string;
 }
 
-const EMPTY_CREDENTIAL_FORM = { appId: "", appSecret: "", accessToken: "", businessAccountId: "" };
+const EMPTY_CREDENTIAL_FORM = { appId: "", appSecret: "", accessToken: "" };
 
 export function AnalyticsComplete({ workspaceId }: Props) {
   const { toast } = useToast();
@@ -113,8 +113,8 @@ export function AnalyticsComplete({ workspaceId }: Props) {
   };
 
   const handleSaveCredential = async () => {
-    const { appId, appSecret, accessToken, businessAccountId } = credentialForm;
-    if (!appId || !appSecret || !accessToken || !businessAccountId) {
+    const { appId, appSecret, accessToken } = credentialForm;
+    if (!appId || !appSecret || !accessToken) {
       toast({ title: "Erro", description: "Preencha todos os campos", variant: "destructive" });
       return;
     }
@@ -122,7 +122,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
     setIsSavingCredential(true);
     try {
       const { error } = await supabase.functions.invoke("instagram-credential", {
-        body: { action: "connect", appId, appSecret, accessToken, businessAccountId },
+        body: { action: "connect", appId, appSecret, accessToken },
       });
       if (error) throw new Error(await formatSupabaseInvokeError(error));
 
@@ -147,7 +147,7 @@ export function AnalyticsComplete({ workspaceId }: Props) {
         <DialogHeader>
           <DialogTitle>Gerenciar credencial do Instagram</DialogTitle>
           <DialogDescription>
-            Cole aqui o App ID, App Secret e o Access Token gerados no Meta for Developers. Esses valores ficam
+            Cole aqui o App ID, o App Secret e o Access Token gerados no Meta for Developers. Esses valores ficam
             criptografados no banco e nunca são enviados ao navegador — só o servidor os usa para consultar a API.
           </DialogDescription>
         </DialogHeader>
@@ -176,14 +176,6 @@ export function AnalyticsComplete({ workspaceId }: Props) {
               type="password"
               value={credentialForm.accessToken}
               onChange={(e) => setCredentialForm((f) => ({ ...f, accessToken: e.target.value }))}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="ig-account-id">Business Account ID</Label>
-            <Input
-              id="ig-account-id"
-              value={credentialForm.businessAccountId}
-              onChange={(e) => setCredentialForm((f) => ({ ...f, businessAccountId: e.target.value }))}
             />
           </div>
         </DialogBody>
