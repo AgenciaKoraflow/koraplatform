@@ -3,9 +3,7 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { AppSidebar } from "./AppSidebar";
 import {
   Menu, X, Sun, Moon,
-  Filter, FolderKanban, CheckSquare, FileSignature,
   User, LogOut, Settings, Bell, Lock,
-  BarChart3, Heart, BookOpen, LayoutDashboard, Users, Building2,
 } from "lucide-react";
 import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
 import {
@@ -54,34 +52,26 @@ interface AppLayoutProps {
   children: ReactNode;
 }
 
-const TOP_NAV = [
-  { name: "Dashboard", href: "/",           icon: LayoutDashboard },
-  { name: "Funil",     href: "/funil",       icon: Filter },
-  { name: "Clientes",  href: "/clientes",    icon: Heart },
-  { name: "Contratos", href: "/contratos",   icon: FileSignature },
-  { name: "Projetos",  href: "/projetos",    icon: FolderKanban },
-  { name: "Tarefas",   href: "/tarefas",     icon: CheckSquare },
-  { name: "Conhecimento", href: "/conhecimento", icon: BookOpen },
-  { name: "Indicadores",  href: "/indicadores",  icon: BarChart3 },
-];
-
-const TOP_NAV_ADMIN = [
-  { name: "Empresa",  href: "/empresa",   icon: Building2 },
-  { name: "Usuários", href: "/usuarios",  icon: Users },
-];
-
 export function AppLayout({ children }: AppLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const { theme, toggleTheme } = useTheme();
-  const location = useLocation();
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
   const { avatarUrl } = useUserAvatar();
   const { data: profile } = useProfile(user?.id);
 
   return (
-    <div className="flex flex-col min-h-screen w-full bg-background">
+    <div className="flex min-h-screen w-full bg-background">
+
+      {/* ── Desktop Sidebar - Fixa, sempre visível ── */}
+      <div className={cn(
+        "hidden lg:block fixed inset-y-0 left-0 z-40 transition-all duration-300",
+        sidebarCollapsed ? "w-16" : "w-64"
+      )}>
+        <AppSidebar collapsed={sidebarCollapsed} />
+      </div>
 
       {/* ── Mobile Overlay ── */}
       {mobileMenuOpen && (
@@ -99,47 +89,39 @@ export function AppLayout({ children }: AppLayoutProps) {
         <AppSidebar onNavigate={() => setMobileMenuOpen(false)} />
       </div>
 
+      {/* ── Main content, deslocado pela sidebar fixa no desktop ── */}
+      <div className={cn(
+        "flex-1 flex flex-col min-w-0 transition-all duration-300",
+        sidebarCollapsed ? "lg:ml-16" : "lg:ml-64"
+      )}>
+
       {/* ── Top Header ── */}
       <header className="h-14 border-b border-border flex items-center justify-between px-4 sm:px-6 bg-card sticky top-0 z-30 shadow-sm">
-        {/* Left: hamburger (mobile) + Logo */}
+        {/* Left: hamburger + Logo */}
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 -ml-1 rounded-xl hover:bg-muted transition-colors touch-manipulation lg:hidden"
+            onClick={() => {
+              const isDesktop = window.innerWidth >= 1024;
+              if (isDesktop) {
+                setSidebarCollapsed(!sidebarCollapsed);
+              } else {
+                setMobileMenuOpen(!mobileMenuOpen);
+              }
+            }}
+            className="p-2 -ml-1 rounded-xl hover:bg-muted transition-colors touch-manipulation"
           >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            <span className="lg:hidden">
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </span>
+            <span className="hidden lg:block">
+              <Menu className="w-5 h-5" />
+            </span>
           </button>
 
-          <NavLink to="/" className="flex items-center">
+          <NavLink to="/" className="flex items-center lg:hidden">
             <KoraSystemLogoIcon className="text-foreground" size={30} />
           </NavLink>
         </div>
-
-        {/* Center: Desktop nav */}
-        <nav className="hidden lg:flex items-center gap-0.5 overflow-x-auto mx-4">
-          {[...TOP_NAV, null, ...TOP_NAV_ADMIN].map((item) => {
-            if (!item) return <div key="sep" className="w-px h-5 bg-border mx-1 flex-shrink-0" />;
-            const isActive = location.pathname === item.href ||
-              (item.href !== "/" && location.pathname.startsWith(item.href));
-            return (
-              <NavLink
-                key={item.href}
-                to={item.href}
-                className={cn(
-                  "group flex items-center px-3 py-2 rounded-lg transition-all duration-300 ease-out",
-                  isActive
-                    ? "bg-accent/60 text-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                )}
-              >
-                <item.icon className="w-4 h-4 flex-shrink-0" />
-                <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 text-sm font-medium transition-all duration-300 ease-out group-hover:max-w-[120px] group-hover:opacity-100 group-hover:ml-2">
-                  {item.name}
-                </span>
-              </NavLink>
-            );
-          })}
-        </nav>
 
         {/* Right: actions */}
         <div className="flex items-center gap-1 sm:gap-2">
@@ -210,6 +192,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           {children}
         </PageTransition>
       </main>
+      </div>
     </div>
   );
 }
