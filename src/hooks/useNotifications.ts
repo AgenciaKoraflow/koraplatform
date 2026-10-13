@@ -20,7 +20,7 @@ const REQUIRED_FIELDS: Record<string, RequiredField[]> = {
     { field: "bu", label: "unidade de negócio" },
     { field: "value", label: "valor do contrato" },
   ],
-  negociacao: [
+  contrato: [
     { field: "email", label: "e-mail" },
     { field: "briefing", label: "briefing" },
     { field: "head", label: "responsável" },

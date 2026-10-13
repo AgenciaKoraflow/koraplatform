@@ -44,7 +44,7 @@ const PIPELINE_STAGES = [
   { id: "prospeccao", label: "Prospecção", color: "bg-slate-400" },
   { id: "qualificacao", label: "Qualificação", color: "bg-blue-500" },
   { id: "proposta", label: "Proposta", color: "bg-violet-500" },
-  { id: "negociacao", label: "Negociação", color: "bg-amber-500" },
+  { id: "contrato", label: "Contrato", color: "bg-amber-500" },
   { id: "cliente", label: "Cliente", color: "bg-emerald-500" },
 ] as const;
 

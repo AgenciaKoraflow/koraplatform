@@ -17,13 +17,28 @@ export interface Process {
   updated_at: string;
 }
 
+/**
+ * Fluxo comercial: prospeccao > qualificacao > proposta > contrato >
+ * cliente (aceitou) | cancelado (recusou). Cliente ativo que sai vai para churn.
+ */
+export type ClientStage =
+  | "prospeccao"
+  | "qualificacao"
+  | "proposta"
+  | "contrato"
+  | "cliente"
+  | "cancelado"
+  | "churn";
+
+export type ChurnStage = "novo" | "em_recuperacao" | "recuperado" | "perdido";
+
 export interface Client {
   id: string;
   name: string;
   company: string;
   email: string;
   phone: string;
-  stage: "prospeccao" | "qualificacao" | "proposta" | "negociacao" | "cliente" | "cancelado";
+  stage: ClientStage;
   value: string;
   lastContact: string;
   anniversary?: string;
@@ -32,6 +47,25 @@ export interface Client {
   proposalSentDate?: string;
   bu?: BU[];
   logo?: string;
+  lostReason?: string;
+  lostAt?: string;
+  becameClientAt?: string;
+  whatsappGroupUrl?: string;
+  whatsappGroupCreatedAt?: string;
+  churnedAt?: string;
+  churnReason?: string;
+  churnStage?: ChurnStage;
+  churnMrr?: number;
+}
+
+export interface ClientInteraction {
+  id: string;
+  clientId: string;
+  type: "meeting" | "delivery" | "adjustment" | "comment" | "note";
+  title: string;
+  description: string;
+  date: string;
+  createdBy?: string;
 }
 
 export interface Project {

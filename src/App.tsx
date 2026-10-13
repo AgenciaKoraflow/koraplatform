@@ -32,8 +32,10 @@ const importRedefinirSenha = () => import("./pages/RedefinirSenha");
 const importPerfilPessoal = () => import("./pages/PerfilPessoal");
 const importGerenciarUsuarios = () => import("./pages/GerenciarUsuarios");
 const importEmpresa = () => import("./pages/Empresa");
+const importChurn = () => import("./pages/Churn");
 
 const Dashboard = lazy(importDashboard);
+const Churn = lazy(importChurn);
 const Funil = lazy(importFunil);
 const ClientesAtivos = lazy(importClientesAtivos);
 const Projetos = lazy(importProjetos);
@@ -160,6 +162,7 @@ function AppRoutes() {
           <Route path="/projetos" element={<ProtectedRoute><Projetos /></ProtectedRoute>} />
           <Route path="/tarefas" element={<ProtectedRoute><Tarefas /></ProtectedRoute>} />
           <Route path="/contratos" element={<ProtectedRoute><Contratos /></ProtectedRoute>} />
+        <Route path="/churn" element={<ProtectedRoute><Churn /></ProtectedRoute>} />
           <Route path="/conhecimento" element={<ProtectedRoute><Conhecimento /></ProtectedRoute>} />
           <Route path="/financeiro" element={<Navigate to="/empresa" replace />} />
           <Route path="/servicos" element={<Navigate to="/empresa" replace />} />

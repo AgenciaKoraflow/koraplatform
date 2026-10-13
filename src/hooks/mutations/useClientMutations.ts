@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { mapDbClient, toISODate } from "@/lib/mappers";
+import { parseCurrencyToNumber } from "@/lib/currency";
 import { Client } from "@/types/data";
 import { clientKeys } from "@/hooks/useClients";
 import { projectKeys } from "@/hooks/useProjects";
@@ -26,6 +27,7 @@ export function useClientMutations() {
         phone: client.phone?.trim() || null,
         pipeline_stage: client.stage,
         notes: client.value?.trim() || null,
+        deal_value: client.value?.trim() ? parseCurrencyToNumber(client.value) : null,
       };
       const ann = toISODate(client.anniversary);
       if (ann) dbData.anniversary = ann;
@@ -55,7 +57,21 @@ export function useClientMutations() {
       if (data.email) dbData.email = data.email;
       if (data.phone) dbData.phone = data.phone;
       if (data.stage) dbData.pipeline_stage = data.stage;
-      if (data.value) dbData.notes = data.value;
+      if (data.value) {
+        dbData.notes = data.value;
+        dbData.deal_value = parseCurrencyToNumber(data.value);
+      }
+      if (data.lostReason !== undefined) dbData.lost_reason = data.lostReason || null;
+      if (data.lostAt !== undefined) dbData.lost_at = data.lostAt || null;
+      if (data.becameClientAt !== undefined) dbData.became_client_at = data.becameClientAt || null;
+      if (data.whatsappGroupUrl !== undefined) {
+        dbData.whatsapp_group_url = data.whatsappGroupUrl || null;
+        dbData.whatsapp_group_created_at = data.whatsappGroupUrl ? new Date().toISOString() : null;
+      }
+      if (data.churnedAt !== undefined) dbData.churned_at = data.churnedAt || null;
+      if (data.churnReason !== undefined) dbData.churn_reason = data.churnReason || null;
+      if (data.churnStage !== undefined) dbData.churn_stage = data.churnStage || null;
+      if (data.churnMrr !== undefined) dbData.churn_mrr = data.churnMrr ?? null;
       if (data.anniversary) dbData.anniversary = toISODate(data.anniversary);
       if (data.briefing !== undefined) dbData.briefing = data.briefing || null;
       if (data.proposalSentDate !== undefined)

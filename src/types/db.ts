@@ -17,8 +17,29 @@ export interface DbClientRow {
   head: string | null;
   bu: string[] | null;
   logo: string | null;
+  deal_value?: number | string | null;
+  lost_reason?: string | null;
+  lost_at?: string | null;
+  became_client_at?: string | null;
+  whatsapp_group_url?: string | null;
+  whatsapp_group_created_at?: string | null;
+  churned_at?: string | null;
+  churn_reason?: string | null;
+  churn_stage?: string | null;
+  churn_mrr?: number | string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface DbClientInteractionRow {
+  id: string;
+  client_id: string;
+  type: string;
+  title: string;
+  description: string | null;
+  date: string;
+  created_by: string | null;
+  created_at: string;
 }
 
 export interface DbProjectRow {
@@ -28,6 +49,8 @@ export interface DbProjectRow {
   description: string | null;
   status: string | null;
   progress: number | null;
+  task_count?: number | null;
+  completed_task_count?: number | null;
   end_date: string | null;
   team: string[] | null;
   head: string | null;

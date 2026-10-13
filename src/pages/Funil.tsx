@@ -31,16 +31,19 @@ const stageConfig = {
   prospeccao: { label: "Prospecção", color: "bg-primary", bgColor: "bg-primary/10", textColor: "text-primary", borderColor: "border-primary/20" },
   qualificacao: { label: "Qualificação", color: "bg-primary", bgColor: "bg-primary/10", textColor: "text-primary", borderColor: "border-primary/20" },
   proposta: { label: "Proposta", color: "bg-primary", bgColor: "bg-primary/10", textColor: "text-primary", borderColor: "border-primary/20" },
-  negociacao: { label: "Negociação", color: "bg-primary", bgColor: "bg-primary/10", textColor: "text-primary", borderColor: "border-primary/20" },
+  contrato: { label: "Contrato", color: "bg-primary", bgColor: "bg-primary/10", textColor: "text-primary", borderColor: "border-primary/20" },
   cliente: { label: "Cliente", color: "bg-green-500", bgColor: "bg-green-500/10", textColor: "text-green-500", borderColor: "border-green-500/20" },
   cancelado: { label: "Cancelado", color: "bg-red-500", bgColor: "bg-red-500/10", textColor: "text-red-500", borderColor: "border-red-500/20" },
 };
 
-const stageOrder: (keyof typeof stageConfig)[] = ["prospeccao", "qualificacao", "proposta", "negociacao", "cliente", "cancelado"];
+// Fluxo: prospectar > qualificar > proposta > contrato > aceitou (cliente) | recusou (cancelado).
+// Quem já foi cliente e saiu fica no quadro de Churn, não aqui.
+const stageOrder: (keyof typeof stageConfig)[] = ["prospeccao", "qualificacao", "proposta", "contrato", "cliente", "cancelado"];
 
 export default function Funil() {
   const { addClient, updateClient, deleteClient, isAdding, isUpdating } = useClientMutations();
-  const { data: clients = [] } = useAllClients();
+  const { data: allClients = [] } = useAllClients();
+  const clients = useMemo(() => allClients.filter((c) => c.stage !== "churn"), [allClients]);
   const { data: projects = [] } = useAllProjects();
   const { data: contracts = [] } = useAllContracts();
 
@@ -69,6 +72,10 @@ export default function Funil() {
   const [draggedClientId, setDraggedClientId] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
 
+  // Recusou: o motivo é obrigatório antes de mover para Cancelado
+  const [lostClientId, setLostClientId] = useState<string | null>(null);
+  const [lostReason, setLostReason] = useState("");
+
   const handleDragStart = useCallback((e: React.DragEvent, clientId: string) => {
     setDraggedClientId(clientId);
     e.dataTransfer.effectAllowed = 'move';
@@ -90,7 +97,10 @@ export default function Funil() {
     setDragOverStage(null);
     if (draggedClientId) {
       const client = clients.find(c => c.id === draggedClientId);
-      if (client && client.stage !== targetStage) {
+      if (client && client.stage !== targetStage && targetStage === "cancelado") {
+        setLostReason("");
+        setLostClientId(client.id);
+      } else if (client && client.stage !== targetStage) {
         await updateClient(draggedClientId, {
           stage: targetStage as keyof typeof stageConfig,
           lastContact: "Agora"
@@ -188,7 +198,7 @@ export default function Funil() {
         company: client.company,
         email: client.email,
         phone: client.phone,
-        stage: client.stage,
+        stage: client.stage as keyof typeof stageConfig,
         value: client.value,
         anniversary: client.anniversary || "",
         head: client.head || "",
@@ -375,8 +385,8 @@ export default function Funil() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[11px] sm:text-sm text-muted-foreground font-medium">Em Negociação</p>
-                  <p className="text-2xl font-bold text-foreground mt-1">{getClientsByStage('negociacao').length}</p>
+                  <p className="text-[11px] sm:text-sm text-muted-foreground font-medium">Em Contrato</p>
+                  <p className="text-2xl font-bold text-foreground mt-1">{getClientsByStage('contrato').length}</p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
                   <Target className="w-6 h-6 text-primary" />
@@ -681,8 +691,8 @@ export default function Funil() {
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className={cn("px-3 py-1 rounded-full text-xs font-medium border w-fit", stageConfig[client.stage].bgColor, stageConfig[client.stage].textColor, stageConfig[client.stage].borderColor)}>
-                            {stageConfig[client.stage].label}
+                          <span className={cn("px-3 py-1 rounded-full text-xs font-medium border w-fit", stageConfig[client.stage as keyof typeof stageConfig].bgColor, stageConfig[client.stage as keyof typeof stageConfig].textColor, stageConfig[client.stage as keyof typeof stageConfig].borderColor)}>
+                            {stageConfig[client.stage as keyof typeof stageConfig].label}
                           </span>
                           {client.bu?.[0] && <BUBadge bu={client.bu[0]} />}
                         </div>
@@ -805,7 +815,7 @@ export default function Funil() {
                     </div>
                   )}
                   <div className="flex items-center justify-between pt-4 border-t border-border">
-                    <span className={cn("px-3 py-1 rounded-full text-xs font-medium border", stageConfig[client.stage].bgColor, stageConfig[client.stage].textColor, stageConfig[client.stage].borderColor)}>{stageConfig[client.stage].label}</span>
+                    <span className={cn("px-3 py-1 rounded-full text-xs font-medium border", stageConfig[client.stage as keyof typeof stageConfig].bgColor, stageConfig[client.stage as keyof typeof stageConfig].textColor, stageConfig[client.stage as keyof typeof stageConfig].borderColor)}>{stageConfig[client.stage as keyof typeof stageConfig].label}</span>
                     <span className="font-bold text-foreground">{calculateClientPotentialValue(client.id)}</span>
                   </div>
                 </CardContent>
@@ -959,6 +969,43 @@ export default function Funil() {
         onConfirm={handleDelete}
         variant="destructive"
       />
+      <Dialog open={!!lostClientId} onOpenChange={(open) => !open && setLostClientId(null)}>
+        <DialogContent className="max-w-md" aria-describedby={undefined}>
+          <DialogHeader>
+            <DialogTitle>Por que o negócio foi cancelado?</DialogTitle>
+          </DialogHeader>
+          <DialogBody>
+            <div className="space-y-2">
+              <Label htmlFor="lost-reason">Motivo *</Label>
+              <Textarea
+                id="lost-reason"
+                value={lostReason}
+                onChange={(e) => setLostReason(e.target.value)}
+                placeholder="Ex.: achou o valor alto, fechou com concorrente, sem orçamento no momento..."
+                rows={3}
+              />
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" onClick={() => setLostClientId(null)}>Voltar</Button>
+              <Button
+                variant="destructive"
+                disabled={!lostReason.trim() || isUpdating}
+                onClick={async () => {
+                  if (!lostClientId) return;
+                  await updateClient(lostClientId, {
+                    stage: "cancelado",
+                    lostReason: lostReason.trim(),
+                    lostAt: new Date().toISOString(),
+                  });
+                  setLostClientId(null);
+                }}
+              >
+                Mover para Cancelado
+              </Button>
+            </div>
+          </DialogBody>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }

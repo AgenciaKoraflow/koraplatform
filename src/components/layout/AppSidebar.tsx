@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   Users,
   Building2,
+  UserMinus,
 } from "lucide-react";
 import { BU } from "@/types/bu";
 import {
@@ -33,6 +34,7 @@ const navigation: NavItem[] = [
   { name: "Funil", href: "/funil", icon: Filter, bu: "kora-agents" },
   { name: "Clientes", href: "/clientes", icon: Heart, bu: "kora-agents" },
   { name: "Contratos", href: "/contratos", icon: FileSignature, bu: "kora-agents" },
+  { name: "Churn", href: "/churn", icon: UserMinus, bu: "kora-agents" },
   { name: "Projetos", href: "/projetos", icon: FolderKanban, bu: "kora-dev" },
   { name: "Tarefas", href: "/tarefas", icon: CheckSquare, bu: "kora-dev" },
   { name: "Conhecimento", href: "/conhecimento", icon: BookOpen, bu: "kora-studio" },

@@ -1,8 +1,9 @@
-import { Client, Project, Task, Contract, KnowledgeItem, SupportTicket, Service, TaskSubtask, TaskComment, TaskAttachment, TaskTimeEntry, InternalWorkspace, InternalCredential, InternalInsight, InternalTask, InternalDocument, InternalDocumentFolder, InternalTaskSubtask, InternalTaskTimeEntry, ProjectDocument } from "@/types/data";
+import { Client, Project, Task, Contract, KnowledgeItem, SupportTicket, Service, TaskSubtask, TaskComment, TaskAttachment, TaskTimeEntry, InternalWorkspace, InternalCredential, InternalInsight, InternalTask, InternalDocument, InternalDocumentFolder, InternalTaskSubtask, InternalTaskTimeEntry, ProjectDocument, ClientInteraction } from "@/types/data";
 import { parseCurrencyToNumber } from "@/lib/currency";
 import type { BU } from "@/types/bu";
 import type {
   DbClientRow,
+  DbClientInteractionRow,
   DbProjectRow,
   DbTaskRow,
   DbContractRow,
@@ -72,8 +73,15 @@ export function mapDbClient(db: DbClientRow): Client {
     company: db.company ?? "",
     email: db.email ?? "",
     phone: db.phone ?? "",
-    stage: (db.pipeline_stage as Client["stage"]) ?? "prospeccao",
-    value: db.notes ?? "R$ 0",
+    // "negociacao" is the former name of the "contrato" stage
+    stage:
+      db.pipeline_stage === "negociacao"
+        ? "contrato"
+        : ((db.pipeline_stage as Client["stage"]) ?? "prospeccao"),
+    value:
+      db.deal_value !== null && db.deal_value !== undefined
+        ? formatValue(Number(db.deal_value))
+        : (db.notes ?? "R$ 0"),
     lastContact: db.updated_at ? formatDate(db.updated_at) : "Nunca",
     anniversary: db.anniversary ?? undefined,
     briefing: db.briefing ?? undefined,
@@ -81,6 +89,28 @@ export function mapDbClient(db: DbClientRow): Client {
     head: db.head ?? undefined,
     bu: sanitizeBU(db.bu),
     logo: db.logo ?? undefined,
+    lostReason: db.lost_reason ?? undefined,
+    lostAt: db.lost_at ?? undefined,
+    becameClientAt: db.became_client_at ?? undefined,
+    whatsappGroupUrl: db.whatsapp_group_url ?? undefined,
+    whatsappGroupCreatedAt: db.whatsapp_group_created_at ?? undefined,
+    churnedAt: db.churned_at ?? undefined,
+    churnReason: db.churn_reason ?? undefined,
+    churnStage: (db.churn_stage as Client["churnStage"]) ?? undefined,
+    churnMrr:
+      db.churn_mrr !== null && db.churn_mrr !== undefined ? Number(db.churn_mrr) : undefined,
+  };
+}
+
+export function mapDbClientInteraction(db: DbClientInteractionRow): ClientInteraction {
+  return {
+    id: db.id,
+    clientId: db.client_id,
+    type: (db.type as ClientInteraction["type"]) ?? "note",
+    title: db.title,
+    description: db.description ?? "",
+    date: db.date,
+    createdBy: db.created_by ?? undefined,
   };
 }
 
@@ -94,8 +124,8 @@ export function mapDbProject(db: DbProjectRow): Project {
     progress: db.progress ?? 0,
     dueDate: db.end_date ? formatDate(db.end_date) : "",
     team: db.team ?? [],
-    tasks: 0,
-    completedTasks: 0,
+    tasks: db.task_count ?? 0,
+    completedTasks: db.completed_task_count ?? 0,
     head: db.head ?? undefined,
     value: db.value ? formatValue(db.value) : undefined,
     billingType: (db.billing_type as Project["billingType"]) ?? "projeto",

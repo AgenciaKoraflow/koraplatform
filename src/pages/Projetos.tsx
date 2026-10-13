@@ -1,9 +1,10 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useState, useMemo, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Plus, Calendar, Clock, Search, Eye, Edit, Trash2, AlertTriangle, CheckCircle, Timer, FolderKanban, ListChecks, ExternalLink, Circle, Ban, UserCheck, CheckCircle2, ChevronDown, ChevronUp, Pause, Play } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogBody, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -167,6 +168,16 @@ export default function Projetos() {
     setFormData({ name: "", clientId: "", description: "", status: "planning", dueDate: "", team: "", head: "", value: "", billingType: "projeto", type: "projeto", recurrenceValue: "", recurrenceStartDate: "", bu: [] });
     setIsDialogOpen(true);
   }, []);
+
+  // "Iniciar projeto" na entrada do cliente: /projetos?novo=1&cliente=<id>
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get("novo") !== "1") return;
+    const clientId = searchParams.get("cliente") ?? "";
+    openNewDialog();
+    if (clientId) setFormData((prev) => ({ ...prev, clientId, status: "in_progress" }));
+    setSearchParams({}, { replace: true });
+  }, [searchParams, setSearchParams, openNewDialog]);
 
   const openEditDialog = useCallback((project: Project) => {
     setEditingProject(project);
@@ -539,6 +550,25 @@ export default function Projetos() {
                           <span>{deadlineStatus.daysRemaining} dias restantes</span>
                         </>
                       )}
+                    </div>
+                  )}
+
+                  {project.tasks > 0 && project.completedTasks === project.tasks && project.status !== "completed" && (
+                    <div
+                      className="mb-4 p-3 rounded-lg border border-emerald-500/30 bg-emerald-500/5 flex items-center justify-between gap-3"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <p className="text-xs text-emerald-600 font-medium">
+                        Todas as tarefas foram concluídas.
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs shrink-0"
+                        onClick={() => updateProject(project.id, { status: "completed" })}
+                      >
+                        Concluir projeto
+                      </Button>
                     </div>
                   )}
 

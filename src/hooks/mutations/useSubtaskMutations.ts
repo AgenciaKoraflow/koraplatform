@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { mapDbSubtask } from "@/lib/mappers";
 import { subtaskKeys } from "@/hooks/useTaskSubtasks";
+import { projectKeys } from "@/hooks/useProjects";
 import type { DbTaskSubtaskRow } from "@/types/db";
 import type { TaskSubtask, SubtaskStatus } from "@/types/data";
 import { toast } from "sonner";
@@ -12,6 +13,12 @@ function errMsg(e: unknown) {
 
 export function useSubtaskMutations(taskId: string) {
   const qc = useQueryClient();
+  // Subtasks count towards the project's progress (recalculated by the database)
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: subtaskKeys.byTask(taskId) });
+    qc.invalidateQueries({ queryKey: ["project_subtasks_map"] });
+    qc.invalidateQueries({ queryKey: projectKeys.all });
+  };
 
   const addMutation = useMutation({
     mutationFn: async (title: string): Promise<TaskSubtask> => {
@@ -30,7 +37,7 @@ export function useSubtaskMutations(taskId: string) {
       if (error) throw new Error(error.message);
       return mapDbSubtask(data as DbTaskSubtaskRow);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: subtaskKeys.byTask(taskId) }),
+    onSuccess: invalidate,
     onError: (e) => toast.error(`Erro ao adicionar subtarefa: ${errMsg(e)}`),
   });
 
@@ -39,7 +46,7 @@ export function useSubtaskMutations(taskId: string) {
       const { error } = await supabase.from("task_subtasks").update({ done }).eq("id", id);
       if (error) throw new Error(error.message);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: subtaskKeys.byTask(taskId) }),
+    onSuccess: invalidate,
     onError: (e) => toast.error(`Erro ao atualizar subtarefa: ${errMsg(e)}`),
   });
 
@@ -48,7 +55,7 @@ export function useSubtaskMutations(taskId: string) {
       const { error } = await supabase.from("task_subtasks").delete().eq("id", id);
       if (error) throw new Error(error.message);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: subtaskKeys.byTask(taskId) }),
+    onSuccess: invalidate,
     onError: (e) => toast.error(`Erro ao remover subtarefa: ${errMsg(e)}`),
   });
 
@@ -61,7 +68,7 @@ export function useSubtaskMutations(taskId: string) {
         .eq("id", id);
       if (error) throw new Error(error.message);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: subtaskKeys.byTask(taskId) }),
+    onSuccess: invalidate,
     onError: (e) => toast.error(`Erro ao atualizar status: ${errMsg(e)}`),
   });
 

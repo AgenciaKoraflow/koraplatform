@@ -22,27 +22,24 @@ import { useAllContracts } from "@/hooks/useContracts";
 import { useAllTasks } from "@/hooks/useTasks";
 import { ClientAvatar } from "@/components/shared/ClientAvatar";
 import { ProjectGantt } from "@/components/shared/ProjectGantt";
-import { Project } from "@/types/data";
+import { Project, ClientInteraction } from "@/types/data";
+import { useAuth } from "@/hooks/useAuth";
+import { useClientMutations } from "@/hooks/mutations/useClientMutations";
+import { useProjectMutations } from "@/hooks/mutations/useProjectMutations";
+import { ClientOnboardingCard } from "@/components/clientes/ClientOnboardingCard";
+import { ChurnDialog, ChurnData } from "@/components/clientes/ChurnDialog";
+import { parseCurrencyToNumber } from "@/lib/currency";
+import {
+  useClientInteractions,
+  useAllClientInteractions,
+  useClientInteractionMutations,
+} from "@/hooks/useClientInteractions";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-
-// Type for interaction/activity
-interface ClientInteraction {
-  id: string;
-  clientId: string;
-  type: "meeting" | "delivery" | "adjustment" | "comment" | "note";
-  title: string;
-  description: string;
-  date: string;
-  createdBy?: string;
-}
-
-// No mock data - using real data from database
-const mockInteractions: ClientInteraction[] = []; // Empty - will be populated from database if available
 
 const interactionTypeConfig = {
   meeting: { label: "Reunião", icon: Video, color: "bg-primary/10 text-primary border-blue-500/20" },
@@ -85,7 +82,6 @@ export default function ClientesAtivos() {
   const [showAnniversaryDialog, setShowAnniversaryDialog] = useState(false);
   const [isInteractionDialogOpen, setIsInteractionDialogOpen] = useState(false);
   const [editingInteraction, setEditingInteraction] = useState<ClientInteraction | null>(null);
-  const [interactions, setInteractions] = useState<ClientInteraction[]>(mockInteractions);
   const [interactionForm, setInteractionForm] = useState({
     type: "meeting" as ClientInteraction["type"],
     title: "",
@@ -108,30 +104,55 @@ export default function ClientesAtivos() {
   });
 
   const selectedClient = selectedClientId ? clients.find(c => c.id === selectedClientId) : null;
-  const clientInteractions = selectedClientId
-    ? interactions.filter(i => i.clientId === selectedClientId).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  const { profile } = useAuth();
+  const { updateClient } = useClientMutations();
+  const { updateProject } = useProjectMutations();
+  const [churnClientId, setChurnClientId] = useState<string | null>(null);
+  const churnClient = churnClientId ? clients.find((c) => c.id === churnClientId) ?? null : null;
+  const churnOpenProjects = churnClientId
+    ? getProjectsByClient(churnClientId).filter((p) => p.status !== "completed" && p.status !== "on_hold")
     : [];
+  // Receita recorrente do cliente: contratos assinados e projetos com recorrência
+  const churnSuggestedMrr = churnClientId
+    ? Math.max(
+        getContractsByClient(churnClientId)
+          .filter((c) => c.status === "signed")
+          .reduce((sum, c) => sum + parseCurrencyToNumber(c.recurrenceValue), 0),
+        getProjectsByClient(churnClientId).reduce(
+          (sum, p) => sum + parseCurrencyToNumber(p.recurrenceValue),
+          0,
+        ),
+      )
+    : 0;
+
+  const handleChurn = async (data: ChurnData) => {
+    if (!churnClientId) return;
+    await updateClient(churnClientId, {
+      stage: "churn",
+      churnedAt: new Date().toISOString(),
+      churnReason: data.reason,
+      churnStage: "novo",
+      churnMrr: data.mrr,
+    });
+    if (data.pauseOpenProjects) {
+      await Promise.all(churnOpenProjects.map((p) => updateProject(p.id, { status: "on_hold" })));
+    }
+    if (selectedClientId === churnClientId) setSelectedClientId(null);
+  };
+  const { data: clientInteractions = [] } = useClientInteractions(selectedClientId);
+  const { data: allInteractions = [] } = useAllClientInteractions();
+  const { addInteraction, updateInteraction, deleteInteraction } =
+    useClientInteractionMutations(selectedClientId);
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const interactionsThisMonth = allInteractions.filter((i) => i.date.startsWith(currentMonth)).length;
   const clientProjects = selectedClientId ? getProjectsByClient(selectedClientId) : [];
   const clientContracts = selectedClientId ? getContractsByClient(selectedClientId) : [];
   const clientTasks = selectedClientId ? getTasksByClient(selectedClientId) : [];
 
-  const handleAddInteraction = () => {
-    if (!selectedClientId || !interactionForm.title || !interactionForm.date) {
-      toast.error("Preencha os campos obrigatórios");
-      return;
-    }
-
-    const newInteraction: ClientInteraction = {
-      id: Date.now().toString(),
-      clientId: selectedClientId,
-      ...interactionForm,
-      createdBy: "Usuário Atual",
-    };
-
-    setInteractions([...interactions, newInteraction]);
+  const resetInteractionDialog = () => {
     setIsInteractionDialogOpen(false);
+    setEditingInteraction(null);
     setInteractionForm({ type: "meeting", title: "", description: "", date: "" });
-    toast.success("Interação adicionada com sucesso!");
   };
 
   const handleOpenEditInteraction = (interaction: ClientInteraction) => {
@@ -145,32 +166,25 @@ export default function ClientesAtivos() {
     setIsInteractionDialogOpen(true);
   };
 
-  const handleSaveInteraction = () => {
-    if (!interactionForm.title || !interactionForm.date) {
+  const handleSaveInteraction = async () => {
+    if (!selectedClientId || !interactionForm.title || !interactionForm.date) {
       toast.error("Preencha os campos obrigatórios");
       return;
     }
-
-    if (editingInteraction) {
-      setInteractions(interactions.map(i =>
-        i.id === editingInteraction.id
-          ? { ...i, ...interactionForm }
-          : i
-      ));
-      toast.success("Interação atualizada com sucesso!");
-    } else {
-      handleAddInteraction();
-      return;
+    try {
+      if (editingInteraction) {
+        await updateInteraction(editingInteraction.id, interactionForm);
+      } else {
+        await addInteraction(interactionForm, profile?.full_name ?? undefined);
+      }
+      resetInteractionDialog();
+    } catch {
+      // The mutation already reported the error; keep the dialog open
     }
-
-    setIsInteractionDialogOpen(false);
-    setEditingInteraction(null);
-    setInteractionForm({ type: "meeting", title: "", description: "", date: "" });
   };
 
   const handleDeleteInteraction = (interactionId: string) => {
-    setInteractions(interactions.filter(i => i.id !== interactionId));
-    toast.success("Interação removida com sucesso!");
+    deleteInteraction(interactionId);
   };
 
   const calculateContractAnniversary = (clientId: string): string | null => {
@@ -250,7 +264,7 @@ export default function ClientesAtivos() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-[11px] sm:text-sm text-muted-foreground font-medium">Interações este Mês</p>
-                  <p className="text-xl font-bold text-foreground mt-1">{interactions.length}</p>
+                  <p className="text-xl font-bold text-foreground mt-1">{interactionsThisMonth}</p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center">
                   <MessageSquare className="w-6 h-6 text-green-500" />
@@ -438,13 +452,25 @@ export default function ClientesAtivos() {
                         </div>
                       </div>
                     </div>
-                    <Button onClick={() => setIsInteractionDialogOpen(true)}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Nova Interação
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" onClick={() => setChurnClientId(selectedClient.id)}>
+                        Registrar saída
+                      </Button>
+                      <Button onClick={() => setIsInteractionDialogOpen(true)}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Nova Interação
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
               </Card>
+
+              <ClientOnboardingCard
+                key={selectedClient.id}
+                client={selectedClient}
+                projectCount={clientProjects.length}
+                onSaveWhatsappGroup={(url) => updateClient(selectedClient.id, { whatsappGroupUrl: url })}
+              />
 
               {/* Quick Stats */}
               <div className="grid grid-cols-3 gap-4">
@@ -514,7 +540,7 @@ export default function ClientesAtivos() {
                                       </div>
                                       <div className="flex items-center gap-2">
                                         <span className="text-xs text-muted-foreground">
-                                          {new Date(interaction.date).toLocaleDateString('pt-BR')}
+                                          {new Date(`${interaction.date}T12:00:00`).toLocaleDateString('pt-BR')}
                                         </span>
                                         <DropdownMenu>
                                           <DropdownMenuTrigger asChild>
@@ -746,7 +772,7 @@ export default function ClientesAtivos() {
                               <div className="flex items-center justify-between mb-2">
                                 <p className="font-medium">{note.title}</p>
                                 <span className="text-xs text-muted-foreground">
-                                  {new Date(note.date).toLocaleDateString('pt-BR')}
+                                  {new Date(`${note.date}T12:00:00`).toLocaleDateString('pt-BR')}
                                 </span>
                               </div>
                               <p className="text-sm text-muted-foreground">{note.description}</p>
@@ -829,7 +855,7 @@ export default function ClientesAtivos() {
             <Button variant="outline" onClick={() => setIsInteractionDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={editingInteraction ? handleSaveInteraction : handleAddInteraction}>
+            <Button onClick={handleSaveInteraction}>
               {editingInteraction ? "Salvar" : "Adicionar"}
             </Button>
           </DialogFooter>
@@ -884,6 +910,13 @@ export default function ClientesAtivos() {
           </DialogBody>
         </DialogContent>
       </Dialog>
+      <ChurnDialog
+        client={churnClient}
+        suggestedMrr={churnSuggestedMrr}
+        openProjectCount={churnOpenProjects.length}
+        onClose={() => setChurnClientId(null)}
+        onConfirm={handleChurn}
+      />
     </AppLayout>
   );
 }

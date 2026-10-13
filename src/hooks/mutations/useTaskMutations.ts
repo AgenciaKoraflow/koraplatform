@@ -11,23 +11,8 @@ function errMsg(e: unknown) {
   return e instanceof Error ? e.message : "Erro desconhecido";
 }
 
-async function syncProjectProgress(projectId: string, qc: ReturnType<typeof useQueryClient>) {
-  try {
-    const { data: tasks } = await supabase
-      .from("tasks")
-      .select("status")
-      .eq("project_id", projectId);
-    const total = tasks?.length ?? 0;
-    if (total === 0) return;
-    const completed = (tasks ?? []).filter((t) => t.status === "done").length;
-    const progress = Math.round((completed / total) * 100);
-    await supabase.from("projects").update({ progress }).eq("id", projectId);
-    qc.invalidateQueries({ queryKey: projectKeys.all });
-  } catch {
-    // Non-critical — progress corrected on next data load
-  }
-}
-
+// Project progress and task counts are recalculated by database triggers;
+// the client only needs to refetch the projects.
 export function useTaskMutations() {
   const qc = useQueryClient();
 
@@ -52,9 +37,9 @@ export function useTaskMutations() {
       if (!rows?.[0]) throw new Error("Resposta vazia ao criar tarefa");
       return mapDbTask(rows[0] as DbTaskRow);
     },
-    onSuccess: async (newTask) => {
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: taskKeys.all });
-      if (newTask.projectId) await syncProjectProgress(newTask.projectId, qc);
+      qc.invalidateQueries({ queryKey: projectKeys.all });
       toast.success("Tarefa adicionada com sucesso");
     },
     onError: (error) => toast.error(`Erro ao adicionar tarefa: ${errMsg(error)}`),
@@ -88,9 +73,9 @@ export function useTaskMutations() {
       );
       return { previous };
     },
-    onSuccess: async (projectId) => {
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: taskKeys.all });
-      if (projectId) await syncProjectProgress(projectId, qc);
+      qc.invalidateQueries({ queryKey: projectKeys.all });
       toast.success("Tarefa atualizada com sucesso");
     },
     onError: (error, _, context) => {
@@ -120,9 +105,9 @@ export function useTaskMutations() {
       if (!rows?.[0]) throw new Error("Resposta vazia ao duplicar tarefa");
       return mapDbTask(rows[0] as DbTaskRow);
     },
-    onSuccess: async (newTask) => {
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: taskKeys.all });
-      if (newTask.projectId) await syncProjectProgress(newTask.projectId, qc);
+      qc.invalidateQueries({ queryKey: projectKeys.all });
       toast.success("Tarefa duplicada com sucesso");
     },
     onError: (error) => toast.error(`Erro ao duplicar tarefa: ${errMsg(error)}`),
@@ -140,9 +125,9 @@ export function useTaskMutations() {
       if (error) throw new Error(error.message);
       return projectId;
     },
-    onSuccess: async (projectId) => {
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: taskKeys.all });
-      if (projectId) await syncProjectProgress(projectId, qc);
+      qc.invalidateQueries({ queryKey: projectKeys.all });
       toast.success("Tarefa excluída com sucesso");
     },
     onError: (error) => toast.error(`Erro ao excluir tarefa: ${errMsg(error)}`),
