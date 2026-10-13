@@ -39,8 +39,8 @@ const PUBLIC_INVOKE_HEADERS = { Authorization: `Bearer ${ANON_KEY}` };
 interface ContractData {
   id: string;
   title: string;
-  value: string;
-  expires_at: string;
+  value: number | string | null;
+  end_date?: string;
   document_name?: string;
   document_data?: string;
   document_type?: string;
@@ -84,6 +84,30 @@ function validateCPF(cpf: string): boolean {
   if (remainder === 10 || remainder === 11) remainder = 0;
   if (remainder !== parseInt(cpf.charAt(10))) return false;
   return true;
+}
+
+function formatValue(value: number | string | null | undefined): string {
+  if (value === null || value === undefined || value === "") return "—";
+  const n = typeof value === "number" ? value : Number(value);
+  if (Number.isNaN(n)) return String(value);
+  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+type DocumentKind = "pdf" | "image" | "other";
+
+function getDocumentKind(type?: string, name?: string): DocumentKind {
+  const t = (type || "").toLowerCase();
+  const ext = (name || "").split(".").pop()?.toLowerCase() || "";
+  if (t.includes("pdf") || ext === "pdf") return "pdf";
+  if (t.includes("image") || ["png", "jpg", "jpeg"].includes(ext)) return "image";
+  return "other";
+}
+
+// Legacy base64 documents: a blob URL renders reliably in the viewer and can be opened in a new tab.
+async function toViewableUrl(url: string): Promise<string> {
+  if (!url.startsWith("data:")) return url;
+  const blob = await (await fetch(url)).blob();
+  return URL.createObjectURL(blob);
 }
 
 function formatCPF(value: string): string {
@@ -159,6 +183,25 @@ export default function SignContract() {
 
       setContract(contractWithClient as unknown as ContractData);
 
+      // Resolve document URL: the original file in storage, falling back to legacy base64
+      let resolvedUrl: string | null = null;
+      const storagePath = data.signed_document_storage_path || data.document_storage_path;
+      if (storagePath && token) {
+        try {
+          const { data: urlResult } = await supabase.functions.invoke("sign-contract", {
+            body: { action: "get_document_url", table: "contracts", token },
+            headers: PUBLIC_INVOKE_HEADERS,
+          });
+          if (urlResult?.signedUrl) resolvedUrl = urlResult.signedUrl;
+        } catch {
+          // Fallback to base64 below
+        }
+      }
+      if (!resolvedUrl && data.document_data) {
+        resolvedUrl = await toViewableUrl(data.document_data);
+      }
+      setDocumentUrl(resolvedUrl);
+
       if (data.client_signed_at) {
         setStatus("signed");
         return;
@@ -176,26 +219,9 @@ export default function SignContract() {
       }
 
       setStatus("ready");
-      if (data.clients) {
-        setSignerName(data.clients.name || "");
-        setSignerEmail(data.clients.email || "");
-      }
-
-      // Resolve document URL: use storage signed URL if available, fall back to base64
-      const storagePath = data.signed_document_storage_path || data.document_storage_path;
-      if (storagePath && token) {
-        try {
-          const { data: urlResult } = await supabase.functions.invoke("sign-contract", {
-            body: { action: "get_document_url", table: "contracts", token },
-            headers: PUBLIC_INVOKE_HEADERS,
-          });
-          if (urlResult?.signedUrl) setDocumentUrl(urlResult.signedUrl);
-        } catch {
-          // Fallback to base64 below
-        }
-      }
-      if (!documentUrl && data.document_data) {
-        setDocumentUrl(data.document_data);
+      if (clientData) {
+        setSignerName((prev) => prev || clientData.name || "");
+        setSignerEmail((prev) => prev || clientData.email || "");
       }
     } catch (err) {
       logger.error("Error loading contract:", err instanceof Error ? err : undefined);
@@ -311,11 +337,19 @@ export default function SignContract() {
   const downloadContract = () => {
     const url = documentUrl;
     if (!url) return;
+    const name = contract?.document_name || "contrato";
     const link = document.createElement("a");
-    link.href = url;
-    link.download = contract?.document_name || "contrato";
+    // Storage URLs are cross-origin, so the browser only honours the file name via ?download=
+    link.href = url.startsWith("http")
+      ? `${url}${url.includes("?") ? "&" : "?"}download=${encodeURIComponent(name)}`
+      : url;
+    link.download = name;
     link.click();
   };
+
+  const documentKind = getDocumentKind(contract?.document_type, contract?.document_name);
+  const koraflowSignedAt = contract?.koraflow_signed_at || contract?.contractor_signed_at;
+  const koraflowSigner = contract?.koraflow_signer_name || contract?.contractor_signer_name;
 
   // ====== Loading / Error / Expired / Not ready states ======
   if (status === "loading") {
@@ -388,7 +422,7 @@ export default function SignContract() {
               <div className="flex items-center gap-2 text-sm">
                 <User className="w-4 h-4 text-muted-foreground" />
                 <span className="text-muted-foreground">Valor:</span>
-                <span className="font-medium">{contract.value}</span>
+                <span className="font-medium">{formatValue(contract.value)}</span>
               </div>
             </div>
 
@@ -510,8 +544,8 @@ export default function SignContract() {
                     Validade
                   </div>
                   <p className="font-semibold">
-                    {contract.expires_at
-                      ? format(new Date(contract.expires_at), "dd/MM/yyyy", { locale: ptBR })
+                    {contract.end_date
+                      ? format(new Date(contract.end_date), "dd/MM/yyyy", { locale: ptBR })
                       : "—"}
                   </p>
                 </div>
@@ -520,18 +554,18 @@ export default function SignContract() {
                     <FileSignature className="w-3.5 h-3.5" />
                     Valor
                   </div>
-                  <p className="font-bold text-primary text-lg">{contract.value}</p>
+                  <p className="font-bold text-primary text-lg">{formatValue(contract.value)}</p>
                 </div>
               </div>
 
-              {contract.koraflow_signed_at && (
+              {koraflowSignedAt && (
                 <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 mb-6 flex items-center gap-3">
                   <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
                   <div className="text-sm">
                     <p className="font-medium text-emerald-700">Já assinado pela Koraflow</p>
                     <p className="text-emerald-600/80 text-xs">
-                      {contract.koraflow_signer_name} •{" "}
-                      {format(new Date(contract.koraflow_signed_at), "dd/MM/yyyy 'às' HH:mm")}
+                      {koraflowSigner} •{" "}
+                      {format(new Date(koraflowSignedAt), "dd/MM/yyyy 'às' HH:mm")}
                     </p>
                   </div>
                 </div>
@@ -728,14 +762,40 @@ export default function SignContract() {
             <DialogTitle>{contract?.document_name}</DialogTitle>
           </DialogHeader>
           <DialogBody>
-            {documentUrl ? (
-              contract?.document_type?.includes("image") ? (
-                <img src={documentUrl} alt="Documento" className="max-w-full" />
-              ) : (
-                <iframe src={documentUrl} className="w-full h-[75vh]" title="Documento" />
-              )
-            ) : (
+            {documentUrl && documentKind === "image" && (
+              <img src={documentUrl} alt="Documento" className="max-w-full mx-auto" />
+            )}
+            {documentUrl && documentKind === "pdf" && (
+              <iframe
+                src={`${documentUrl}#view=FitH`}
+                className="w-full h-[75vh] rounded-lg border border-border"
+                title="Documento"
+              />
+            )}
+            {documentUrl && documentKind === "other" && (
+              <p className="text-center text-muted-foreground py-8">
+                Este formato não pode ser exibido no navegador. Baixe o arquivo para visualizar o
+                documento original.
+              </p>
+            )}
+            {!documentUrl && (
               <p className="text-center text-muted-foreground py-8">Visualização não disponível</p>
+            )}
+            {documentUrl && (
+              <div className="flex justify-end gap-2 mt-4">
+                {documentKind !== "other" && (
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={documentUrl} target="_blank" rel="noopener noreferrer">
+                      <Eye className="w-4 h-4 mr-1" />
+                      Abrir em nova aba
+                    </a>
+                  </Button>
+                )}
+                <Button variant="outline" size="sm" onClick={downloadContract}>
+                  <Download className="w-4 h-4 mr-1" />
+                  Baixar original
+                </Button>
+              </div>
             )}
           </DialogBody>
         </DialogContent>
