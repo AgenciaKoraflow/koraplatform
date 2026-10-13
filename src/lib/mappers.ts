@@ -121,7 +121,8 @@ export function mapDbProject(db: DbProjectRow): Project {
     name: db.name ?? "",
     description: db.description ?? "",
     status: (db.status as Project["status"]) ?? "planning",
-    progress: db.progress ?? 0,
+    // A project closed without tasks has nothing to measure, so it reads as fully done
+    progress: db.status === "completed" && !db.task_count ? 100 : (db.progress ?? 0),
     dueDate: db.end_date ? formatDate(db.end_date) : "",
     team: db.team ?? [],
     tasks: db.task_count ?? 0,
