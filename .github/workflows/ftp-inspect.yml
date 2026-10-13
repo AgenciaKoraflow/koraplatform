@@ -1,0 +1,27 @@
+name: FTP Inspect (temporary)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: List folders
+        env:
+          H: ${{ secrets.FTP_HOST }}
+          U: ${{ secrets.FTP_USER }}
+          P: ${{ secrets.FTP_PASSWORD }}
+          D: ${{ secrets.FTP_DIR }}
+        run: |
+          ls_dir() {
+            echo "=== [$2]"
+            curl -s --ssl-reqd -k --user "$U:$P" "ftp://$H/$1" | awk '{print $1, $6, $7, $8, $9}' | head -40 || echo "(falhou)"
+          }
+          ls_dir "" "raiz da conta FTP"
+          ls_dir "public_html/" "public_html"
+          ls_dir "public_html/app/" "public_html/app"
+          ls_dir "app/" "app"
+          ls_dir "domains/" "domains"
+          ls_dir "$D/" "FTP_DIR atual"
+          echo "FTP_DIR tem ${#D} caracteres; comeca com barra: $([ "${D#/}" != "$D" ] && echo sim || echo nao)"
