@@ -1,0 +1,55 @@
+name: Deploy to Hostinger
+
+# Builda o front e publica em app.koraflow.com.br (Hostinger) via FTP.
+# Requer os secrets: FTP_HOST, FTP_USER, FTP_PASSWORD, FTP_DIR,
+# além de SUPABASE_URL e SUPABASE_ANON_KEY (usados no build).
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "supabase/**"
+      - "**.md"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-hostinger
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      FTP_HOST: ${{ secrets.FTP_HOST }}
+    steps:
+      - name: Check FTP secrets
+        run: |
+          if [ -z "$FTP_HOST" ]; then
+            echo "::error::Secrets de FTP não configurados (FTP_HOST, FTP_USER, FTP_PASSWORD, FTP_DIR)."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
+      - name: Upload to Hostinger
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          local-dir: ./dist/
+          server-dir: ${{ secrets.FTP_DIR }}
