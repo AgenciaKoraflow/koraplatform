@@ -6,6 +6,7 @@ import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-
 import { buildSignedPdf, sha256Hex } from "./signed-pdf.ts";
 
 const BUCKET = "contracts-documents";
+const KORAFLOW_CNPJ = "61.158.793/0001-66";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -197,6 +198,8 @@ async function generateSignedDocument(
       email: str("koraflow_signer_email") ?? str("contractor_signer_email"),
       signedAt: str("koraflow_signed_at") ?? str("contractor_signed_at") ?? "",
       signatureData: str("koraflow_signature_data") ?? str("contractor_signature_data"),
+      cnpj: KORAFLOW_CNPJ,
+      method: "Usuário autenticado na plataforma Koraflow",
       ip: contractorMeta.ip,
       userAgent: contractorMeta.userAgent,
     },
@@ -207,6 +210,7 @@ async function generateSignedDocument(
       cpf: str("client_cpf"),
       signedAt: str("client_signed_at") ?? "",
       signatureData: str("client_signature_data"),
+      method: "Link exclusivo de assinatura enviado ao signatário",
       ip: clientMeta.ip,
       userAgent: clientMeta.userAgent,
     },

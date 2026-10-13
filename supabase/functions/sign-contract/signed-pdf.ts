@@ -1,5 +1,5 @@
 // Builds the signed document: the original file with the signatures stamped on
-// its signature block. Once both parties signed, a signature report page is appended.
+// its signature block. Once both parties signed, a signature certificate page is appended.
 
 import { PDFDocument, PDFFont, PDFImage, PDFPage, StandardFonts, rgb } from "npm:pdf-lib@1.17.1";
 import { getDocumentProxy } from "npm:unpdf@0.12.1";
@@ -9,6 +9,9 @@ export interface SignerInfo {
   name: string;
   email?: string | null;
   cpf?: string | null;
+  cnpj?: string | null;
+  /** How the signer was authenticated, e.g. "Link exclusivo enviado ao signatário". */
+  method?: string | null;
   signedAt: string;
   signatureData?: string | null;
   ip?: string | null;
@@ -208,7 +211,7 @@ function drawReportPage(
   const rule = (yy: number) =>
     page.drawLine({ start: { x: margin, y: yy }, end: { x: right, y: yy }, thickness: 0.7, color: BORDER });
 
-  text("Relatório de Assinaturas", margin, y, 16, bold);
+  text("Certificado de Assinatura", margin, y, 16, bold);
   const brand = "Koraflow";
   text(brand, right - bold.widthOfTextAtSize(brand, 18), y - 2, 18, bold, ORANGE);
   y -= 16;
@@ -249,7 +252,7 @@ function drawReportPage(
   ];
 
   for (const [signer, image] of signers) {
-    const boxHeight = 168;
+    const boxHeight = 190;
     const top = y;
     const bottom = top - boxHeight;
     page.drawRectangle({
@@ -286,6 +289,8 @@ function drawReportPage(
     const points: string[] = [];
     if (signer.email) points.push(`E-mail: ${signer.email}`);
     if (signer.cpf) points.push(`CPF: ${formatCpf(signer.cpf)}`);
+    if (signer.cnpj) points.push(`CNPJ: ${signer.cnpj}`);
+    if (signer.method) points.push(`Autenticação: ${signer.method}`);
     points.push(`IP: ${signer.ip || "não registrado"}`);
     points.push(`Dispositivo: ${signer.userAgent || "não registrado"}`);
 
@@ -306,7 +311,7 @@ function drawReportPage(
   fy -= 13;
   const legal = [
     "Assinaturas eletrônicas têm validade legal, conforme MP 2.200-2/2001 e Lei 14.063/2020.",
-    `Este relatório é parte integrante do documento número ${input.contractId}. ` +
+    `Este certificado é parte integrante do documento número ${input.contractId}. ` +
       "A integridade do documento original pode ser conferida pelo hash SHA256 informado acima.",
   ];
   for (const paragraph of legal) {
