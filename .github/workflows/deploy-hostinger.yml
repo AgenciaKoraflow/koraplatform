@@ -52,4 +52,5 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           protocol: ftps
           local-dir: ./dist/
-          server-dir: ${{ secrets.FTP_DIR }}
+          # The action requires a trailing slash
+          server-dir: ${{ format('{0}/', secrets.FTP_DIR) }}
