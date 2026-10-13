@@ -32,6 +32,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { SignaturePadPro } from "@/components/signature/SignaturePadPro";
+import { PdfViewer } from "@/components/signature/PdfViewer";
 
 const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 const PUBLIC_INVOKE_HEADERS = { Authorization: `Bearer ${ANON_KEY}` };
@@ -273,11 +274,6 @@ export default function SignContract() {
       setStatus("signed");
       setCurrentStep("confirm");
       toast.success("Contrato assinado com sucesso!");
-
-      await supabase.functions.invoke("signature-notifications", {
-        body: { action: "notify_fully_signed", contractId: contract.id },
-        headers: PUBLIC_INVOKE_HEADERS,
-      });
 
       loadContract();
     } catch (err) {
@@ -726,11 +722,7 @@ export default function SignContract() {
               <img src={documentUrl} alt="Documento" className="max-w-full mx-auto" />
             )}
             {documentUrl && documentKind === "pdf" && (
-              <iframe
-                src={`${documentUrl}#view=FitH`}
-                className="w-full h-[75vh] rounded-lg border border-border"
-                title="Documento"
-              />
+              <PdfViewer url={documentUrl} className="h-[70vh]" />
             )}
             {documentUrl && documentKind === "other" && (
               <p className="text-center text-muted-foreground py-8">

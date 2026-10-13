@@ -149,6 +149,8 @@ async function loadSignerMeta(
     .select("ip_address, user_agent")
     .eq("contract_id", contractId)
     .eq("event_type", eventType)
+    // The database trigger logs the same event types without IP/device
+    .not("user_agent", "is", null)
     .order("created_at", { ascending: false })
     .limit(1);
   return {
@@ -191,7 +193,7 @@ async function generateSignedDocument(
     documentName: str("document_name") ?? "",
     contractId: contract.id as string,
     contractTitle: str("title") ?? "Contrato",
-    createdAt: str("created_at"),
+    createdAt: str("created_at") ?? str("start_date"),
     contractor: {
       role: "Contratada",
       name: str("koraflow_signer_name") ?? str("contractor_signer_name") ?? "Koraflow",

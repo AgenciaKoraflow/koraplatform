@@ -15,6 +15,7 @@ import {
   Mail, Users, Check, Cake, CalendarClock, TrendingUp, Zap
 } from "lucide-react";
 import { SignaturePadPro } from "@/components/signature/SignaturePadPro";
+import { PdfViewer } from "@/components/signature/PdfViewer";
 import { Dialog, DialogContent, DialogHeader, DialogBody, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -368,12 +369,22 @@ export default function Contratos() {
   // Signed PDF (signatures stamped + signature report). Contracts signed before this
   // existed get theirs generated on first access.
   const ensureSignedDocumentPath = async (contract: typeof contracts[0]): Promise<string | undefined> => {
+    // The list may be stale (the client signs outside this session), so read the current row
+    const { data: fresh } = await supabase
+      .from("contracts")
+      .select("signed_document_storage_path, client_signed_at, koraflow_signed_at, contractor_signed_at")
+      .eq("id", contract.id)
+      .maybeSingle();
+    const current = fresh?.signed_document_storage_path ?? contract.signedDocumentStoragePath;
+    const clientSigned = !!(fresh?.client_signed_at ?? contract.clientSignedAt);
+    const koraflowSigned = !!(
+      fresh?.koraflow_signed_at ?? fresh?.contractor_signed_at ??
+      contract.koraflowSignedAt ?? contract.contractorSignedAt
+    );
     // A "partial" file only carries the Koraflow signature; once the client signs it is outdated
-    const current = contract.signedDocumentStoragePath;
-    const isOutdated = !!current && !!contract.clientSignedAt && current.includes("/partial/");
+    const isOutdated = !!current && clientSigned && current.includes("/partial/");
     if (current && !isOutdated) return current;
     const hasOriginal = !!(contract.documentStoragePath || contract.documentData);
-    const koraflowSigned = !!(contract.koraflowSignedAt || contract.contractorSignedAt);
     if (!koraflowSigned || !hasOriginal) return undefined;
     const { data, error } = await supabase.functions.invoke("sign-contract", {
       body: { action: "regenerate_signed_document", contractId: contract.id },
@@ -1837,11 +1848,7 @@ export default function Contratos() {
           </DialogHeader>
           <div className="overflow-auto max-h-[70vh]">
             {documentPreview?.type.includes("pdf") ? (
-              <iframe
-                src={documentPreview.data}
-                className="w-full h-[70vh]"
-                title="Document Preview"
-              />
+              <PdfViewer url={documentPreview.data} className="h-[70vh]" />
             ) : documentPreview?.type.includes("image") ? (
               <img src={documentPreview.data} alt="Document" className="max-w-full" />
             ) : (

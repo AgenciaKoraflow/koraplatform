@@ -6,6 +6,11 @@ import { contractKeys } from "@/hooks/useContracts";
 import type { DbContractRow } from "@/types/db";
 import { toast } from "sonner";
 
+// Signature moments keep their time of day; toISODate would truncate them to midnight UTC.
+function toTimestamp(value: string): string | null {
+  return /^\d{4}-\d{2}-\d{2}T/.test(value) ? value : toISODate(value);
+}
+
 function errMsg(e: unknown) {
   return e instanceof Error ? e.message : "Erro desconhecido";
 }
@@ -104,9 +109,9 @@ export function useContractMutations() {
       if (data.bu !== undefined) dbData.bu = data.bu;
       if (data.signatureLinkToken) dbData.signature_link_token = data.signatureLinkToken;
       if (data.signatureLinkExpiresAt)
-        dbData.signature_link_expires_at = toISODate(data.signatureLinkExpiresAt);
+        dbData.signature_link_expires_at = toTimestamp(data.signatureLinkExpiresAt);
       if (data.koraflowSignedAt)
-        dbData.contractor_signed_at = toISODate(data.koraflowSignedAt);
+        dbData.contractor_signed_at = toTimestamp(data.koraflowSignedAt);
       if (data.koraflowSignatureData)
         dbData.contractor_signature_data = data.koraflowSignatureData;
       if (data.koraflowSignerName)
@@ -114,7 +119,7 @@ export function useContractMutations() {
       if (data.koraflowSignerEmail)
         dbData.contractor_signer_email = data.koraflowSignerEmail;
       if (data.contractorSignedAt)
-        dbData.contractor_signed_at = toISODate(data.contractorSignedAt);
+        dbData.contractor_signed_at = toTimestamp(data.contractorSignedAt);
       if (data.contractorSignatureData)
         dbData.contractor_signature_data = data.contractorSignatureData;
       if (data.contractorSignerName)
