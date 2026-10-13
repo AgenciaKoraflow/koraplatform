@@ -363,17 +363,35 @@ export default function Contratos() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  // Signed PDF (signatures stamped + signature report). Contracts signed before this
+  // existed get theirs generated on first access.
+  const ensureSignedDocumentPath = async (contract: typeof contracts[0]): Promise<string | undefined> => {
+    if (contract.signedDocumentStoragePath) return contract.signedDocumentStoragePath;
+    const hasOriginal = !!(contract.documentStoragePath || contract.documentData);
+    if (!contract.clientSignedAt || !hasOriginal) return undefined;
+    const { data, error } = await supabase.functions.invoke("sign-contract", {
+      body: { action: "regenerate_signed_document", contractId: contract.id },
+    });
+    if (error || !data?.path) {
+      logger.error("Error generating signed document:", error instanceof Error ? error : undefined);
+      toast.warning("Não foi possível gerar o documento assinado. Exibindo o original.");
+      return undefined;
+    }
+    return data.path as string;
+  };
+
   const openDocumentViewer = async (contract: typeof contracts[0]) => {
-    const storagePath = contract.signedDocumentStoragePath || contract.documentStoragePath;
+    const signedPath = await ensureSignedDocumentPath(contract);
+    const storagePath = signedPath || contract.documentStoragePath;
     if (storagePath) {
       try {
         const url = await getSignedUrl(storagePath);
         setDocumentPreview({
-          name: contract.signedDocumentStoragePath
+          name: signedPath
             ? `${contract.documentName?.replace(/\.[^/.]+$/, "") || "contrato"}_assinado.pdf`
             : contract.documentName || "Documento",
           data: url,
-          type: contract.documentType || "application/pdf",
+          type: signedPath ? "application/pdf" : contract.documentType || "application/pdf",
         });
         setIsDocumentViewerOpen(true);
       } catch {
@@ -393,13 +411,14 @@ export default function Contratos() {
   };
 
   const downloadDocument = async (contract: typeof contracts[0]) => {
-    const storagePath = contract.signedDocumentStoragePath || contract.documentStoragePath;
+    const signedPath = await ensureSignedDocumentPath(contract);
+    const storagePath = signedPath || contract.documentStoragePath;
     if (storagePath) {
       try {
         const url = await getSignedUrl(storagePath, 300);
         const link = document.createElement("a");
         link.href = url;
-        link.download = contract.signedDocumentStoragePath
+        link.download = signedPath
           ? `${contract.documentName?.replace(/\.[^/.]+$/, "") || "contrato"}_assinado.pdf`
           : contract.documentName || "contrato";
         link.click();

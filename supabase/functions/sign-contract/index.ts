@@ -3,6 +3,9 @@
 // All DB access is via service role on the main project.
 
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { buildSignedPdf } from "./signed-pdf.ts";
+
+const BUCKET = "contracts-documents";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -30,8 +33,6 @@ const CONTRACT_SIGNING_FIELDS = new Set([
   "client_cpf",
   "status",
   "fully_signed_at",
-  "signed_document_data",
-  "document_data",
 ]);
 
 async function handleSelectContracts(
@@ -118,19 +119,136 @@ async function handleGetDocumentUrl(
   return json({ signedUrl: signed.signedUrl });
 }
 
+interface SignerMeta {
+  ip: string | null;
+  userAgent: string | null;
+}
+
+function getSignerMeta(req: Request): SignerMeta {
+  const forwarded = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  return {
+    ip: forwarded || req.headers.get("x-real-ip") || null,
+    userAgent: req.headers.get("user-agent"),
+  };
+}
+
+function dataUrlToBytes(dataUrl: string): Uint8Array {
+  const base64 = dataUrl.includes(",") ? dataUrl.slice(dataUrl.indexOf(",") + 1) : dataUrl;
+  return Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+}
+
+/**
+ * Generates the signed PDF (signatures stamped + signature report page),
+ * stores it and returns its storage path. The original file is never modified.
+ */
+async function generateSignedDocument(
+  client: SupabaseClient,
+  contract: Record<string, unknown>,
+  clientMeta: SignerMeta,
+): Promise<{ path: string; hash: string | null }> {
+  const str = (key: string) => (contract[key] as string | null | undefined) ?? null;
+
+  let original: Uint8Array | null = null;
+  const originalPath = str("document_storage_path");
+  if (originalPath) {
+    const { data: file, error } = await client.storage.from(BUCKET).download(originalPath);
+    if (error || !file) throw new Error(`Original document download failed: ${error?.message}`);
+    original = new Uint8Array(await file.arrayBuffer());
+  } else if (str("document_data")) {
+    original = dataUrlToBytes(str("document_data")!);
+  }
+
+  const { pdf, hash } = await buildSignedPdf({
+    original,
+    originalType: str("document_type") ?? "",
+    documentName: str("document_name") ?? "",
+    contractId: contract.id as string,
+    contractTitle: str("title") ?? "Contrato",
+    createdAt: str("created_at"),
+    contractor: {
+      role: "Contratada",
+      name: str("koraflow_signer_name") ?? str("contractor_signer_name") ?? "Koraflow",
+      email: str("koraflow_signer_email") ?? str("contractor_signer_email"),
+      signedAt: str("koraflow_signed_at") ?? str("contractor_signed_at") ?? "",
+      signatureData: str("koraflow_signature_data") ?? str("contractor_signature_data"),
+    },
+    client: {
+      role: "Contratante",
+      name: str("client_signer_name") ?? "",
+      email: str("client_signer_email"),
+      cpf: str("client_cpf"),
+      signedAt: str("client_signed_at") ?? "",
+      signatureData: str("client_signature_data"),
+      ip: clientMeta.ip,
+      userAgent: clientMeta.userAgent,
+    },
+  });
+
+  const path = `contracts/${contract.id}/signed/${Date.now()}.pdf`;
+  const { error: uploadError } = await client.storage
+    .from(BUCKET)
+    .upload(path, pdf, { contentType: "application/pdf", upsert: true });
+  if (uploadError) throw new Error(`Signed document upload failed: ${uploadError.message}`);
+  return { path, hash };
+}
+
+/** Rebuilds the signed PDF of a fully signed contract. Staff only (requires a user session). */
+async function handleRegenerateSignedDocument(
+  client: SupabaseClient,
+  req: Request,
+  contractId: string,
+): Promise<Response> {
+  const jwt = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  if (!jwt) return err("Unauthorized", 401);
+  const { data: userData, error: userError } = await client.auth.getUser(jwt);
+  if (userError || !userData?.user) return err("Unauthorized", 401);
+
+  const { data: rows, error } = await client.from("contracts").select("*").eq("id", contractId);
+  if (error || !rows || rows.length === 0) return err("Contract not found", 404);
+  const contract = rows[0] as Record<string, unknown>;
+  if (!contract.client_signed_at) return err("Contract not fully signed", 409);
+
+  // IP and device were recorded when the client signed.
+  const { data: audit } = await client
+    .from("signature_audit_log")
+    .select("ip_address, user_agent")
+    .eq("contract_id", contractId)
+    .eq("event_type", "client_signed")
+    .order("created_at", { ascending: false })
+    .limit(1);
+  const meta: SignerMeta = {
+    ip: (audit?.[0]?.ip_address as string | null) ?? null,
+    userAgent: (audit?.[0]?.user_agent as string | null) ?? null,
+  };
+
+  try {
+    const { path } = await generateSignedDocument(client, contract, meta);
+    const { error: updateError } = await client
+      .from("contracts")
+      .update({ signed_document_storage_path: path })
+      .eq("id", contractId);
+    if (updateError) return err("Update failed", 400);
+    return json({ path });
+  } catch (e) {
+    console.error("Signed document generation failed:", e);
+    return err("Failed to generate signed document", 500);
+  }
+}
+
 async function handleSignContract(
   client: SupabaseClient,
   token: string,
   rawData: Record<string, unknown>,
+  meta: SignerMeta,
 ): Promise<Response> {
   const { data: rows, error } = await client
     .from("contracts")
-    .select("id, signature_link_expires_at, client_signed_at")
+    .select("*")
     .eq("signature_link_token", token);
 
   if (error || !rows || rows.length === 0) return err("Contract not found", 404);
 
-  const contract = rows[0] as {
+  const contract = rows[0] as Record<string, unknown> & {
     id: string;
     signature_link_expires_at: string | null;
     client_signed_at: string | null;
@@ -149,13 +267,47 @@ async function handleSignContract(
     Object.entries(rawData).filter(([k]) => CONTRACT_SIGNING_FIELDS.has(k)),
   );
 
+  // The signing moment is set by the server, not by the browser.
+  const now = new Date().toISOString();
+  payload.client_signed_at = now;
+  payload.fully_signed_at = now;
+  payload.status = "signed";
+
+  // A failure here must not block the signature: the document can be regenerated later.
+  let documentHash: string | null = null;
+  try {
+    const signed = await generateSignedDocument(client, { ...contract, ...payload }, meta);
+    payload.signed_document_storage_path = signed.path;
+    documentHash = signed.hash;
+  } catch (e) {
+    console.error("Signed document generation failed:", e);
+  }
+
   const { data: updated, error: updateError } = await client
     .from("contracts")
     .update(payload)
     .eq("id", contract.id)
     .select();
 
-  if (updateError) return err("Sign failed", 400);
+  if (updateError) {
+    console.error("Sign failed:", updateError.message);
+    return err("Sign failed", 400);
+  }
+
+  const { error: auditError } = await client.from("signature_audit_log").insert({
+    contract_id: contract.id,
+    event_type: "client_signed",
+    ip_address: meta.ip,
+    user_agent: meta.userAgent,
+    event_data: {
+      signer_name: payload.client_signer_name ?? null,
+      signer_email: payload.client_signer_email ?? null,
+      original_document_sha256: documentHash,
+      signed_document_storage_path: payload.signed_document_storage_path ?? null,
+    },
+  });
+  if (auditError) console.error("Audit log failed:", auditError.message);
+
   return json({ data: updated });
 }
 
@@ -177,12 +329,13 @@ Deno.serve(async (req: Request) => {
     return err("Invalid JSON body", 400);
   }
 
-  const { action, table, filters, data, token } = body as {
+  const { action, table, filters, data, token, contractId } = body as {
     action?: string;
     table?: string;
     filters?: Record<string, unknown>;
     data?: Record<string, unknown>;
     token?: string;
+    contractId?: string;
   };
 
   if (!action) return err("action required", 400);
@@ -206,7 +359,12 @@ Deno.serve(async (req: Request) => {
   if (action === "sign_contract") {
     if (!token) return err("token required", 400);
     if (!data) return err("data required", 400);
-    return handleSignContract(client, token, data);
+    return handleSignContract(client, token, data, getSignerMeta(req));
+  }
+
+  if (action === "regenerate_signed_document") {
+    if (!contractId) return err("contractId required", 400);
+    return handleRegenerateSignedDocument(client, req, contractId);
   }
 
   return err("Unknown action", 400);

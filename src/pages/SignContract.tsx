@@ -254,51 +254,6 @@ export default function SignContract() {
     setIsSigning(true);
     try {
       const now = new Date().toISOString();
-      const koraflowSignatureData =
-        contract.koraflow_signature_data || contract.contractor_signature_data;
-      const koraflowSignerName =
-        contract.koraflow_signer_name || contract.contractor_signer_name || "Koraflow";
-      const koraflowSignerEmail =
-        contract.koraflow_signer_email || contract.contractor_signer_email || "contato@koraflow.com.br";
-      const koraflowSignedAt = contract.koraflow_signed_at || contract.contractor_signed_at || now;
-
-      let signedDocumentData = contract.document_data;
-
-      if (contract.document_data) {
-        const pdfBase64 = contract.document_data
-          .replace(/^data:application\/pdf;base64,/, "")
-          .replace(/^data:application\/octet-stream;base64,/, "");
-
-        const { data: embedResult, error: embedError } = await supabase.functions.invoke(
-          "embed-signature",
-          {
-            body: {
-              pdfBase64,
-              contractTitle: contract.title,
-              koraflowSignature: {
-                imageData: koraflowSignatureData,
-                signerName: koraflowSignerName,
-                signerEmail: koraflowSignerEmail,
-                signedAt: koraflowSignedAt,
-              },
-              clientSignature: {
-                imageData: signatureData,
-                signerName,
-                signerEmail,
-                signedAt: now,
-                cpf: signerCpf.replace(/[^\d]/g, ""),
-              },
-              sendEmail: { to: signerEmail, fromAlias: "contratos@koraflow.com.br" },
-            },
-            headers: PUBLIC_INVOKE_HEADERS,
-          }
-        );
-
-        if (!embedError && embedResult?.signedPdfBase64) {
-          signedDocumentData = `data:application/pdf;base64,${embedResult.signedPdfBase64}`;
-        }
-      }
-
       const updateData: Record<string, unknown> = {
         client_signed_at: now,
         client_signature_data: signatureData,
@@ -308,7 +263,6 @@ export default function SignContract() {
         fully_signed_at: now,
         client_cpf: signerCpf.replace(/[^\d]/g, ""),
       };
-      if (signedDocumentData) updateData.document_data = signedDocumentData;
 
       const { error } = await supabase.functions.invoke("sign-contract", {
         body: { action: "sign_contract", table: "contracts", data: updateData, token },
@@ -337,7 +291,10 @@ export default function SignContract() {
   const downloadContract = () => {
     const url = documentUrl;
     if (!url) return;
-    const name = contract?.document_name || "contrato";
+    const baseName = contract?.document_name || "contrato";
+    const name = contract?.signed_document_storage_path
+      ? `${baseName.replace(/\.[^/.]+$/, "")}_assinado.pdf`
+      : baseName;
     const link = document.createElement("a");
     // Storage URLs are cross-origin, so the browser only honours the file name via ?download=
     link.href = url.startsWith("http")
@@ -347,7 +304,10 @@ export default function SignContract() {
     link.click();
   };
 
-  const documentKind = getDocumentKind(contract?.document_type, contract?.document_name);
+  // The signed version is always a PDF, whatever the original format was
+  const documentKind = contract?.signed_document_storage_path
+    ? "pdf"
+    : getDocumentKind(contract?.document_type, contract?.document_name);
   const koraflowSignedAt = contract?.koraflow_signed_at || contract?.contractor_signed_at;
   const koraflowSigner = contract?.koraflow_signer_name || contract?.contractor_signer_name;
 

@@ -40,7 +40,10 @@ export function useContracts(params: ContractListParams = {}) {
         total: count ?? 0,
       };
     },
-    staleTime: 5 * 60 * 1000,
+    // Clients sign through a public link, so the list must pick up changes made outside this session
+    staleTime: 30 * 1000,
+    refetchInterval: 60 * 1000,
+    refetchOnWindowFocus: true,
     placeholderData: keepPreviousData,
   });
 }
