@@ -1,0 +1,22 @@
+name: Supabase Keep Alive
+
+# Evita que o projeto Supabase (plano free) seja pausado por inatividade (7 dias).
+# Requer os secrets: SUPABASE_URL e SUPABASE_ANON_KEY.
+
+on:
+  schedule:
+    - cron: "0 12 */3 * *" # a cada 3 dias
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        run: |
+          status=$(curl -s -o /dev/null -w "%{http_code}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/clients?select=id&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
+          echo "HTTP $status"
+          test "$status" -ge 200 && test "$status" -lt 300
