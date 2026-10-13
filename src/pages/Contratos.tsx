@@ -26,7 +26,7 @@ import { ViewModeToggle, ViewMode } from "@/components/shared/ViewModeToggle";
 import { DatePicker } from "@/components/shared/DatePicker";
 import { useContractMutations } from "@/hooks/mutations/useContractMutations";
 import { useContractDocument } from "@/hooks/useContractDocument";
-import { useContracts } from "@/hooks/useContracts";
+import { useContracts, contractKeys } from "@/hooks/useContracts";
 import { useAllClients } from "@/hooks/useClients";
 import { useAllProjects } from "@/hooks/useProjects";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -37,6 +37,7 @@ import { parseCurrencyToNumber, formatCurrency } from "@/lib/currency";
 import { calculateRecurrenceTotal } from "@/lib/recurrence";
 import { parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Sócios autorizados a assinar como Koraflow
 const KORAFLOW_PARTNERS: { name: string; email: string }[] = [
@@ -193,6 +194,7 @@ function getContractTypeLabel(contract: Contract, allProjects: Project[]): strin
 export default function Contratos() {
   const { addContract, updateContract, deleteContract } = useContractMutations();
   const { upload: uploadDocument, getSignedUrl } = useContractDocument();
+  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const [searchInput, setSearchInput] = useState("");
   const searchQuery = useDebounce(searchInput, 300);
@@ -366,9 +368,13 @@ export default function Contratos() {
   // Signed PDF (signatures stamped + signature report). Contracts signed before this
   // existed get theirs generated on first access.
   const ensureSignedDocumentPath = async (contract: typeof contracts[0]): Promise<string | undefined> => {
-    if (contract.signedDocumentStoragePath) return contract.signedDocumentStoragePath;
+    // A "partial" file only carries the Koraflow signature; once the client signs it is outdated
+    const current = contract.signedDocumentStoragePath;
+    const isOutdated = !!current && !!contract.clientSignedAt && current.includes("/partial/");
+    if (current && !isOutdated) return current;
     const hasOriginal = !!(contract.documentStoragePath || contract.documentData);
-    if (!contract.clientSignedAt || !hasOriginal) return undefined;
+    const koraflowSigned = !!(contract.koraflowSignedAt || contract.contractorSignedAt);
+    if (!koraflowSigned || !hasOriginal) return undefined;
     const { data, error } = await supabase.functions.invoke("sign-contract", {
       body: { action: "regenerate_signed_document", contractId: contract.id },
     });
@@ -605,7 +611,21 @@ export default function Contratos() {
       koraflowSignerEmail: koraflowSignerEmail,
     });
 
-    toast.success("Contrato assinado pela Koraflow!");
+    // Stamps the Koraflow signature on the document the client will review
+    const { error: stampError } = await supabase.functions.invoke("sign-contract", {
+      body: {
+        action: "regenerate_signed_document",
+        contractId: signingContract.id,
+        recordContractorSignature: true,
+      },
+    });
+    if (stampError) {
+      logger.error("Error stamping signature:", stampError instanceof Error ? stampError : undefined);
+      toast.warning("Contrato assinado, mas não foi possível carimbar a assinatura no documento.");
+    } else {
+      queryClient.invalidateQueries({ queryKey: contractKeys.all });
+      toast.success("Contrato assinado pela Koraflow!");
+    }
     setIsKoraflowSignDialogOpen(false);
     setSigningContractId(null);
   };

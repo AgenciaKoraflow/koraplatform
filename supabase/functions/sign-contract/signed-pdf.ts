@@ -1,5 +1,5 @@
-// Builds the final signed document: the original file with both signatures
-// stamped on its signature block, followed by a signature report page.
+// Builds the signed document: the original file with the signatures stamped on
+// its signature block. Once both parties signed, a signature report page is appended.
 
 import { PDFDocument, PDFFont, PDFImage, PDFPage, StandardFonts, rgb } from "npm:pdf-lib@1.17.1";
 import { getDocumentProxy } from "npm:unpdf@0.12.1";
@@ -23,7 +23,8 @@ export interface SignedPdfInput {
   contractTitle: string;
   createdAt?: string | null;
   contractor: SignerInfo;
-  client: SignerInfo;
+  /** null while only the contractor has signed: no client stamp and no report page yet. */
+  client: SignerInfo | null;
 }
 
 const A4: [number, number] = [595.28, 841.89];
@@ -191,7 +192,7 @@ function stampSignature(page: PDFPage, slot: Slot, image: PDFImage) {
 function drawReportPage(
   doc: PDFDocument,
   fonts: { regular: PDFFont; bold: PDFFont },
-  input: SignedPdfInput,
+  input: SignedPdfInput & { client: SignerInfo },
   hash: string | null,
   images: { contractor: PDFImage | null; client: PDFImage | null },
 ) {
@@ -346,7 +347,7 @@ export async function buildSignedPdf(input: SignedPdfInput): Promise<{ pdf: Uint
 
   const images = {
     contractor: await embedSignature(doc, input.contractor.signatureData),
-    client: await embedSignature(doc, input.client.signatureData),
+    client: input.client ? await embedSignature(doc, input.client.signatureData) : null,
   };
 
   if (isPdf) {
@@ -364,12 +365,14 @@ export async function buildSignedPdf(input: SignedPdfInput): Promise<{ pdf: Uint
     }
   }
 
-  const fonts = {
-    regular: await doc.embedFont(StandardFonts.Helvetica),
-    bold: await doc.embedFont(StandardFonts.HelveticaBold),
-  };
   const hash = original ? await sha256Hex(original) : null;
-  drawReportPage(doc, fonts, input, hash, images);
+  if (input.client) {
+    const fonts = {
+      regular: await doc.embedFont(StandardFonts.Helvetica),
+      bold: await doc.embedFont(StandardFonts.HelveticaBold),
+    };
+    drawReportPage(doc, fonts, { ...input, client: input.client }, hash, images);
+  }
 
   return { pdf: await doc.save(), hash };
 }
